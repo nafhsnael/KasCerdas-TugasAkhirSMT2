@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import TopBar from './components/TopBar'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import InitialBalancePage from './pages/InitialBalancePage'
 //import DashboardPage from './pages/DashboardPage'
 import TransactionsPage from './pages/TransactionsPage'
 //import ReportsPage from './pages/ReportsPage'
@@ -23,6 +24,8 @@ const pages = {
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showInitialBalance, setShowInitialBalance] = useState(false)
+  const [initialBalance, setInitialBalance] = useState(0)
   const [filters, setFilters] = useState({ type: 'all' })
   const [transactions, setTransactions] = useState(initialTransactions)
   const [userProfile, setUserProfile] = useState({
@@ -41,18 +44,39 @@ function App() {
     setTransactions((prev) => [transaction, ...prev])
   }
 
+  const handleAuthenticate = () => {
+    setIsAuthenticated(true)
+    setShowInitialBalance(true)
+  }
+
+  const handleSaveInitialBalance = (data) => {
+    setInitialBalance(data.balance)
+    setShowInitialBalance(false)
+    setCurrentPage('transactions')
+  }
+
   const pageComponent = useMemo(() => {
+    if (showInitialBalance) {
+      return <InitialBalancePage onSave={handleSaveInitialBalance} initialBalance={initialBalance} />
+    }
+
     if (!isAuthenticated) {
       return currentPage === 'register' ? (
-        <RegisterPage onSwitch={() => setCurrentPage('login')} onAuthenticate={() => setIsAuthenticated(true)} />
+        <RegisterPage onSwitch={() => setCurrentPage('login')} onAuthenticate={handleAuthenticate} />
       ) : (
-        <LoginPage onSwitch={() => setCurrentPage('register')} onAuthenticate={() => setIsAuthenticated(true)} />
+        <LoginPage onSwitch={() => setCurrentPage('register')} onAuthenticate={handleAuthenticate} />
       )
     }
 
     switch (currentPage) {
-      case 'dashboard':
-        return <DashboardPage walletSummary={walletSummary} transactions={transactions.slice(0, 4)} budgets={budgets} />
+      case '':
+        return (
+          <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900"> </h1>
+            </div>
+          </div>
+        )
       case 'transactions':
         return <TransactionsPage transactions={transactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
       case 'reports':
@@ -61,8 +85,22 @@ function App() {
         return <BudgetPage budgets={budgets} />
       case 'profile':
         return <ProfilePage userProfile={userProfile} setUserProfile={setUserProfile} />
+      case 'dashboard':
+        return (
+          <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900"></h1>
+            </div>
+          </div>
+        )
       default:
-        return <DashboardPage walletSummary={walletSummary} transactions={transactions.slice(0, 4)} budgets={budgets} />
+        return (
+          <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900"></h1>
+            </div>
+          </div>
+        )
     }
   }, [currentPage, isAuthenticated, filters, transactions])
 
@@ -76,7 +114,7 @@ function App() {
           userProfile={userProfile}
         /> */}
         <div className="flex-1 p-4 md:p-6 lg:p-8">
-          {isAuthenticated && <TopBar currentPage={pages[currentPage] || 'Dashboard'} />}
+          
           <div className="mt-6">
             {pageComponent}
           </div>

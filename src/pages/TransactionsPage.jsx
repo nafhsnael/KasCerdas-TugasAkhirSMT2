@@ -58,19 +58,19 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
           </div>
           <div className="flex gap-2">
             <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'all' ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-700'}`}
+              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'all' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
               onClick={() => setFilters({ type: 'all' })}
             >
               Semua
             </button>
             <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'income' ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-700'}`}
+              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'income' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
               onClick={() => setFilters({ type: 'income' })}
             >
               Pemasukan
             </button>
             <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'expense' ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-700'}`}
+              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'expense' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
               onClick={() => setFilters({ type: 'expense' })}
             >
               Pengeluaran
@@ -86,7 +86,7 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               value={form.title}
               onChange={(e) => handleChange('title', e.target.value)}
               required
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
               placeholder="Contoh: Makan siang"
             />
           </div>
@@ -97,7 +97,7 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               value={form.amount}
               onChange={(e) => handleChange('amount', e.target.value)}
               required
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
               placeholder="Rp"
             />
           </div>
@@ -106,7 +106,7 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
             <select
               value={form.category}
               onChange={(e) => handleChange('category', e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             >
               {categories.map((category) => (
                 <option key={category} value={category}>{category}</option>
@@ -118,7 +118,7 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
             <select
               value={form.wallet}
               onChange={(e) => handleChange('wallet', e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             >
               {wallets.map((wallet) => (
                 <option key={wallet} value={wallet}>{wallet}</option>
@@ -132,7 +132,7 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               value={form.date}
               onChange={(e) => handleChange('date', e.target.value)}
               required
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             />
           </div>
           <div className="lg:col-span-2">
@@ -141,40 +141,42 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               value={form.note}
               onChange={(e) => handleChange('note', e.target.value)}
               rows="3"
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
               placeholder="Contoh: Makan siang di kantor"
             />
           </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Upload Bukti Nota</label>
-            <input
-              type="file"
-              accept="image/*,application/pdf"
-              onChange={(e) => handleChange('receipt', e.target.files?.[0] || null)}
-              className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-2 text-slate-700"
-            />
-          </div>
+          {form.type === 'expense' && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Upload Bukti Nota</label>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={(e) => handleChange('receipt', e.target.files?.[0] || null)}
+                className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-2 text-slate-700"
+              />
+            </div>
+          )}
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Tipe Transaksi</label>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => handleChange('type', 'income')}
-                className={`rounded-3xl px-4 py-3 text-sm font-semibold transition ${form.type === 'income' ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-700'}`}
+                className={`rounded-3xl px-4 py-3 text-sm font-semibold transition ${form.type === 'income' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
               >
                 Pemasukan
               </button>
               <button
                 type="button"
                 onClick={() => handleChange('type', 'expense')}
-                className={`rounded-3xl px-4 py-3 text-sm font-semibold transition ${form.type === 'expense' ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-700'}`}
+                className={`rounded-3xl px-4 py-3 text-sm font-semibold transition ${form.type === 'expense' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
               >
                 Pengeluaran
               </button>
             </div>
           </div>
           <div className="lg:col-span-2">
-            <button className="w-full rounded-3xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-600">
+            <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
               Simpan Transaksi
             </button>
           </div>
