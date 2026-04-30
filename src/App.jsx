@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react'
 import TopBar from './components/TopBar'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import UserTypePage from './pages/UserTypePage'
+import DompetPage from './pages/DompetPage'
 import InitialBalancePage from './pages/InitialBalancePage'
 //import DashboardPage from './pages/DashboardPage'
 import TransactionsPage from './pages/TransactionsPage'
@@ -24,6 +26,10 @@ const pages = {
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showUserType, setShowUserType] = useState(false)
+  const [userType, setUserType] = useState(null)
+  const [showWallet, setShowWallet] = useState(false)
+  const [wallet, setWallet] = useState(null)
   const [showInitialBalance, setShowInitialBalance] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
   const [filters, setFilters] = useState({ type: 'all' })
@@ -32,7 +38,8 @@ function App() {
     nama: 'nafhisa naila',
     email: 'Naila@email.com',
     user: 'Nafhsnael',
-    dompet: 'Cash',
+    usertype: null,
+    dompet: null,
     profileImage: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=200&q=80',
   })
 
@@ -44,9 +51,26 @@ function App() {
     setTransactions((prev) => [transaction, ...prev])
   }
 
-  const handleAuthenticate = () => {
+  const handleAuthenticate = (isRegister = false) => {
     setIsAuthenticated(true)
+    if (isRegister) {
+      setShowUserType(true)
+    } else {
+      setCurrentPage('transactions')
+    }
+  }
+
+  const handleUserTypeNext = (selectedUserType) => {
+    setUserType(selectedUserType)
+    setShowUserType(false)
+    setShowWallet(true)
+  }
+
+  const handleWalletNext = (selectedWallet) => {
+    setWallet(selectedWallet)
+    setShowWallet(false)
     setShowInitialBalance(true)
+    setUserProfile(prev => ({ ...prev, usertype: userType, dompet: selectedWallet }))
   }
 
   const handleSaveInitialBalance = (data) => {
@@ -56,15 +80,23 @@ function App() {
   }
 
   const pageComponent = useMemo(() => {
+    if (isAuthenticated && showUserType) {
+      return <UserTypePage onNext={handleUserTypeNext} />
+    }
+
+    if (isAuthenticated && showWallet) {
+      return <DompetPage onNext={handleWalletNext} />
+    }
+
     if (showInitialBalance) {
       return <InitialBalancePage onSave={handleSaveInitialBalance} initialBalance={initialBalance} />
     }
 
     if (!isAuthenticated) {
       return currentPage === 'register' ? (
-        <RegisterPage onSwitch={() => setCurrentPage('login')} onAuthenticate={handleAuthenticate} />
+        <RegisterPage onSwitch={() => setCurrentPage('login')} onAuthenticate={() => handleAuthenticate(true)} />
       ) : (
-        <LoginPage onSwitch={() => setCurrentPage('register')} onAuthenticate={handleAuthenticate} />
+        <LoginPage onSwitch={() => setCurrentPage('register')} onAuthenticate={() => handleAuthenticate(false)} />
       )
     }
 
@@ -102,7 +134,7 @@ function App() {
           </div>
         )
     }
-  }, [currentPage, isAuthenticated, filters, transactions])
+  }, [currentPage, isAuthenticated, showUserType, showWallet, showInitialBalance, initialBalance, filters, transactions, userProfile])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -114,7 +146,7 @@ function App() {
           userProfile={userProfile}
         /> */}
         <div className="flex-1 p-4 md:p-6 lg:p-8">
-          
+
           <div className="mt-6">
             {pageComponent}
           </div>

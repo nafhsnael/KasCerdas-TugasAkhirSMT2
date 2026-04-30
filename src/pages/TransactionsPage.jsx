@@ -126,6 +126,18 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
             </select>
           </div>
           <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Bank</label>
+            <select
+              value={form.bank}
+              onChange={(e) => handleChange('bank', e.target.value)}
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+            >
+              {bank.map((bank) => (
+                <option key={bank} value={bank}>{bank}</option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Tanggal</label>
             <input
               type="date"
