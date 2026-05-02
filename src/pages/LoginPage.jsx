@@ -6,7 +6,7 @@ function LoginPage({ onSwitch, onAuthenticate }) {
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    onAuthenticate()
+    onAuthenticate({ username, usertype: 'Mahasiswa', dompet: 'pribadi' })
   }
 
   return (

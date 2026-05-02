@@ -7,6 +7,8 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
     user: '',
     phone: '',
     address: '',
+    dompet: '',
+    usertype: '',
   })
   const [profileImage, setProfileImage] = useState(userProfile?.profileImage || '')
   const [imagePreview, setImagePreview] = useState(userProfile?.profileImage || '')
@@ -19,13 +21,15 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
         user: userProfile.user || '',
         phone: userProfile.phone || '',
         address: userProfile.address || '',
+        dompet: userProfile.dompet || '',
+        usertype: userProfile.usertype || '',
       })
       setProfileImage(userProfile.profileImage || '')
       setImagePreview(userProfile.profileImage || '')
     }
   }, [userProfile])
 
-  const handleChange = (field, value) => {        
+  const handleChange = (field, value) => {
     setProfile((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -48,13 +52,15 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
       alert('Mohon isi field Nama, Email, dan Username')
       return
     }
-    setUserProfile((prev) => ({ 
-      ...prev, 
+    setUserProfile((prev) => ({
+      ...prev,
       nama: profile.nama,
       email: profile.email,
       user: profile.user,
       phone: profile.phone,
       address: profile.address,
+      dompet: profile.dompet,
+      usertype: profile.usertype,
       profileImage: profileImage,
     }))
     alert('Profil berhasil diperbarui!')
@@ -63,7 +69,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6 rounded-3xl bg-[#38ADA9] p-6 text-white">
-        <h2 className="text-2xl font-bold">Profil Pengguna</h2>  
+        <h2 className="text-2xl font-bold">Profil Pengguna</h2>
         <p className="text-sm text-white/80 mt-2">
           Kelola dan perbarui informasi profil kamu
         </p>
@@ -111,9 +117,9 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
             />
           </div>
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-slate-700">Email *</label>   
+          <label className="block text-sm font-medium text-slate-700">Email *</label>
           <input
             type="email"
             value={profile.email}
@@ -121,8 +127,8 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
             className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
             required
           />
-        </div>  
-        
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-slate-700">Telepon</label>
           <input
@@ -132,8 +138,8 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
             className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
           />
         </div>
-        
-        <div>   
+
+        <div>
           <label className="block text-sm font-medium text-slate-700">Alamat</label>
           <textarea
             value={profile.address}
@@ -142,7 +148,28 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
             className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
           />
         </div>
-        
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700">Dompet</label>
+          <textarea
+            value={profile.dompet}
+            onChange={(e) => handleChange('dompet', e.target.value)}
+            rows="1"
+            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700">User</label>
+          <textarea
+            value={profile.usertype}
+            onChange={(e) => handleChange('usertype', e.target.value)}
+            rows="1"
+            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
+          />
+        </div>
+
+
         <div className="flex gap-4 pt-4">
           <button
             type="submit"
@@ -151,7 +178,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
             Simpan Perubahan
           </button>
           <button
-            type="button"   
+            type="button"
             onClick={() => onNavigate && onNavigate('transactions')}
             className="flex-1 rounded-2xl bg-slate-200 py-3 font-semibold text-slate-700 transition hover:bg-slate-300"
           >
@@ -160,7 +187,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
         </div>
       </form>
     </div>
-  )   
+  )
 }
 
 export default ProfilePage

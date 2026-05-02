@@ -51,8 +51,17 @@ function App() {
     setTransactions((prev) => [transaction, ...prev])
   }
 
-  const handleAuthenticate = (isRegister = false) => {
+  const handleAuthenticate = (userData = {}, isRegister = false) => {
     setIsAuthenticated(true)
+    if (userData.username || userData.email) {
+      setUserProfile(prev => ({
+        ...prev,
+        user: userData.username || prev.user,
+        email: userData.email || prev.email,
+        usertype: userData.usertype || prev.usertype,
+        dompet: userData.dompet || prev.dompet,
+      }))
+    }
     if (isRegister) {
       setShowUserType(true)
     } else {
@@ -104,9 +113,9 @@ function App() {
 
     if (!isAuthenticated) {
       return currentPage === 'register' ? (
-        <RegisterPage onSwitch={() => setCurrentPage('login')} onAuthenticate={() => handleAuthenticate(true)} />
+        <RegisterPage onSwitch={() => setCurrentPage('login')} onAuthenticate={(data) => handleAuthenticate(data, true)} />
       ) : (
-        <LoginPage onSwitch={() => setCurrentPage('register')} onAuthenticate={() => handleAuthenticate(false)} />
+        <LoginPage onSwitch={() => setCurrentPage('register')} onAuthenticate={(data) => handleAuthenticate(data, false)} />
       )
     }
 
@@ -148,25 +157,23 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="flex min-h-screen">
-        {isAuthenticated && (
-          <Sidebar
-            currentPage={currentPage}
-            onNavigate={setCurrentPage}
-            userProfile={userProfile}
-            onLogout={handleLogout}
-          />
+      {isAuthenticated && !showUserType && !showWallet && !showInitialBalance && (
+        <Sidebar
+          currentPage={currentPage}
+          onNavigate={setCurrentPage}
+          userProfile={userProfile}
+          onLogout={handleLogout}
+        />
+      )}
+      <div className={`flex-1 flex flex-col ${isAuthenticated && !showUserType && !showWallet && !showInitialBalance ? 'ml-64' : ''}`}>
+        {isAuthenticated && !showUserType && !showWallet && !showInitialBalance && (
+          <div className="p-4 md:p-6 lg:p-8">
+            <TopBar currentPage={pages[currentPage] || currentPage} />
+          </div>
         )}
-        <div className="flex-1 flex flex-col">
-          {isAuthenticated && (
-            <div className="p-4 md:p-6 lg:p-8">
-              <TopBar currentPage={pages[currentPage] || currentPage} />
-            </div>
-          )}
-          <div className="flex-1 p-4 md:p-6 lg:p-8">
-            <div className="mt-6">
-              {pageComponent}
-            </div>
+        <div className="flex-1 p-4 md:p-6 lg:p-8">
+          <div className="mt-6">
+            {pageComponent}
           </div>
         </div>
       </div>

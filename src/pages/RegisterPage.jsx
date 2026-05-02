@@ -8,7 +8,11 @@ function RegisterPage({ onSwitch, onAuthenticate }) {
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    onAuthenticate()
+    if (password !== confirmPassword) {
+      alert('Password dan konfirmasi password tidak cocok')
+      return
+    }
+    onAuthenticate({ email, username })
   }
 
   return (
