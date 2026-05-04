@@ -5,6 +5,8 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const menuItems = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'analysis', label: 'Analisis' },
     { id: 'transactions', label: 'Transaksi' },
     { id: 'profile', label: 'Profil' },
   ]

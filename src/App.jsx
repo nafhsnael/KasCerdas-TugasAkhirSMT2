@@ -6,7 +6,8 @@ import RegisterPage from './pages/RegisterPage'
 import UserTypePage from './pages/UserTypePage'
 import DompetPage from './pages/DompetPage'
 import InitialBalancePage from './pages/InitialBalancePage'
-//import DashboardPage from './pages/DashboardPage'
+import DashboardPage from './pages/DashboardPage'
+import AnalysisPage from './pages/AnalysisPage'
 import TransactionsPage from './pages/TransactionsPage'
 //import ReportsPage from './pages/ReportsPage'
 //import BudgetPage from './pages/BudgetPage'
@@ -14,7 +15,8 @@ import ProfilePage from './pages/ProfilePage'
 import { transactions as initialTransactions, budgets, reports, walletSummary } from './utils/data'
 
 const pages = {
-  //dashboard: 'Dashboard',
+  dashboard: 'Dashboard',
+  analysis: 'Analisis',
   transactions: 'Transaksi',
   //reports: 'Laporan',
   //budget: 'Budget',
@@ -130,6 +132,8 @@ function App() {
         )
       case 'transactions':
         return <TransactionsPage transactions={transactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
+      case 'analysis':
+        return <AnalysisPage transactions={transactions} />
       case 'reports':
         return <ReportsPage reports={reports} />
       case 'budget':
@@ -137,21 +141,9 @@ function App() {
       case 'profile':
         return <ProfilePage userProfile={userProfile} setUserProfile={setUserProfile} onNavigate={setCurrentPage} />
       case 'dashboard':
-        return (
-          <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900"></h1>
-            </div>
-          </div>
-        )
+        return <DashboardPage walletSummary={walletSummary} transactions={transactions.slice(0, 4)} budgets={budgets} />
       default:
-        return (
-          <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900"></h1>
-            </div>
-          </div>
-        )
+        return <DashboardPage walletSummary={walletSummary} transactions={transactions.slice(0, 4)} budgets={budgets} />
     }
   }, [currentPage, isAuthenticated, showUserType, showWallet, showInitialBalance, initialBalance, filters, transactions, userProfile])
 
