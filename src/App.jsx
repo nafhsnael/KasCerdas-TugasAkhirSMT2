@@ -11,6 +11,8 @@ import AnalysisPage from './pages/AnalysisPage'
 import TransactionsPage from './pages/TransactionsPage'
 import ReportsPage from './pages/ReportsPage'
 import BudgetPage from './pages/BudgetPage'
+import AddDebtPage from './pages/AddDebtPage'
+import AddSavingsPage from './pages/AddSavingsPage'
 import ProfilePage from './pages/ProfilePage'
 import { transactions as initialTransactions, budgets, reports, walletSummary } from './utils/data'
 
@@ -36,8 +38,15 @@ function App() {
   const [initialBalance, setInitialBalance] = useState(0)
   const [filters, setFilters] = useState({ type: 'all' })
   const [transactions, setTransactions] = useState(initialTransactions)
+  const [debts, setDebts] = useState([
+    { id: 'd1', creditor: 'Keluarga', amount: 3000000, dueDate: '2026-06-30', status: 'ongoing', note: 'Hutang untuk keperluan keluarga', createdAt: '2026-04-01T00:00:00.000Z' },
+    { id: 'd2', creditor: 'Teman', amount: 800000, dueDate: '2026-05-15', status: 'ongoing', note: 'Pinjaman untuk modal usaha', createdAt: '2026-04-01T00:00:00.000Z' },
+  ])
+  const [savings, setSavings] = useState([
+    { id: 's1', name: 'Tabungan Rumah', target: 50000000, current: 21000000, deadline: '2026-12-31', status: 'active', note: 'Target tabungan untuk DP rumah', createdAt: '2026-04-01T00:00:00.000Z' },
+  ])
   const [userProfile, setUserProfile] = useState({
-    nama: 'nafhisa naila',
+    nama: 'Veloura',
     email: 'Naila@email.com',
     user: 'Nafhsnael',
     usertype: null,
@@ -55,6 +64,14 @@ function App() {
       ...newTransaction,
     }
     setTransactions((prev) => [transaction, ...prev])
+  }
+
+  const addDebt = (newDebt) => {
+    setDebts((prev) => [...prev, newDebt])
+  }
+
+  const addSavings = (newSavings) => {
+    setSavings((prev) => [...prev, newSavings])
   }
 
   const handleAuthenticate = (userData = {}, isRegister = false) => {
@@ -139,9 +156,13 @@ function App() {
       case 'analysis':
         return <AnalysisPage transactions={transactions} />
       case 'reports':
-        return <ReportsPage transactions={transactions} />
+        return <ReportsPage transactions={transactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
       case 'budget':
         return <BudgetPage transactions={transactions} />
+      case 'add-debt':
+        return <AddDebtPage onAddDebt={addDebt} onNavigate={setCurrentPage} />
+      case 'add-savings':
+        return <AddSavingsPage onAddSavings={addSavings} onNavigate={setCurrentPage} />
       case 'profile':
         return <ProfilePage userProfile={userProfile} setUserProfile={setUserProfile} onNavigate={setCurrentPage} />
       case 'dashboard':
