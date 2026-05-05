@@ -5,10 +5,12 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'analysis', label: 'Analisis' },
-    { id: 'transactions', label: 'Transaksi' },
-    { id: 'profile', label: 'Profil' },
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'analysis', label: 'Analisis', icon: '📈' },
+    { id: 'transactions', label: 'Transaksi', icon: '💳' },
+    { id: 'reports', label: 'Laporan', icon: '📋' },
+    { id: 'budget', label: 'Budget', icon: '💰' },
+    { id: 'profile', label: 'Profil', icon: '👤' },
   ]
 
   return (

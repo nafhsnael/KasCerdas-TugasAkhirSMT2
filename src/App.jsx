@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import LoginPage from './pages/LoginPage'
@@ -9,8 +9,8 @@ import InitialBalancePage from './pages/InitialBalancePage'
 import DashboardPage from './pages/DashboardPage'
 import AnalysisPage from './pages/AnalysisPage'
 import TransactionsPage from './pages/TransactionsPage'
-//import ReportsPage from './pages/ReportsPage'
-//import BudgetPage from './pages/BudgetPage'
+import ReportsPage from './pages/ReportsPage'
+import BudgetPage from './pages/BudgetPage'
 import ProfilePage from './pages/ProfilePage'
 import { transactions as initialTransactions, budgets, reports, walletSummary } from './utils/data'
 
@@ -18,8 +18,8 @@ const pages = {
   dashboard: 'Dashboard',
   analysis: 'Analisis',
   transactions: 'Transaksi',
-  //reports: 'Laporan',
-  //budget: 'Budget',
+  reports: 'Laporan',
+  budget: 'Budget',
   profile: 'Profil',
   login: 'Login',
   register: 'Register',
@@ -44,6 +44,10 @@ function App() {
     dompet: null,
     profileImage: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=200&q=80',
   })
+
+  useEffect(() => {
+    console.log('Current page:', currentPage)
+  }, [currentPage])
 
   const addTransaction = (newTransaction) => {
     const transaction = {
@@ -135,9 +139,9 @@ function App() {
       case 'analysis':
         return <AnalysisPage transactions={transactions} />
       case 'reports':
-        return <ReportsPage reports={reports} />
+        return <ReportsPage transactions={transactions} />
       case 'budget':
-        return <BudgetPage budgets={budgets} />
+        return <BudgetPage transactions={transactions} />
       case 'profile':
         return <ProfilePage userProfile={userProfile} setUserProfile={setUserProfile} onNavigate={setCurrentPage} />
       case 'dashboard':
