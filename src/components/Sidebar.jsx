@@ -5,12 +5,12 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'analysis', label: 'Analisis', icon: '📈' },
-    { id: 'transactions', label: 'Transaksi', icon: '💳' },
-    { id: 'reports', label: 'Laporan', icon: '📋' },
-    { id: 'budget', label: 'Budget', icon: '💰' },
-    { id: 'profile', label: 'Profil', icon: '👤' },
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'analysis', label: 'Analisis' },
+    { id: 'transactions', label: 'Transaksi' },
+    { id: 'reports', label: 'Laporan' },
+    { id: 'budget', label: 'Budget' },
+    { id: 'profile', label: 'Profil' },
   ]
 
   return (
@@ -18,7 +18,7 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
 
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/20">
-        {isExpanded && <h1 className="text-xl font-bold">Dompet</h1>}
+        {isExpanded && <h1 className="text-xl font-bold">KasCerdas</h1>}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="p-2 hover:bg-white/10 rounded-lg transition"
