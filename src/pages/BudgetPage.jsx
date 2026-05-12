@@ -8,13 +8,12 @@ function BudgetPage({ transactions }) {
     { id: 3, category: 'Transport', limit: 700000, usage: 240000 },
     { id: 4, category: 'Belanja', limit: 1500000, usage: 830000 },
   ])
-
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [formData, setFormData] = useState({
+   const [formData, setFormData] = useState({
     category: '',
     limit: '',
   })
+  const [editingId, setEditingId] = useState(null)
+  const [showForm, setShowForm] = useState(false)
 
   const [message, setMessage] = useState('')
 
@@ -241,25 +240,23 @@ function BudgetPage({ transactions }) {
           {budgets.map((budget) => {
             const actualUsage = getActualUsage(budget.category)
             return (
-              <div key={budget.id} className="relative">
-                <BudgetCard category={budget.category} usage={actualUsage} limit={budget.limit} />
-                <div className="absolute top-4 right-4 flex gap-2">
-                  <button
-                    onClick={() => handleEditBudget(budget)}
-                    className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
-                    title="Edit"
-                  >
-                    ✎
-                  </button>
-                  <button
-                    onClick={() => handleDeleteBudget(budget.id)}
-                    className="p-2 text-rose-600 hover:bg-rose-100 rounded-lg transition"
-                    title="Hapus"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
+              <BudgetCard key={budget.id} category={budget.category} usage={actualUsage} limit={budget.limit}>
+
+                <button
+                  onClick={() => handleEditBudget(budget)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition"
+                  title="Edit"
+                >
+                  ✎
+                </button>
+                <button
+                  onClick={() => handleDeleteBudget(budget.id)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-rose-600 hover:bg-rose-100 transition"
+                  title="Hapus"
+                >
+                  ✕
+                </button>
+              </BudgetCard>
             )
           })}
         </div>

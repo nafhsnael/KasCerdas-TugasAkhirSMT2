@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import StatCard from '../components/StatCard'
 
-function ReportsPage({ transactions }) {
+function ReportsPage({ transactions, debts, savings }) {
   const [activeTab, setActiveTab] = useState('daily')
 
   const now = new Date()
@@ -9,59 +9,42 @@ function ReportsPage({ transactions }) {
   const currentYear = now.getFullYear()
   const currentDate = now.getDate()
 
-  // Daily Report
-  const dailyTransactions = transactions.filter((transaction) => {
-    const date = new Date(transaction.date)
-    return (
+  const filterByDate = (dateValue, comparator) => {
+    const date = new Date(dateValue)
+    return comparator(date)
+  }
+
+  const dailyTransactions = transactions.filter((transaction) =>
+    filterByDate(transaction.date, (date) =>
       date.getDate() === currentDate &&
       date.getMonth() === currentMonth &&
       date.getFullYear() === currentYear
     )
-  })
+  )
 
-  const dailyIncome = dailyTransactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0)
+  const monthlyTransactions = transactions.filter((transaction) =>
+    filterByDate(transaction.date, (date) =>
+      date.getMonth() === currentMonth && date.getFullYear() === currentYear
+    )
+  )
 
-  const dailyExpense = dailyTransactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0)
+  const annualTransactions = transactions.filter((transaction) =>
+    filterByDate(transaction.date, (date) => date.getFullYear() === currentYear)
+  )
+
+  const sumAmount = (items) => items.reduce((sum, item) => sum + item.amount, 0)
+
+  const dailyIncome = sumAmount(dailyTransactions.filter((t) => t.type === 'income'))
+  const dailyExpense = sumAmount(dailyTransactions.filter((t) => t.type === 'expense'))
+  const monthlyIncome = sumAmount(monthlyTransactions.filter((t) => t.type === 'income'))
+  const monthlyExpense = sumAmount(monthlyTransactions.filter((t) => t.type === 'expense'))
+  const annualIncome = sumAmount(annualTransactions.filter((t) => t.type === 'income'))
+  const annualExpense = sumAmount(annualTransactions.filter((t) => t.type === 'expense'))
 
   const dailyBalance = dailyIncome - dailyExpense
-
-  // Monthly Report
-  const monthlyTransactions = transactions.filter((transaction) => {
-    const date = new Date(transaction.date)
-    return date.getMonth() === currentMonth && date.getFullYear() === currentYear
-  })
-
-  const monthlyIncome = monthlyTransactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0)
-
-  const monthlyExpense = monthlyTransactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0)
-
   const monthlyBalance = monthlyIncome - monthlyExpense
-
-  // Annual Report
-  const annualTransactions = transactions.filter((transaction) => {
-    const date = new Date(transaction.date)
-    return date.getFullYear() === currentYear
-  })
-
-  const annualIncome = annualTransactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0)
-
-  const annualExpense = annualTransactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0)
-
   const annualBalance = annualIncome - annualExpense
 
-  // Expense by category (for annual insights)
   const categoryExpenses = useMemo(() => {
     const categories = {}
     annualTransactions
@@ -74,26 +57,11 @@ function ReportsPage({ transactions }) {
       .sort((a, b) => b.amount - a.amount)
   }, [annualTransactions])
 
-  // Debt Summary (hardcoded for demo)
-  const debtSummary = {
-    activeDebts: 2,
-    details: [
-      { creditor: 'Keluarga', amount: 3000000, dueDate: '2026-06-30', status: 'ongoing' },
-      { creditor: 'Teman', amount: 800000, dueDate: '2026-05-15', status: 'ongoing' },
-    ],
-  }
-
-  const totalDebt = debtSummary.details.reduce((sum, d) => sum + d.amount, 0)
-
-  // Savings Target
-  const savingsTarget = {
-    current: 21000000,
-    target: 32000000,
-    deadline: '2026-12-31',
-    monthlyRequired: ((32000000 - 21000000) / 8), // Assuming 8 months left
-  }
-
-  const savingsProgress = Math.round((savingsTarget.current / savingsTarget.target) * 100)
+  const totalDebt = debts.reduce((sum, debt) => sum + debt.amount, 0)
+  const savingTargets = savings.map((saving) => ({
+    ...saving,
+    progress: saving.target > 0 ? Math.round((saving.current / saving.target) * 100) : 0,
+  }))
 
   const tabs = [
     { id: 'daily', label: 'Harian' },
@@ -105,16 +73,14 @@ function ReportsPage({ transactions }) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Manajemen Keuangan</p>
         <h1 className="text-3xl font-semibold text-slate-900">Laporan</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-500">
-          Lihat ringkasan keuangan Anda secara detail dalam berbagai periode waktu
+          Lihat ringkasan keuangan Anda secara detail dalam berbagai periode waktu.
         </p>
       </section>
 
-      {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200 overflow-x-auto">
         {tabs.map((tab) => (
           <button
@@ -131,7 +97,6 @@ function ReportsPage({ transactions }) {
         ))}
       </div>
 
-      {/* Daily Report */}
       {activeTab === 'daily' && (
         <div className="space-y-6">
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
@@ -139,25 +104,11 @@ function ReportsPage({ transactions }) {
             <p className="text-sm text-slate-500 mb-4">{now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
             <p className="text-2xl font-bold text-[#38ADA9]">Total {dailyTransactions.length} transaksi</p>
           </div>
-
           <div className="grid gap-4 xl:grid-cols-3">
-            <StatCard
-              label="Pemasukan Hari Ini"
-              value={`Rp ${dailyIncome.toLocaleString('id-ID')}`}
-              description={`${dailyTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`}
-            />
-            <StatCard
-              label="Pengeluaran Hari Ini"
-              value={`Rp ${dailyExpense.toLocaleString('id-ID')}`}
-              description={`${dailyTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`}
-            />
-            <StatCard
-              label="Saldo Hari Ini"
-              value={`Rp ${dailyBalance.toLocaleString('id-ID')}`}
-              description={dailyBalance >= 0 ? 'Surplus ✓' : 'Defisit ✗'}
-            />
+            <StatCard label="Pemasukan Hari Ini" value={`Rp ${dailyIncome.toLocaleString('id-ID')}`} description={`${dailyTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`} />
+            <StatCard label="Pengeluaran Hari Ini" value={`Rp ${dailyExpense.toLocaleString('id-ID')}`} description={`${dailyTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`} />
+            <StatCard label="Saldo Hari Ini" value={`Rp ${dailyBalance.toLocaleString('id-ID')}`} description={dailyBalance >= 0 ? 'Surplus ✓' : 'Defisit ✗'} />
           </div>
-
           {dailyTransactions.length > 0 && (
             <div className="rounded-[32px] border border-slate-200 bg-white p-6">
               <h3 className="font-semibold text-slate-900 mb-4">Detail Transaksi Hari Ini</h3>
@@ -179,7 +130,6 @@ function ReportsPage({ transactions }) {
         </div>
       )}
 
-      {/* Monthly Report */}
       {activeTab === 'monthly' && (
         <div className="space-y-6">
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
@@ -187,214 +137,112 @@ function ReportsPage({ transactions }) {
             <p className="text-sm text-slate-500 mb-4">{now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</p>
             <p className="text-2xl font-bold text-[#38ADA9]">Total {monthlyTransactions.length} transaksi</p>
           </div>
-
           <div className="grid gap-4 xl:grid-cols-3">
-            <StatCard
-              label="Total Pemasukan"
-              value={`Rp ${monthlyIncome.toLocaleString('id-ID')}`}
-              description={`${monthlyTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`}
-            />
-            <StatCard
-              label="Total Pengeluaran"
-              value={`Rp ${monthlyExpense.toLocaleString('id-ID')}`}
-              description={`${monthlyTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`}
-            />
-            <StatCard
-              label="Saldo Bulanan"
-              value={`Rp ${monthlyBalance.toLocaleString('id-ID')}`}
-              description={monthlyBalance >= 0 ? 'Surplus ✓' : 'Defisit ✗'}
-            />
+            <StatCard label="Total Pemasukan" value={`Rp ${monthlyIncome.toLocaleString('id-ID')}`} description={`${monthlyTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`} />
+            <StatCard label="Total Pengeluaran" value={`Rp ${monthlyExpense.toLocaleString('id-ID')}`} description={`${monthlyTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`} />
+            <StatCard label="Saldo Bulanan" value={`Rp ${monthlyBalance.toLocaleString('id-ID')}`} description={monthlyBalance >= 0 ? 'Surplus ?' : 'Defisit ?'} />
           </div>
-
-          {monthlyTransactions.length > 0 && (
+          {categoryExpenses.length > 0 && (
             <div className="rounded-[32px] border border-slate-200 bg-white p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">Top 5 Pengeluaran Bulan Ini</h3>
+              <h3 className="font-semibold text-slate-900 mb-4">Kategori Pengeluaran Terbesar</h3>
               <div className="space-y-3">
-                {monthlyTransactions
-                  .filter((t) => t.type === 'expense')
-                  .sort((a, b) => b.amount - a.amount)
-                  .slice(0, 5)
-                  .map((t) => (
-                    <div key={t.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-slate-900">{t.title}</p>
-                        <p className="text-sm text-slate-500">{t.category}</p>
-                      </div>
-                      <p className="font-semibold text-slate-900">Rp {t.amount.toLocaleString('id-ID')}</p>
-                    </div>
-                  ))}
+                {categoryExpenses.slice(0, 5).map((item) => (
+                  <div key={item.category} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                    <span className="font-medium text-slate-900">{item.category}</span>
+                    <span className="text-slate-600">Rp {item.amount.toLocaleString('id-ID')}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Annual Report */}
       {activeTab === 'annual' && (
         <div className="space-y-6">
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
             <h2 className="text-xl font-semibold text-slate-900 mb-2">Laporan Tahunan</h2>
-            <p className="text-sm text-slate-500 mb-4">Tahun {currentYear}</p>
+            <p className="text-sm text-slate-500 mb-4">{currentYear}</p>
             <p className="text-2xl font-bold text-[#38ADA9]">Total {annualTransactions.length} transaksi</p>
           </div>
-
           <div className="grid gap-4 xl:grid-cols-3">
-            <StatCard
-              label="Total Pemasukan Tahunan"
-              value={`Rp ${annualIncome.toLocaleString('id-ID')}`}
-              description={`${annualTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`}
-            />
-            <StatCard
-              label="Total Pengeluaran Tahunan"
-              value={`Rp ${annualExpense.toLocaleString('id-ID')}`}
-              description={`${annualTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`}
-            />
-            <StatCard
-              label="Saldo Tahunan"
-              value={`Rp ${annualBalance.toLocaleString('id-ID')}`}
-              description={annualBalance >= 0 ? 'Surplus ✓' : 'Defisit ✗'}
-            />
+            <StatCard label="Pemasukan Tahunan" value={`Rp ${annualIncome.toLocaleString('id-ID')}`} description={`${annualTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`} />
+            <StatCard label="Pengeluaran Tahunan" value={`Rp ${annualExpense.toLocaleString('id-ID')}`} description={`${annualTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`} />
+            <StatCard label="Saldo Tahunan" value={`Rp ${annualBalance.toLocaleString('id-ID')}`} description={annualBalance >= 0 ? 'Surplus ?' : 'Defisit ?'} />
           </div>
-
           {categoryExpenses.length > 0 && (
             <div className="rounded-[32px] border border-slate-200 bg-white p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">Pengeluaran per Kategori</h3>
-              <div className="space-y-4">
-                {categoryExpenses.map((item) => {
-                  const percentage = Math.round((item.amount / annualExpense) * 100)
-                  return (
-                    <div key={item.category}>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-medium text-slate-900">{item.category}</p>
-                        <span className="text-sm text-slate-500">{percentage}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="h-2 bg-[#38ADA9] rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      <p className="text-sm text-slate-500 mt-1">Rp {item.amount.toLocaleString('id-ID')}</p>
-                    </div>
-                  )
-                })}
+              <h3 className="font-semibold text-slate-900 mb-4">Pengeluaran Tahunan Berdasarkan Kategori</h3>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {categoryExpenses.map((item) => (
+                  <div key={item.category} className="rounded-2xl bg-slate-50 p-4">
+                    <p className="font-medium text-slate-900">{item.category}</p>
+                    <p className="mt-2 text-slate-600">Rp {item.amount.toLocaleString('id-ID')}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Debt Summary */}
       {activeTab === 'debt' && (
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-rose-500/10 to-transparent p-6">
+          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
             <h2 className="text-xl font-semibold text-slate-900 mb-2">Rekap Hutang</h2>
-            <p className="text-sm text-slate-500 mb-4">Status hutang aktif Anda</p>
-            <p className="text-2xl font-bold text-rose-600">{debtSummary.activeDebts} Hutang Aktif</p>
+            <p className="text-sm text-slate-500 mb-4">Lacak seluruh hutang yang masih aktif.</p>
+            <p className="text-2xl font-bold text-[#38ADA9]">Total Hutang: Rp {totalDebt.toLocaleString('id-ID')}</p>
           </div>
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            <StatCard
-              label="Total Hutang"
-              value={`Rp ${totalDebt.toLocaleString('id-ID')}`}
-              description="Jumlah keseluruhan hutang"
-            />
-            <StatCard
-              label="Rata-rata Hutang"
-              value={`Rp ${(totalDebt / debtSummary.activeDebts).toLocaleString('id-ID')}`}
-              description="Per kreditur"
-            />
-          </div>
-
           <div className="rounded-[32px] border border-slate-200 bg-white p-6">
             <h3 className="font-semibold text-slate-900 mb-4">Daftar Hutang</h3>
             <div className="space-y-3">
-              {debtSummary.details.map((debt, idx) => {
-                const dueDate = new Date(debt.dueDate)
-                const daysUntilDue = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24))
-                const isOverdue = daysUntilDue < 0
-
-                return (
-                  <div key={idx} className="p-4 border border-slate-200 rounded-xl">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="font-semibold text-slate-900">{debt.creditor}</p>
-                        <p className="text-sm text-slate-500">Hutang kepada {debt.creditor}</p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        isOverdue ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
-                      }`}>
-                        {isOverdue ? 'Jatuh Tempo' : `${daysUntilDue} hari`}
-                      </span>
+              {debts.map((debt) => (
+                <div key={debt.id} className="flex flex-col gap-2 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-900">{debt.creditor}</p>
+                      <p className="text-sm text-slate-500">{debt.note}</p>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-lg font-bold text-slate-900">Rp {debt.amount.toLocaleString('id-ID')}</p>
-                      <p className="text-sm text-slate-500">{dueDate.toLocaleDateString('id-ID')}</p>
-                    </div>
+                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{debt.status}</span>
                   </div>
-                )
-              })}
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                    <span>Rp {debt.amount.toLocaleString('id-ID')}</span>
+                    <span>Jatuh tempo {new Date(debt.dueDate).toLocaleDateString('id-ID')}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* Savings Target */}
       {activeTab === 'savings' && (
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-emerald-500/10 to-transparent p-6">
+          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
             <h2 className="text-xl font-semibold text-slate-900 mb-2">Target Tabungan</h2>
-            <p className="text-sm text-slate-500 mb-4">Deadline: {new Date(savingsTarget.deadline).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-            <p className="text-2xl font-bold text-emerald-600">{savingsProgress}% Tercapai</p>
+            <p className="text-sm text-slate-500 mb-4">Pantau pencapaian target tabungan Anda.</p>
+            <p className="text-2xl font-bold text-[#38ADA9]">{savings.length} target tabungan aktif</p>
           </div>
-
-          <div className="grid gap-4 xl:grid-cols-3">
-            <StatCard
-              label="Tabungan Saat Ini"
-              value={`Rp ${savingsTarget.current.toLocaleString('id-ID')}`}
-              description="Saldo tabungan Anda"
-            />
-            <StatCard
-              label="Target Akhir Tahun"
-              value={`Rp ${savingsTarget.target.toLocaleString('id-ID')}`}
-              description="Target yang ingin dicapai"
-            />
-            <StatCard
-              label="Masih Diperlukan"
-              value={`Rp ${(savingsTarget.target - savingsTarget.current).toLocaleString('id-ID')}`}
-              description="Untuk mencapai target"
-            />
-          </div>
-
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6">
-            <h3 className="font-semibold text-slate-900 mb-4">Progress Target Tabungan</h3>
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-600">Target {savingsProgress}%</span>
-                <span className="text-sm text-slate-500">{savingsProgress}/100</span>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {savingTargets.map((saving) => (
+              <div key={saving.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-900">{saving.name}</h3>
+                    <p className="text-sm text-slate-500">Deadline: {new Date(saving.deadline).toLocaleDateString('id-ID')}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-slate-700">{saving.progress}% tercapai</span>
+                </div>
+                <div className="mt-4 rounded-full bg-slate-100 h-3 overflow-hidden">
+                  <div className="h-3 rounded-full bg-[#38ADA9]" style={{ width: `${Math.min(saving.progress, 100)}%` }} />
+                </div>
+                <div className="mt-4 text-sm text-slate-600 space-y-2">
+                  <p>Tabungan saat ini: Rp {saving.current.toLocaleString('id-ID')}</p>
+                  <p>Target: Rp {saving.target.toLocaleString('id-ID')}</p>
+                  <p>Sisa: Rp {(saving.target - saving.current).toLocaleString('id-ID')}</p>
+                </div>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
-                <div
-                  className="h-4 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-300"
-                  style={{ width: `${savingsProgress}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="p-4 bg-emerald-50 rounded-xl">
-                <p className="text-sm text-slate-600 mb-1">Target per Bulan</p>
-                <p className="text-xl font-bold text-emerald-600">
-                  Rp {savingsTarget.monthlyRequired.toLocaleString('id-ID')}
-                </p>
-              </div>
-              <div className="p-4 bg-blue-50 rounded-xl">
-                <p className="text-sm text-slate-600 mb-1">Sisa Waktu</p>
-                <p className="text-xl font-bold text-blue-600">
-                  {Math.ceil((new Date(savingsTarget.deadline) - now) / (1000 * 60 * 60 * 24))} hari
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       )}

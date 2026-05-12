@@ -72,7 +72,7 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
             !isExpanded && 'justify-center'
           }`}
         >
-          <span className="text-xl">🚪</span>
+          <span className="text-xl"></span>
           {isExpanded && <span>Logout</span>}
         </button>
       </div>
