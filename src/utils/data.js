@@ -14,6 +14,8 @@ export const transactions = [
     note: 'Nasi ayam geprek',
     amount: 45000,
     type: 'expense',
+    invoice: 'INV-2026-0001',
+    receipt: null,
   },
   {
     id: 't2',
@@ -24,6 +26,8 @@ export const transactions = [
     note: 'Transfer klien',
     amount: 1500000,
     type: 'income',
+    invoice: '',
+    receipt: null,
   },
   {
     id: 't3',
@@ -34,6 +38,8 @@ export const transactions = [
     note: 'Grab ke kantor',
     amount: 32000,
     type: 'expense',
+    invoice: 'INV-2026-0002',
+    receipt: null,
   },
   {
     id: 't4',
@@ -44,6 +50,8 @@ export const transactions = [
     note: 'Langganan musik',
     amount: 75000,
     type: 'expense',
+    invoice: 'INV-2026-0003',
+    receipt: null,
   },
 ]
 

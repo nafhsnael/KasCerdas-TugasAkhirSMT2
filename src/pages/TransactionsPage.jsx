@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
+import InvoiceModal from '../components/InvoiceModal'
 
 const categories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
 const bank = ['Cash', 'Ovo', 'Dana', 'Bank']
@@ -16,15 +17,70 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
     note: '',
     type: 'expense',
     receipt: null,
+    invoice: '',
   })
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedMonth, setSelectedMonth] = useState('')
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
+  const [selectedInvoice, setSelectedInvoice] = useState(null)
 
   const visibleTransactions = useMemo(() => {
-    if (filters.type === 'all') return transactions
-    return transactions.filter((item) => item.type === filters.type)
-  }, [filters.type, transactions])
+    let filtered = transactions
+    
+    // Filter berdasarkan tipe transaksi
+    if (filters.type !== 'all') {
+      filtered = filtered.filter((item) => item.type === filters.type)
+    }
+    
+    // Filter berdasarkan bulan
+    if (selectedMonth) {
+      filtered = filtered.filter((item) => item.date.startsWith(selectedMonth))
+    }
+    
+    // Filter berdasarkan search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter((item) => 
+        item.title.toLowerCase().includes(query) ||
+        item.category.toLowerCase().includes(query) ||
+        item.note.toLowerCase().includes(query) ||
+        (item.invoice && item.invoice.toLowerCase().includes(query))
+      )
+    }
+    
+    return filtered
+  }, [filters.type, transactions, searchQuery, selectedMonth])
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleReceiptChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setForm((prev) => ({
+          ...prev,
+          receipt: {
+            name: file.name,
+            type: file.type,
+            url: event.target.result,
+          },
+        }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleViewInvoice = (transaction) => {
+    setSelectedInvoice(transaction)
+    setIsInvoiceModalOpen(true)
+  }
+
+  const handleCloseInvoiceModal = () => {
+    setIsInvoiceModalOpen(false)
+    setSelectedInvoice(null)
   }
 
   const handleSubmit = (event) => {
@@ -42,10 +98,12 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
       date: form.date,
       note: form.note,
       type: form.type,
+      invoice: form.invoice,
+      receipt: form.receipt,
     }
     onAddTransaction(newTransaction)
     alert('Transaksi baru berhasil ditambahkan!')
-    setForm({ title: '', amount: '', category: 'Makan', wallet: 'UMKM', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null })
+    setForm({ title: '', amount: '', category: 'Makan', wallet: 'UMKM', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null, invoice: '' })
   }
 
   return (
@@ -163,11 +221,24 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               <input
                 type="file"
                 accept="image/*,application/pdf"
-                onChange={(e) => handleChange('receipt', e.target.files?.[0] || null)}
+                onChange={handleReceiptChange}
                 className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-2 text-slate-700"
               />
+              {form.receipt && (
+                <p className="mt-2 text-sm text-emerald-600">✓ {form.receipt.name}</p>
+              )}
             </div>
           )}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Nomor Invoice</label>
+            <input
+              type="text"
+              value={form.invoice}
+              onChange={(e) => handleChange('invoice', e.target.value)}
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+              placeholder="Contoh: INV-2026-001"
+            />
+          </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Tipe Transaksi</label>
             <div className="flex gap-3">
@@ -203,12 +274,60 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
           </div>
           <span className="rounded-2xl bg-slate-100 px-3 py-1 text-sm text-slate-600">{visibleTransactions.length} transaksi</span>
         </div>
+
+        <div className="mb-6 grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Cari Transaksi</label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari judul, kategori, catatan, atau invoice..."
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Filter Bulan</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+            >
+              <option value="">Semua Bulan</option>
+              <option value="2026-01">Januari 2026</option>
+              <option value="2026-02">Februari 2026</option>
+              <option value="2026-03">Maret 2026</option>
+              <option value="2026-04">April 2026</option>
+              <option value="2026-05">Mei 2026</option>
+              <option value="2026-06">Juni 2026</option>
+              <option value="2026-07">Juli 2026</option>
+              <option value="2026-08">Agustus 2026</option>
+              <option value="2026-09">September 2026</option>
+              <option value="2026-10">Oktober 2026</option>
+              <option value="2026-11">November 2026</option>
+              <option value="2026-12">Desember 2026</option>
+            </select>
+          </div>
+        </div>
+
         <div className="space-y-4">
-          {visibleTransactions.map((trx) => (
-            <TransactionCard key={trx.id} transaction={trx} />
-          ))}
+          {visibleTransactions.length > 0 ? (
+            visibleTransactions.map((trx) => (
+              <TransactionCard key={trx.id} transaction={trx} onViewInvoice={handleViewInvoice} />
+            ))
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
+              <p className="text-slate-500">Tidak ada transaksi yang cocok dengan pencarian.</p>
+            </div>
+          )}
         </div>
       </section>
+
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        transaction={selectedInvoice}
+        onClose={handleCloseInvoiceModal}
+      />
     </div>
   )
 }

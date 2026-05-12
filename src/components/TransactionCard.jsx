@@ -1,4 +1,4 @@
-function TransactionCard({ transaction }) {
+function TransactionCard({ transaction, onViewInvoice }) {
   return (
     <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 shadow-sm">
       <div className="flex items-center justify-between gap-4">
@@ -14,6 +14,22 @@ function TransactionCard({ transaction }) {
         <p className="text-lg font-semibold text-slate-900">Rp {transaction.amount.toLocaleString('id-ID')}</p>
         <p className="text-sm text-slate-500">{transaction.date} • {transaction.note}</p>
       </div>
+      {transaction.invoice && (
+        <div className="mt-3 pt-3 border-t border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Invoice</p>
+              <p className="text-sm text-slate-700 mt-1">{transaction.invoice}</p>
+            </div>
+            <button
+              onClick={() => onViewInvoice(transaction)}
+              className="rounded-2xl bg-[#38ADA9] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#2c8a7d]"
+            >
+              Lihat
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
