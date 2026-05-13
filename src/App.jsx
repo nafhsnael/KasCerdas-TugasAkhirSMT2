@@ -163,7 +163,7 @@ function App() {
   const handleSaveInitialBalance = (data) => {
     setInitialBalance(data.balance)
     setShowInitialBalance(false)
-    navigateTo('transactions')
+    navigateTo('dashboard')
   }
 
   const handleLogout = () => {
