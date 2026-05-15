@@ -131,6 +131,16 @@ function App() {
 
   const handleAuthenticate = (userData = {}, isRegister = false) => {
     setIsAuthenticated(true)
+
+    const token = userData.token
+    if (token) {
+      try {
+        localStorage.setItem('token', token)
+      } catch (e) {
+        // ignore
+      }
+    }
+
     if (userData.username || userData.email) {
       setUserProfile(prev => ({
         ...prev,
@@ -140,12 +150,14 @@ function App() {
         dompet: userData.dompet || prev.dompet,
       }))
     }
+
     if (isRegister) {
       setShowUserType(true)
     } else {
       navigateTo('dashboard')
     }
   }
+
 
   const handleUserTypeNext = (selectedUserType) => {
     setUserType(selectedUserType)

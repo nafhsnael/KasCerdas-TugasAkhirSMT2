@@ -6,14 +6,37 @@ function RegisterPage({ onSwitch, onAuthenticate }) {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     if (password !== confirmPassword) {
       alert('Password dan konfirmasi password tidak cocok')
       return
     }
-    onAuthenticate({ email, username })
+
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        username,
+        password,
+        password_confirmation: confirmPassword,
+      }),
+    })
+
+    const json = await res.json()
+    if (!res.ok || !json.success) {
+      alert(json?.message || 'Registrasi gagal')
+      return
+    }
+
+    onAuthenticate({
+      token: json.data.token,
+      username: json.data.user.username,
+      email: json.data.user.email,
+    }, true)
   }
+
 
   return (
     <div className="mx-auto max-w-4xl rounded-[32px] bg-white px-8 py-10 shadow-2xl shadow-slate-300 sm:px-10">      

@@ -4,10 +4,30 @@ function LoginPage({ onSwitch, onAuthenticate }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    onAuthenticate({ username, usertype: 'Mahasiswa', dompet: 'pribadi' })
+
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+
+    const json = await res.json()
+    if (!res.ok || !json.success) {
+      alert(json?.message || 'Login gagal')
+      return
+    }
+
+    onAuthenticate({
+      token: json.data.token,
+      username: json.data.user.username,
+      email: json.data.user.email,
+      usertype: 'Mahasiswa',
+      dompet: 'pribadi',
+    })
   }
+
 
   return (
     <div className="mx-auto max-w-4xl rounded-[32px] bg-white px-8 py-10 shadow-2xl shadow-slate-300 sm:px-10">      
