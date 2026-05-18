@@ -9,10 +9,11 @@ import AnalysisPage from './pages/AnalysisPage'
 import TransactionsPage from './pages/TransactionsPage'
 import ReportsPage from './pages/ReportsPage'
 import BudgetPage from './pages/BudgetPage'
+import DashboardPage from './pages/DashboardPage'
 import AddDebtPage from './pages/AddDebtPage'
 import AddSavingsPage from './pages/AddSavingsPage'
 import ProfilePage from './pages/ProfilePage'
-import { transactions as initialTransactions } from './utils/data'
+import { transactions as initialTransactions, walletSummary, budgets } from './utils/data'
 
 const routeToPage = {
   '': 'dashboard',
@@ -322,37 +323,13 @@ function App() {
         return <ProfilePage userProfile={userProfile} setUserProfile={setUserProfile} onNavigate={setCurrentPage} />
       case 'dashboard':
         return (
-          <div className="space-y-6">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-              <h1 className="text-2xl font-semibold text-slate-900">Selamat Datang di Dashboard</h1>
-              <p className="text-slate-600 mt-2">Kelola keuangan Anda dengan mudah dan efisien.</p>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Total Transaksi</h3>
-                <p className="text-3xl font-bold text-[#38ADA9] mt-2">{transactions.length}</p>
-              </div>
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Pemasukan</h3>
-                <p className="text-3xl font-bold text-green-600 mt-2">
-                  Rp {transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
-                </p>
-              </div>
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Pengeluaran</h3>
-                <p className="text-3xl font-bold text-red-600 mt-2">
-                  Rp {transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
-            {walletInfo && (
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Dompet Terhubung</h3>
-                <p className="mt-2 text-slate-700">{walletInfo.name}</p>
-                <p className="mt-1 text-slate-500">Saldo: Rp {Number(walletInfo.balance).toLocaleString()}</p>
-              </div>
-            )}
-          </div>
+          <DashboardPage
+            walletSummary={walletSummary}
+            transactions={transactions}
+            budgets={budgets}
+            walletInfo={walletInfo}
+            userProfile={userProfile}
+          />
         )
       default:
         return (
