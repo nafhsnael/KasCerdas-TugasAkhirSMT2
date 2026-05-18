@@ -9,10 +9,11 @@ import AnalysisPage from './pages/AnalysisPage'
 import TransactionsPage from './pages/TransactionsPage'
 import ReportsPage from './pages/ReportsPage'
 import BudgetPage from './pages/BudgetPage'
+import DashboardPage from './pages/DashboardPage'
 import AddDebtPage from './pages/AddDebtPage'
 import AddSavingsPage from './pages/AddSavingsPage'
 import ProfilePage from './pages/ProfilePage'
-import { transactions as initialTransactions } from './utils/data'
+import { transactions as initialTransactions, walletSummary, budgets } from './utils/data'
 
 const routeToPage = {
   '': 'dashboard',
@@ -51,11 +52,17 @@ function App() {
     if (typeof window === 'undefined') return 'dashboard'
     return pathToPage(window.location.pathname)
   })
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [token, setToken] = useState(() => {
+    if (typeof window === 'undefined') return null
+    return window.localStorage.getItem('token')
+  })
+  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(token))
+  const [authLoading, setAuthLoading] = useState(Boolean(token))
   const [showUserType, setShowUserType] = useState(false)
   const [userType, setUserType] = useState(null)
   const [showWallet, setShowWallet] = useState(false)
   const [wallet, setWallet] = useState(null)
+  const [walletInfo, setWalletInfo] = useState(null)
   const [showInitialBalance, setShowInitialBalance] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
   const [filters, setFilters] = useState({ type: 'all' })
@@ -97,6 +104,32 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (!token) return
+
+    setAuthLoading(true)
+    Promise.all([fetchCurrentUser(), fetchWalletInfo()])
+      .then(([authUser, walletData]) => {
+        setUserProfile(prev => ({
+          ...prev,
+          nama: authUser.name || prev.nama,
+          user: authUser.username || prev.user,
+          email: authUser.email || prev.email,
+          usertype: authUser.role || prev.usertype,
+          dompet: walletData?.name || prev.dompet,
+        }))
+        setWalletInfo(walletData)
+        setIsAuthenticated(true)
+      })
+      .catch(() => {
+        handleLogout()
+      })
+      .finally(() => {
+        setAuthLoading(false)
+      })
+
+  }, [token])
+
+  useEffect(() => {
     if (!isAuthenticated && currentPage !== 'login' && currentPage !== 'register') {
       if (typeof window !== 'undefined') {
         window.history.replaceState(null, '', '/login')
@@ -129,27 +162,71 @@ function App() {
     setSavings((prev) => [...prev, newSavings])
   }
 
-  const handleAuthenticate = (userData = {}, isRegister = false) => {
-    setIsAuthenticated(true)
-
-    const token = userData.token
-    if (token) {
-      try {
-        localStorage.setItem('token', token)
-      } catch (e) {
-        // ignore
-      }
+  const authFetch = async (url, options = {}) => {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
     }
 
-    if (userData.username || userData.email) {
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+
+    return fetch(url, {
+      ...options,
+      headers,
+    })
+  }
+
+  const fetchCurrentUser = async () => {
+    const res = await authFetch('/api/auth/me', { method: 'GET' })
+
+    if (!res.ok) {
+      throw new Error('Gagal mengambil profil user')
+    }
+
+    const json = await res.json()
+    return json.data
+  }
+
+  const fetchWalletInfo = async () => {
+    const res = await authFetch('/api/wallet/me', { method: 'GET' })
+    if (!res.ok) {
+      throw new Error('Gagal mengambil data wallet')
+    }
+
+    const json = await res.json()
+    return json.data
+  }
+
+  const handleAuthenticate = async (userData = {}, isRegister = false) => {
+    const newToken = userData?.token
+
+    if (!newToken) {
+      alert(userData?.message || 'Autentikasi gagal: token tidak ditemukan')
+      setIsAuthenticated(false)
+      return
+    }
+
+    setToken(newToken)
+    try {
+      window.localStorage.setItem('token', newToken)
+    } catch (e) {
+      // ignore
+    }
+
+    if (userData.username || userData.email || userData.name || userData.role) {
       setUserProfile(prev => ({
         ...prev,
+        nama: userData.name || prev.nama,
         user: userData.username || prev.user,
         email: userData.email || prev.email,
-        usertype: userData.usertype || prev.usertype,
-        dompet: userData.dompet || prev.dompet,
+        usertype: userData.role || prev.usertype,
+        dompet: prev.dompet,
       }))
     }
+
+    setIsAuthenticated(true)
 
     if (isRegister) {
       setShowUserType(true)
@@ -178,14 +255,26 @@ function App() {
     navigateTo('dashboard')
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (token) {
+      await authFetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+    }
+
+    setToken(null)
     setIsAuthenticated(false)
     navigateTo('login')
     setUserType(null)
     setWallet(null)
+    setWalletInfo(null)
     setShowUserType(false)
     setShowWallet(false)
     setShowInitialBalance(false)
+
+    try {
+      window.localStorage.removeItem('token')
+    } catch (e) {
+      // ignore
+    }
   }
 
   const pageComponent = useMemo(() => {
@@ -234,30 +323,13 @@ function App() {
         return <ProfilePage userProfile={userProfile} setUserProfile={setUserProfile} onNavigate={setCurrentPage} />
       case 'dashboard':
         return (
-          <div className="space-y-6">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-              <h1 className="text-2xl font-semibold text-slate-900">Selamat Datang di Dashboard</h1>
-              <p className="text-slate-600 mt-2">Kelola keuangan Anda dengan mudah dan efisien.</p>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Total Transaksi</h3>
-                <p className="text-3xl font-bold text-[#38ADA9] mt-2">{transactions.length}</p>
-              </div>
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Pemasukan</h3>
-                <p className="text-3xl font-bold text-green-600 mt-2">
-                  Rp {transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
-                </p>
-              </div>
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Pengeluaran</h3>
-                <p className="text-3xl font-bold text-red-600 mt-2">
-                  Rp {transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
+          <DashboardPage
+            walletSummary={walletSummary}
+            transactions={transactions}
+            budgets={budgets}
+            walletInfo={walletInfo}
+            userProfile={userProfile}
+          />
         )
       default:
         return (
@@ -268,7 +340,7 @@ function App() {
           </div>
         )
     }
-  }, [currentPage, isAuthenticated, showUserType, showWallet, showInitialBalance, initialBalance, filters, transactions, debts, savings, userProfile])
+  }, [currentPage, isAuthenticated, showUserType, showWallet, showInitialBalance, initialBalance, filters, transactions, debts, savings, userProfile, walletInfo])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
