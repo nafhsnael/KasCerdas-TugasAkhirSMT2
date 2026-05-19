@@ -6,13 +6,13 @@ function DompetPage({ onNext }) {
   const options = [
     {
       id: 'Usaha',
-      label: 'Usaha',
-      image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=400&q=80',
+      label: 'Dompet Usaha',
+      description: 'Digunakan khusus untuk mengelola modal, pemasukan, dan pengeluaran bisnis/usaha',
     },
     {
       id: 'Pribadi',
-      label: 'Pribadi',
-      image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=400&q=80',
+      label: 'Dompet Pribadi',
+      description: 'Digunakan untuk mengatur keuangan belanja bulanan, tabungan, dan kebutuhan pribadi',
     }
   ]
 
@@ -26,37 +26,32 @@ function DompetPage({ onNext }) {
   }
 
   return (
-  <div className="mx-auto max-w-xl">
-    {/* Header */}
-    <div className="mb-6 rounded-t-3xl bg-[#38ADA9] p-6 text-center text-white">
-      <h2 className="text-xl font-bold">Pilih User</h2>
-    </div>
+    <div className="mx-auto max-w-lg">
+      {/* Header */}
+      <div className="mb-6 rounded-3xl bg-[#38ADA9] p-6 text-white shadow-md">
+        <h2 className="text-xl font-bold">Pilih Jenis Dompet</h2>
+        <p className="text-sm text-white/80">
+          Tentukan penggunaan dompet utama kamu
+        </p>
+      </div>
 
-    {/* Container */}
-    <div className="rounded-b-3xl bg-white p-6 shadow">
-      
       {/* Cards */}
-      <div className="flex flex-wrap justify-center gap-6">
+      <div className="grid gap-4">
         {options.map((item) => (
           <div
             key={item.id}
             onClick={() => setSelected(item.id)}
-            className={`w-32 cursor-pointer rounded-2xl p-5 text-center transition-all ${
+            className={`cursor-pointer rounded-2xl border p-5 transition-all duration-200 ${
               selected === item.id
-                ? "bg-[#38ADA9]/20 ring-2 ring-[#38ADA9] scale-105"
-                : "bg-gray-100 hover:scale-105"
+                ? 'border-[#38ADA9] bg-[#38ADA9]/5 ring-2 ring-[#38ADA9]/20 scale-[1.02]'
+                : 'border-slate-200 bg-white hover:border-[#38ADA9]/50 hover:scale-[1.01]'
             }`}
           >
-            {/* Image */}
-            <img
-              src={item.image}
-              alt={item.label}
-              className="mx-auto mb-3 h-24 object-contain"
-            />
-
-            {/* Label */}
-            <p className="text-sm font-semibold text-gray-700">
+            <h3 className={`text-lg font-bold ${selected === item.id ? 'text-[#38ADA9]' : 'text-slate-800'}`}>
               {item.label}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              {item.description}
             </p>
           </div>
         ))}
@@ -65,13 +60,12 @@ function DompetPage({ onNext }) {
       {/* Button */}
       <button
         onClick={handleSubmit}
-        className="mt-6 w-full rounded-2xl bg-[#38ADA9] py-3 font-semibold text-white transition hover:bg-[#2e8b87]"
+        className="mt-6 w-full rounded-2xl bg-[#38ADA9] py-3.5 font-semibold text-white shadow-md transition hover:bg-[#2e8b87]"
       >
         Lanjutkan
       </button>
     </div>
-  </div>
-);
+  )
 }
 
 export default DompetPage

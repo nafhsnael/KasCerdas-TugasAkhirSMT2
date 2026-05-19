@@ -2,6 +2,10 @@
 
 use Illuminate\Http\Request;
 
+// Suppress PHP deprecation warnings from being output in responses (PHP 8.5 compat)
+ini_set('display_errors', '0');
+error_reporting(E_ALL & ~E_DEPRECATED);
+
 define('LARAVEL_START', microtime(true));
 
 // Determine if the application is in maintenance mode...

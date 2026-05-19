@@ -5,9 +5,9 @@
 ## Auth (Sanctum) — BE & FE
 - [x] Fix backend Sanctum token creation (User model must use HasApiTokens)
 
-- [ ] Add `/api/auth/me` usage from FE after login/register
-- [ ] Implement FE API calls for register/login using Axios/fetch
-- [ ] Persist token in FE and attach `Authorization: Bearer <token>` to protected requests
+- [x] Add `/api/auth/me` usage from FE after login/register
+- [x] Implement FE API calls for register/login using Axios/fetch
+- [x] Persist token in FE and attach `Authorization: Bearer <token>` to protected requests
 
 ## Database & Minimal API (Wallet + Transactions + Budgets)
 - [ ] Update migrations for `wallets`, `transactions`, `budgets` (fields + relations)

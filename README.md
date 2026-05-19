@@ -80,4 +80,11 @@ Project ini dibuat untuk memenuhi tugas mata kuliah serta sebagai sarana pembela
 
 Project ini dibuat untuk keperluan pembelajaran dan tidak diperjualbelikan.
 
+## Setup
 
+1. `cp .env.example .env`
+2. Isi database di `.env`
+3. `composer install`
+4. `php artisan key:generate`
+5. `php artisan migrate`
+6. `php artisan serve`

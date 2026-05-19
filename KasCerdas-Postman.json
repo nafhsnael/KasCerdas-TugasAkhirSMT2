@@ -1,0 +1,837 @@
+{
+	"info": {
+		"_postman_id": "kas-cerdas-api-collection",
+		"name": "KasCerdas API",
+		"description": "Koleksi API untuk aplikasi Kas Cerdas - Manajemen Keuangan",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"description": "Endpoint autentikasi (register, login, logout, me)",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('token', jsonData.data.token);",
+									"    console.log('Token saved:', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"username\": \"testuser\",\n    \"password\": \"Password123!\",\n    \"password_confirmation\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "register"]
+						},
+						"description": "Registrasi user baru. Token otomatis disimpan ke variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('token', jsonData.data.token);",
+									"    console.log('Token saved:', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login user. Token otomatis disimpan ke variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User (Me)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "me"]
+						},
+						"description": "Ambil data profil user yang sedang login."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "logout"]
+						},
+						"description": "Logout user dan revoke token saat ini."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Wallet",
+			"description": "Endpoint dompet/wallet",
+			"item": [
+				{
+					"name": "Get My Wallet",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/wallet/me",
+							"host": ["{{base_url}}"],
+							"path": ["wallet", "me"]
+						},
+						"description": "Ambil data wallet user yang sedang login."
+					},
+					"response": []
+				},
+				{
+					"name": "Create / Update Wallet",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Dompet Pribadi\",\n    \"balance\": 500000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/wallets",
+							"host": ["{{base_url}}"],
+							"path": ["wallets"]
+						},
+						"description": "Buat wallet baru atau update wallet yang sudah ada."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Transactions",
+			"description": "Endpoint transaksi keuangan",
+			"item": [
+				{
+					"name": "Get All Transactions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/transactions",
+							"host": ["{{base_url}}"],
+							"path": ["transactions"]
+						},
+						"description": "Ambil semua transaksi milik user yang sedang login."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transaction (Income)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Gaji Bulanan\",\n    \"category\": \"Gaji\",\n    \"type\": \"income\",\n    \"amount\": 5000000,\n    \"date\": \"2026-05-19\",\n    \"note\": \"Gaji bulan Mei\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/transactions",
+							"host": ["{{base_url}}"],
+							"path": ["transactions"]
+						},
+						"description": "Buat transaksi pemasukan baru."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transaction (Expense)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Makan Siang\",\n    \"category\": \"Makanan\",\n    \"type\": \"expense\",\n    \"amount\": 25000,\n    \"date\": \"2026-05-19\",\n    \"note\": \"Makan di kantin\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/transactions",
+							"host": ["{{base_url}}"],
+							"path": ["transactions"]
+						},
+						"description": "Buat transaksi pengeluaran baru."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Transaction",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/transactions/1",
+							"host": ["{{base_url}}"],
+							"path": ["transactions", "1"]
+						},
+						"description": "Hapus transaksi berdasarkan ID. Ganti angka 1 dengan ID transaksi yang ingin dihapus."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Budgets",
+			"description": "Endpoint budget/anggaran",
+			"item": [
+				{
+					"name": "Get All Budgets",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/budgets",
+							"host": ["{{base_url}}"],
+							"path": ["budgets"]
+						},
+						"description": "Ambil semua budget milik user yang sedang login."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Budget",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"period_month\": \"2026-05\",\n    \"category\": \"Makanan\",\n    \"limit\": 1500000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/budgets",
+							"host": ["{{base_url}}"],
+							"path": ["budgets"]
+						},
+						"description": "Buat budget baru untuk kategori dan periode tertentu."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Profile",
+			"description": "Endpoint profil user",
+			"item": [
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/profil",
+							"host": ["{{base_url}}"],
+							"path": ["user", "profil"]
+						},
+						"description": "Ambil profil user saat ini."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile / Set User Type",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Nama Baru\",\n    \"email\": \"user@example.com\",\n    \"user_type\": \"mahasiswa\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/user/profil",
+							"host": ["{{base_url}}"],
+							"path": ["user", "profil"]
+						},
+						"description": "Update nama, email, password (optional) dan user_type (hanya jika saat ini masih null)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"description": "Endpoint administrasi dan monitoring (butuh role admin)",
+			"item": [
+				{
+					"name": "User Management",
+					"item": [
+						{
+							"name": "List Users",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/users?search=&role=&user_type=&is_active=",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "users"],
+									"query": [
+										{
+											"key": "search",
+											"value": ""
+										},
+										{
+											"key": "role",
+											"value": ""
+										},
+										{
+											"key": "user_type",
+											"value": ""
+										},
+										{
+											"key": "is_active",
+											"value": ""
+										}
+									]
+								},
+								"description": "Mendapatkan semua daftar user dengan filter search, role, user_type, dan status is_active."
+							},
+							"response": []
+						},
+						{
+							"name": "Get User Detail",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/users/1",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "users", "1"]
+								},
+								"description": "Mendapatkan detail user berdasarkan ID."
+							},
+							"response": []
+						},
+						{
+							"name": "Update User Status / Role",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"role\": \"user\",\n    \"is_active\": false\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/users/1",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "users", "1"]
+								},
+								"description": "Update role atau status keaktifan user berdasarkan ID."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete User",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/users/1",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "users", "1"]
+								},
+								"description": "Hapus user berdasarkan ID."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Category Management",
+					"item": [
+						{
+							"name": "List Categories",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/categories",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "categories"]
+								},
+								"description": "Mendapatkan daftar semua kategori."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Category",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Kategori Baru\",\n    \"description\": \"Deskripsi kategori baru\",\n    \"is_active\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/categories",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "categories"]
+								},
+								"description": "Membuat kategori baru (slug digenerate otomatis)."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Category",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Kategori Update\",\n    \"description\": \"Deskripsi update\",\n    \"is_active\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/categories/1",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "categories", "1"]
+								},
+								"description": "Mengupdate kategori berdasarkan ID."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Category",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/categories/1",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "categories", "1"]
+								},
+								"description": "Menghapus kategori berdasarkan ID."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Monitoring",
+					"item": [
+						{
+							"name": "Get System Stats",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/monitoring",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "monitoring"]
+								},
+								"description": "Mendapatkan statistik sistem dan ringkasan data."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Activity Logs",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/monitoring/logs?search=&level=",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "monitoring", "logs"],
+									"query": [
+										{
+											"key": "search",
+											"value": ""
+										},
+										{
+											"key": "level",
+											"value": ""
+										}
+									]
+								},
+								"description": "Mendapatkan daftar log aktivitas sistem dengan filter pencarian dan level."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Maintenance Mode",
+					"item": [
+						{
+							"name": "Get Maintenance Status",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/maintenance",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "maintenance"]
+								},
+								"description": "Mendapatkan status maintenance mode saat ini."
+							},
+							"response": []
+						},
+						{
+							"name": "Enable Maintenance Mode",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"message\": \"Sistem sedang dalam pemeliharaan rutin. Silakan coba beberapa saat lagi.\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/maintenance",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "maintenance"]
+								},
+								"description": "Mengaktifkan maintenance mode."
+							},
+							"response": []
+						},
+						{
+							"name": "Disable Maintenance Mode",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/maintenance",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "maintenance"]
+								},
+								"description": "Menonaktifkan maintenance mode."
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	]
+}

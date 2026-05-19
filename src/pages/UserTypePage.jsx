@@ -7,17 +7,17 @@ function UserTypePage({ onNext }) {
     {
       id: 'umkm',
       label: 'UMKM',
-      image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=400&q=80',
+      description: 'Untuk pencatatan keuangan operasional usaha kecil dan menengah',
     },
     {
       id: 'mahasiswa',
       label: 'Mahasiswa',
-      image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=400&q=80',
+      description: 'Untuk pencatatan keuangan pribadi, kos, kuliah, dan kebutuhan sehari-hari',
     },
     {
-      id: 'masyarakat',
+      id: 'masyarakat_umum',
       label: 'Masyarakat Lain',
-      image: 'https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=400&q=80',
+      description: 'Untuk pencatatan keuangan rumah tangga dan pengeluaran umum sehari-hari',
     },
   ]
 
@@ -33,7 +33,7 @@ function UserTypePage({ onNext }) {
   return (
     <div className="mx-auto max-w-lg">
       {/* Header */}
-      <div className="mb-6 rounded-3xl bg-[#38ADA9] p-6 text-white">
+      <div className="mb-6 rounded-3xl bg-[#38ADA9] p-6 text-white shadow-md">
         <h2 className="text-xl font-bold">Pilih Jenis Pengguna</h2>
         <p className="text-sm text-white/80">
           Supaya pengalaman kamu lebih sesuai
@@ -46,24 +46,18 @@ function UserTypePage({ onNext }) {
           <div
             key={item.id}
             onClick={() => setSelected(item.id)}
-            className={`cursor-pointer overflow-hidden rounded-2xl border transition-all ${
+            className={`cursor-pointer rounded-2xl border p-5 transition-all duration-200 ${
               selected === item.id
-                ? 'border-[#38ADA9] ring-2 ring-[#38ADA9]/30 scale-[1.02]'
-                : 'border-slate-200 hover:scale-[1.01]'
+                ? 'border-[#38ADA9] bg-[#38ADA9]/5 ring-2 ring-[#38ADA9]/20 scale-[1.02]'
+                : 'border-slate-200 bg-white hover:border-[#38ADA9]/50 hover:scale-[1.01]'
             }`}
           >
-            <div className="relative h-40">
-              <img
-                src={item.image}
-                alt={item.label}
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                <span className="text-lg font-semibold text-white">
-                  {item.label}
-                </span>
-              </div>
-            </div>
+            <h3 className={`text-lg font-bold ${selected === item.id ? 'text-[#38ADA9]' : 'text-slate-800'}`}>
+              {item.label}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              {item.description}
+            </p>
           </div>
         ))}
       </div>
@@ -71,7 +65,7 @@ function UserTypePage({ onNext }) {
       {/* Button */}
       <button
         onClick={handleSubmit}
-        className="mt-6 w-full rounded-2xl bg-[#38ADA9] py-3 font-semibold text-white transition hover:bg-[#2e8b87]"
+        className="mt-6 w-full rounded-2xl bg-[#38ADA9] py-3.5 font-semibold text-white shadow-md transition hover:bg-[#2e8b87]"
       >
         Lanjutkan
       </button>

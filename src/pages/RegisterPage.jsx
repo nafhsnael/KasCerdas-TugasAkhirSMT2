@@ -34,9 +34,10 @@ function RegisterPage({ onSwitch, onAuthenticate }) {
       token: json.data.token,
       username: json.data.user.username,
       email: json.data.user.email,
+      role: json.data.user.role,
+      user_type: json.data.user.user_type,
     }, true)
   }
-
 
   return (
     <div className="mx-auto max-w-4xl rounded-[32px] bg-white px-8 py-10 shadow-2xl shadow-slate-300 sm:px-10">      

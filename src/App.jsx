@@ -215,13 +215,13 @@ function App() {
       // ignore
     }
 
-    if (userData.username || userData.email || userData.name || userData.role) {
+    if (userData.username || userData.email || userData.name || userData.role || userData.user_type) {
       setUserProfile(prev => ({
         ...prev,
         nama: userData.name || prev.nama,
         user: userData.username || prev.user,
         email: userData.email || prev.email,
-        usertype: userData.role || prev.usertype,
+        usertype: userData.user_type || userData.role || prev.usertype,
         dompet: prev.dompet,
       }))
     }
@@ -236,7 +236,33 @@ function App() {
   }
 
 
-  const handleUserTypeNext = (selectedUserType) => {
+  const handleUserTypeNext = async (selectedUserType) => {
+    try {
+      const res = await authFetch('/api/user/profil', {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: userProfile.nama,
+          email: userProfile.email,
+          user_type: selectedUserType,
+        })
+      })
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}))
+        alert(errJson?.message || 'Gagal menyimpan tipe pengguna')
+        return
+      }
+
+      const json = await res.json()
+      setUserProfile(prev => ({
+        ...prev,
+        usertype: json.data.user_type,
+      }))
+    } catch (e) {
+      alert('Terjadi kesalahan koneksi saat menyimpan tipe pengguna')
+      return
+    }
+
     setUserType(selectedUserType)
     setShowUserType(false)
     setShowWallet(true)
