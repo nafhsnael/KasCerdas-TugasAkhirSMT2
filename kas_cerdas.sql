@@ -17,7 +17,7 @@ SET time_zone = "+00:00";
 --
 -- Database: `kas_cerdas`
 --
-CREATE DATABASE IF NOT EXISTS `kas_cerdas` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS `Kas_Cerdas` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `kas_cerdas`;
 
 -- --------------------------------------------------------

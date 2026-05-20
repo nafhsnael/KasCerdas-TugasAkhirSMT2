@@ -68,14 +68,14 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
             </p>
           </div>
           <div className="rounded-[28px] border border-white/20 bg-white/10 p-4 text-right">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-100/80">Saldo Tersedia</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-100/80">Saldo </p>
             <p className="mt-2 text-3xl font-semibold">Rp {totalIncome.toLocaleString('id-ID')}</p>
             <p className="text-sm text-slate-100/80">Pemasukan bulan ini</p>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-4 xl:grid-cols-2">
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -94,21 +94,12 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
           <h2 className="mt-4 text-4xl font-semibold">Rp {totalExpense.toLocaleString('id-ID')}</h2>
           <p className="mt-3 text-sm text-slate-300">Total biaya sejauh ini</p>
         </div>
-
-        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Poin Hijau</p>
-          <h2 className="mt-4 text-4xl font-semibold text-slate-900">{totalPoints.toLocaleString('id-ID')} Poin</h2>
-          <div className="mt-4 rounded-full bg-slate-100 h-3 overflow-hidden">
-            <div className="h-3 rounded-full bg-[#38ADA9]" style={{ width: '85%' }} />
-          </div>
-          <p className="mt-3 text-sm text-slate-500">Progress Reward 4.250 / 5.000</p>
-        </div>
       </section>
 
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Aksi Cepat</p>
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Kategori</p>
             <h2 className="mt-2 text-xl font-semibold text-slate-900">Kelola keuangan Anda</h2>
           </div>
         </div>

@@ -37,9 +37,8 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Eco-Wallet</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo</p>
               <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {walletSummary.current.toLocaleString('id-ID')}</h2>
-              <p className="mt-3 text-sm text-slate-500">+12,5% dibanding bulan lalu</p>
             </div>
             <div className="rounded-3xl bg-slate-50 p-4 text-slate-900">
               <span className="text-2xl">💳</span>

@@ -8,13 +8,6 @@ function UserTypePage({ onNext }) {
       id: 'umkm',
       label: 'UMKM',
       description: 'Untuk pemisahan akun usaha dan pribadi serta pencatatan arus kas usaha.',
-      features: [
-        'Pemisahan dompet usaha & dompet pribadi',
-        'Cash flow usaha masuk/keluar',
-        'Stok barang & pengingat menipis',
-        'Laporan laba rugi otomatis',
-        'Catatan utang & piutang usaha',
-      ],
     },
     {
       id: 'mahasiswa',

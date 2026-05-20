@@ -18,7 +18,7 @@ import DashboardMahasiswaPage from './pages/DashboardMahasiswaPage'
 import AddDebtPage from './pages/AddDebtPage'
 import AddSavingsPage from './pages/AddSavingsPage'
 import ProfilePage from './pages/ProfilePage'
-import { transactions as initialTransactions, walletSummary, budgets } from './utils/data'
+
 
 const routeToPage = {
   '': 'dashboard',
@@ -71,35 +71,33 @@ function App() {
   const [showInitialBalance, setShowInitialBalance] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
   const [filters, setFilters] = useState({ type: 'all' })
-  const [transactions, setTransactions] = useState(initialTransactions)
+  const [transactions, setTransactions] = useState([])
+  const budgets = []
+
+
   const [umkmTransactions, setUmkmTransactions] = useState([])
   const [umkmSummary, setUmkmSummary] = useState({
-    income: 12500000,
-    operationalExpense: 5300000,
-    estimatedHpp: 1950000,
-    payables: 4200000,
-    receivables: 1750000,
-    inventory: [
-      { id: 'bahan_baku_utama', name: 'Bahan baku utama', stock: 18, reorderLevel: 10 },
-      { id: 'produk_siapi_jual', name: 'Produk siap jual', stock: 6, reorderLevel: 15 },
-      { id: 'kemasan_label', name: 'Kemasan & label', stock: 32, reorderLevel: 8 },
-    ],
+    income: 0,
+    operationalExpense: 0,
+    estimatedHpp: 0,
+    payables: 0,
+    receivables: 0,
+    inventory: [],
   })
-  const [debts, setDebts] = useState([
-    { id: 'd1', creditor: 'Keluarga', amount: 3000000, dueDate: '2026-06-30', status: 'ongoing', note: 'Hutang untuk keperluan keluarga', createdAt: '2026-04-01T00:00:00.000Z' },
-    { id: 'd2', creditor: 'Teman', amount: 800000, dueDate: '2026-05-15', status: 'ongoing', note: 'Pinjaman untuk modal usaha', createdAt: '2026-04-01T00:00:00.000Z' },
-  ])
-  const [savings, setSavings] = useState([
-    { id: 's1', name: 'Tabungan Rumah', target: 50000000, current: 21000000, deadline: '2026-12-31', status: 'active', note: 'Target tabungan untuk DP rumah', createdAt: '2026-04-01T00:00:00.000Z' },
-  ])
+
+  const [debts, setDebts] = useState([])
+
+  const [savings, setSavings] = useState([])
+
   const [userProfile, setUserProfile] = useState({
-    nama: 'Veloura',
-    email: 'Naila@email.com',
-    user: 'Nafhsnael',
+    nama: '',
+    email: '',
+    user: '',
     usertype: null,
     dompet: null,
-    profileImage: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=200&q=80',
+    profileImage: '',
   })
+
 
   const navigateTo = (page, replace = false) => {
     const path = pageToPath(page)
@@ -453,17 +451,31 @@ function App() {
         return <ProfilePage userProfile={userProfile} setUserProfile={setUserProfile} onNavigate={setCurrentPage} />
       case 'dashboard':
         return (
-          userProfile?.usertype === 'masyarakat' ? (
-            <DashboardMasyarakatPage
-              walletSummary={walletSummary}
+          userProfile?.usertype === 'mahasiswa' ? (
+            <DashboardMahasiswaPage
+              walletSummary={{ current: 0, income: 0, expense: 0 }}
               transactions={transactions}
-              budgets={budgets}
+              budgets={[]}
+
+              walletInfo={walletInfo}
+              userProfile={userProfile}
+            />
+          ) : userProfile?.usertype === 'masyarakat' ? (
+            <DashboardMasyarakatPage
+              walletSummary={{ current: 0, income: 0, expense: 0 }}
+              transactions={transactions}
+              budgets={[]}
+
               walletInfo={walletInfo}
               userProfile={userProfile}
             />
           ) : (
             <DashboardPage
-              walletSummary={walletSummary}
+              walletSummary={{
+                current: Number(walletInfo?.balance ?? 0),
+                income: 0,
+                expense: 0,
+              }}
               transactions={transactions}
               budgets={budgets}
               walletInfo={walletInfo}
