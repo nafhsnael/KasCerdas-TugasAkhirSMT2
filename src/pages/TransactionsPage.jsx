@@ -17,7 +17,6 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
     note: '',
     type: 'expense',
     receipt: null,
-    invoice: '',
   })
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMonth, setSelectedMonth] = useState('')
@@ -83,6 +82,22 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
     setSelectedInvoice(null)
   }
 
+  const generateInvoiceNumber = (existingTransactions, date) => {
+    const year = date?.slice(0, 4) || new Date().getFullYear().toString()
+    const invoiceNumbers = existingTransactions
+      .map((item) => item.invoice)
+      .filter(Boolean)
+      .map((invoice) => {
+        const match = invoice.match(/^INV-(\d{4})-(\d{4})$/)
+        return match ? { year: match[1], seq: parseInt(match[2], 10) } : null
+      })
+      .filter(Boolean)
+
+    const sameYearInvoices = invoiceNumbers.filter((item) => item.year === year)
+    const nextNumber = sameYearInvoices.length ? Math.max(...sameYearInvoices.map((item) => item.seq)) + 1 : 1
+    return `INV-${year}-${String(nextNumber).padStart(4, '0')}`
+  }
+
   const handleSubmit = (event) => {
     event.preventDefault()
     if (!form.title || !form.amount || !form.date) {
@@ -98,41 +113,21 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
       date: form.date,
       note: form.note,
       type: form.type,
-      invoice: form.invoice,
+      invoice: generateInvoiceNumber(transactions, form.date),
       receipt: form.receipt,
     }
     onAddTransaction(newTransaction)
     alert('Transaksi baru berhasil ditambahkan!')
-    setForm({ title: '', amount: '', category: 'Makan', wallet: 'UMKM', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null, invoice: '' })
+    setForm({ title: '', amount: '', category: 'Makan', wallet: 'UMKM', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null })
   }
 
   return (
     <div className="space-y-8">
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="mb-6">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Tambah Transaksi</p>
             <h2 className="text-xl font-semibold text-slate-900">Input data transaksi</h2>
-          </div>
-          <div className="flex gap-2">
-            <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'all' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              onClick={() => setFilters({ type: 'all' })}
-            >
-              Semua
-            </button>
-            <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'income' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              onClick={() => setFilters({ type: 'income' })}
-            >
-              Pemasukan
-            </button>
-            <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'expense' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              onClick={() => setFilters({ type: 'expense' })}
-            >
-              Pengeluaran
-            </button>
           </div>
         </div>
 
@@ -230,16 +225,6 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
             </div>
           )}
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Nomor Invoice</label>
-            <input
-              type="text"
-              value={form.invoice}
-              onChange={(e) => handleChange('invoice', e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-              placeholder="Contoh: INV-2026-001"
-            />
-          </div>
-          <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Tipe Transaksi</label>
             <div className="flex gap-3">
               <button
@@ -267,10 +252,30 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
       </section>
 
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi</p>
             <h2 className="text-xl font-semibold text-slate-900">Daftar terbaru</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'all' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
+              onClick={() => setFilters({ type: 'all' })}
+            >
+              Semua
+            </button>
+            <button
+              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'income' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
+              onClick={() => setFilters({ type: 'income' })}
+            >
+              Pemasukan
+            </button>
+            <button
+              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'expense' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
+              onClick={() => setFilters({ type: 'expense' })}
+            >
+              Pengeluaran
+            </button>
           </div>
           <span className="rounded-2xl bg-slate-100 px-3 py-1 text-sm text-slate-600">{visibleTransactions.length} transaksi</span>
         </div>
