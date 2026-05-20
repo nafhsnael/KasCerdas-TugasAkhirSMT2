@@ -7,7 +7,14 @@ function UserTypePage({ onNext }) {
     {
       id: 'umkm',
       label: 'UMKM',
-      description: 'Untuk pencatatan keuangan operasional usaha kecil dan menengah',
+      description: 'Untuk pemisahan akun usaha dan pribadi serta pencatatan arus kas usaha.',
+      features: [
+        'Pemisahan dompet usaha & dompet pribadi',
+        'Cash flow usaha masuk/keluar',
+        'Stok barang & pengingat menipis',
+        'Laporan laba rugi otomatis',
+        'Catatan utang & piutang usaha',
+      ],
     },
     {
       id: 'mahasiswa',
@@ -58,6 +65,16 @@ function UserTypePage({ onNext }) {
             <p className="mt-1 text-sm text-slate-500">
               {item.description}
             </p>
+            {item.features && (
+              <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                {item.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2">
+                    <span className="mt-1 text-[#38ADA9]">•</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         ))}
       </div>

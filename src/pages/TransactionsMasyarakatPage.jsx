@@ -2,43 +2,22 @@ import { useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
-const defaultCategories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
+const categories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
 const bank = ['Cash', 'Ovo', 'Dana', 'Bank']
 const wallets = ['UMKM', 'Mahasiswa', 'Masyarakat Luas']
 
-function TransactionsPage({
-  transactions,
-  filters,
-  setFilters,
-  onAddTransaction,
-  defaultWallet = 'UMKM',
-  walletOptions = wallets,
-  categories: categoriesProp,
-}) {
-  const categories = categoriesProp && categoriesProp.length ? categoriesProp : defaultCategories
-
-  const initialCategory = categories.includes('Makan') ? 'Makan' : categories[0]
-
+function TransactionsPage({ transactions, filters, setFilters, onAddTransaction }) {
   const [form, setForm] = useState({
     title: '',
     amount: '',
-    category: initialCategory,
-    wallet: defaultWallet,
-    bank: 'Cash',
+    category: 'Makan',
+    wallet: 'UMKM',
+    bank : 'Cash',
     date: '',
     note: '',
     type: 'expense',
     receipt: null,
   })
-
-  const mahasiswaIncomeCategories = ['Uang Saku/Kiriman', 'Beasiswa', 'Penghasilan Kerja Paruh Waktu']
-  const mahasiswaExpenseCategories = ['UKT', 'Buku/Alat Tulis', 'Makan', 'Kos', 'Transportasi']
-
-  const inferredTypeFromCategory = (category) => {
-    if (mahasiswaIncomeCategories.includes(category)) return 'income'
-    if (mahasiswaExpenseCategories.includes(category)) return 'expense'
-    return form.type
-  }
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMonth, setSelectedMonth] = useState('')
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
@@ -50,11 +29,6 @@ function TransactionsPage({
     // Filter berdasarkan tipe transaksi
     if (filters.type !== 'all') {
       filtered = filtered.filter((item) => item.type === filters.type)
-    }
-
-    // Filter berdasarkan kategori
-    if (filters.category && filters.category !== 'all') {
-      filtered = filtered.filter((item) => item.category === filters.category)
     }
     
     // Filter berdasarkan bulan
@@ -77,11 +51,6 @@ function TransactionsPage({
   }, [filters.type, transactions, searchQuery, selectedMonth])
 
   const handleChange = (field, value) => {
-    if (field === 'category') {
-      const nextType = inferredTypeFromCategory(value)
-      setForm((prev) => ({ ...prev, category: value, type: nextType }))
-      return
-    }
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -204,7 +173,7 @@ function TransactionsPage({
               onChange={(e) => handleChange('wallet', e.target.value)}
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             >
-              {walletOptions.map((wallet) => (
+              {wallets.map((wallet) => (
                 <option key={wallet} value={wallet}>{wallet}</option>
               ))}
             </select>
@@ -255,6 +224,25 @@ function TransactionsPage({
               )}
             </div>
           )}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Tipe Transaksi</label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => handleChange('type', 'income')}
+                className={`rounded-3xl px-4 py-3 text-sm font-semibold transition ${form.type === 'income' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
+              >
+                Pemasukan
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChange('type', 'expense')}
+                className={`rounded-3xl px-4 py-3 text-sm font-semibold transition ${form.type === 'expense' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
+              >
+                Pengeluaran
+              </button>
+            </div>
+          </div>
           <div className="lg:col-span-2">
             <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
               Simpan Transaksi
@@ -293,32 +281,17 @@ function TransactionsPage({
         </div>
 
         <div className="mb-6 grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Cari Transaksi</label>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Cari Transaksi</label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari judul, catatan, atau invoice..."
+              placeholder="Cari judul, kategori, catatan, atau invoice..."
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             />
           </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Filter Kategori</label>
-            <select
-              value={filters.category || 'all'}
-              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-            >
-              <option value="all">Semua Kategori</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="md:col-span-2">
+          <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Filter Bulan</label>
             <select
               value={selectedMonth}

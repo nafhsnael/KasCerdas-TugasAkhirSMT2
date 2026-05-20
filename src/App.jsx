@@ -6,10 +6,15 @@ import UserTypePage from './pages/UserTypePage'
 import DompetPage from './pages/DompetPage'
 import InitialBalancePage from './pages/InitialBalancePage'
 import AnalysisPage from './pages/AnalysisPage'
-import TransactionsPage from './pages/TransactionsPage'
+import TransactionsUMKMPage from './pages/TransactionsUMKMPage'
+import TransactionsMahasiswaPage from './pages/TransactionsMahasiswaPage'
+import TransactionsMasyarakatPage from './pages/TransactionsMasyarakatPage'
 import ReportsPage from './pages/ReportsPage'
 import BudgetPage from './pages/BudgetPage'
 import DashboardPage from './pages/DashboardPage'
+import DashboardMasyarakatPage from './pages/DashboardMasyarakatPage'
+import DashboardUMKMPage from './pages/DashboardUMKMPage'
+import DashboardMahasiswaPage from './pages/DashboardMahasiswaPage'
 import AddDebtPage from './pages/AddDebtPage'
 import AddSavingsPage from './pages/AddSavingsPage'
 import ProfilePage from './pages/ProfilePage'
@@ -67,6 +72,19 @@ function App() {
   const [initialBalance, setInitialBalance] = useState(0)
   const [filters, setFilters] = useState({ type: 'all' })
   const [transactions, setTransactions] = useState(initialTransactions)
+  const [umkmTransactions, setUmkmTransactions] = useState([])
+  const [umkmSummary, setUmkmSummary] = useState({
+    income: 12500000,
+    operationalExpense: 5300000,
+    estimatedHpp: 1950000,
+    payables: 4200000,
+    receivables: 1750000,
+    inventory: [
+      { id: 'bahan_baku_utama', name: 'Bahan baku utama', stock: 18, reorderLevel: 10 },
+      { id: 'produk_siapi_jual', name: 'Produk siap jual', stock: 6, reorderLevel: 15 },
+      { id: 'kemasan_label', name: 'Kemasan & label', stock: 32, reorderLevel: 8 },
+    ],
+  })
   const [debts, setDebts] = useState([
     { id: 'd1', creditor: 'Keluarga', amount: 3000000, dueDate: '2026-06-30', status: 'ongoing', note: 'Hutang untuk keperluan keluarga', createdAt: '2026-04-01T00:00:00.000Z' },
     { id: 'd2', creditor: 'Teman', amount: 800000, dueDate: '2026-05-15', status: 'ongoing', note: 'Pinjaman untuk modal usaha', createdAt: '2026-04-01T00:00:00.000Z' },
@@ -114,7 +132,7 @@ function App() {
           nama: authUser.name || prev.nama,
           user: authUser.username || prev.user,
           email: authUser.email || prev.email,
-          usertype: authUser.role || prev.usertype,
+          usertype: authUser.user_type || authUser.role || prev.usertype,
           dompet: walletData?.name || prev.dompet,
         }))
         setWalletInfo(walletData)
@@ -152,6 +170,78 @@ function App() {
       ...newTransaction,
     }
     setTransactions((prev) => [transaction, ...prev])
+  }
+
+  const addUmkmTransaction = (newTransaction) => {
+    const transaction = {
+      id: `t${Date.now()}`,
+      ...newTransaction,
+      isUmkm: true,
+    }
+
+    setTransactions((prev) => [transaction, ...prev])
+    setUmkmTransactions((prev) => [transaction, ...prev])
+
+    setUmkmSummary((prevSummary) => {
+      const amount = Number(newTransaction.amount) || 0
+      const stockQty = Number(newTransaction.stockQty) || 1
+      const linkedStock = newTransaction.linkedStock
+      const selectedStockId = newTransaction.stockItemId
+      const estimatedHpp = Math.round(amount * 0.42)
+
+      const updateInventory = (change) =>
+        prevSummary.inventory.map((item) =>
+          item.id === selectedStockId
+            ? { ...item, stock: Math.max(0, item.stock + change) }
+            : item
+        )
+
+      let nextSummary = { ...prevSummary }
+
+      switch (newTransaction.businessCategory) {
+        case 'Penjualan':
+          nextSummary.income += amount
+          nextSummary.estimatedHpp += estimatedHpp
+          if (linkedStock) {
+            nextSummary.inventory = updateInventory(-stockQty)
+          }
+          break
+        case 'Pemasukan Lain':
+          nextSummary.income += amount
+          break
+        case 'Keluar Operasional':
+          nextSummary.operationalExpense += amount
+          break
+        case 'Beli Bahan Baku / Stok':
+          nextSummary.inventory = updateInventory(stockQty)
+          nextSummary.estimatedHpp += amount
+          break
+        case 'Piutang Pelanggan':
+          if (newTransaction.isSettled) {
+            nextSummary.income += amount
+          } else {
+            nextSummary.receivables += amount
+          }
+          if (linkedStock) {
+            nextSummary.inventory = updateInventory(-stockQty)
+            nextSummary.estimatedHpp += estimatedHpp
+          }
+          break
+        case 'Utang Supplier':
+          nextSummary.payables += amount
+          nextSummary.inventory = updateInventory(stockQty)
+          nextSummary.estimatedHpp += amount
+          if (newTransaction.isSettled) {
+            nextSummary.payables = Math.max(0, nextSummary.payables - amount)
+            nextSummary.operationalExpense += amount
+          }
+          break
+        default:
+          break
+      }
+
+      return nextSummary
+    })
   }
 
   const addDebt = (newDebt) => {
@@ -334,7 +424,21 @@ function App() {
           </div>
         )
       case 'transactions':
-        return <TransactionsPage transactions={transactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
+        if (userProfile?.usertype === 'umkm') {
+          return (
+            <TransactionsUMKMPage
+              transactions={umkmTransactions}
+              filters={filters}
+              setFilters={setFilters}
+              onAddUmkmTransaction={addUmkmTransaction}
+              umkmSummary={umkmSummary}
+            />
+          )
+        }
+        if (userProfile?.usertype === 'mahasiswa') {
+          return <TransactionsMahasiswaPage transactions={transactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
+        }
+        return <TransactionsMasyarakatPage transactions={transactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
       case 'analysis':
         return <AnalysisPage transactions={transactions} />
       case 'reports':
@@ -349,13 +453,24 @@ function App() {
         return <ProfilePage userProfile={userProfile} setUserProfile={setUserProfile} onNavigate={setCurrentPage} />
       case 'dashboard':
         return (
-          <DashboardPage
-            walletSummary={walletSummary}
-            transactions={transactions}
-            budgets={budgets}
-            walletInfo={walletInfo}
-            userProfile={userProfile}
-          />
+          userProfile?.usertype === 'masyarakat' ? (
+            <DashboardMasyarakatPage
+              walletSummary={walletSummary}
+              transactions={transactions}
+              budgets={budgets}
+              walletInfo={walletInfo}
+              userProfile={userProfile}
+            />
+          ) : (
+            <DashboardPage
+              walletSummary={walletSummary}
+              transactions={transactions}
+              budgets={budgets}
+              walletInfo={walletInfo}
+              userProfile={userProfile}
+              umkmSummary={umkmSummary}
+            />
+          )
         )
       default:
         return (

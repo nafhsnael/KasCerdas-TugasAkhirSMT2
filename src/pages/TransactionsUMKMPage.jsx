@@ -2,43 +2,34 @@ import { useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
-const defaultCategories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
-const bank = ['Cash', 'Ovo', 'Dana', 'Bank']
-const wallets = ['UMKM', 'Mahasiswa', 'Masyarakat Luas']
+const categories = [
+  'Penjualan',
+  'Pemasukan Lain',
+  'Keluar Operasional',
+  'Beli Bahan Baku / Stok',
+  'Piutang Pelanggan',
+  'Utang Supplier',
+]
 
-function TransactionsPage({
+function TransactionsUMKMPage({
   transactions,
   filters,
   setFilters,
-  onAddTransaction,
-  defaultWallet = 'UMKM',
-  walletOptions = wallets,
-  categories: categoriesProp,
+  onAddUmkmTransaction,
+  umkmSummary,
 }) {
-  const categories = categoriesProp && categoriesProp.length ? categoriesProp : defaultCategories
-
-  const initialCategory = categories.includes('Makan') ? 'Makan' : categories[0]
-
   const [form, setForm] = useState({
     title: '',
     amount: '',
-    category: initialCategory,
-    wallet: defaultWallet,
-    bank: 'Cash',
+    category: 'Penjualan',
     date: '',
     note: '',
-    type: 'expense',
+    linkedStock: false,
+    stockItemId: umkmSummary.inventory[1].id,
+    stockQty: '1',
+    isSettled: false,
     receipt: null,
   })
-
-  const mahasiswaIncomeCategories = ['Uang Saku/Kiriman', 'Beasiswa', 'Penghasilan Kerja Paruh Waktu']
-  const mahasiswaExpenseCategories = ['UKT', 'Buku/Alat Tulis', 'Makan', 'Kos', 'Transportasi']
-
-  const inferredTypeFromCategory = (category) => {
-    if (mahasiswaIncomeCategories.includes(category)) return 'income'
-    if (mahasiswaExpenseCategories.includes(category)) return 'expense'
-    return form.type
-  }
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMonth, setSelectedMonth] = useState('')
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
@@ -46,42 +37,32 @@ function TransactionsPage({
 
   const visibleTransactions = useMemo(() => {
     let filtered = transactions
-    
-    // Filter berdasarkan tipe transaksi
+
     if (filters.type !== 'all') {
-      filtered = filtered.filter((item) => item.type === filters.type)
+      filtered = filtered.filter((item) => {
+        const category = item.businessCategory || item.category
+        return category === filters.type
+      })
     }
 
-    // Filter berdasarkan kategori
-    if (filters.category && filters.category !== 'all') {
-      filtered = filtered.filter((item) => item.category === filters.category)
-    }
-    
-    // Filter berdasarkan bulan
     if (selectedMonth) {
       filtered = filtered.filter((item) => item.date.startsWith(selectedMonth))
     }
-    
-    // Filter berdasarkan search query
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      filtered = filtered.filter((item) => 
+      filtered = filtered.filter((item) =>
         item.title.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query) ||
+        (item.businessCategory || item.category).toLowerCase().includes(query) ||
         item.note.toLowerCase().includes(query) ||
         (item.invoice && item.invoice.toLowerCase().includes(query))
       )
     }
-    
+
     return filtered
   }, [filters.type, transactions, searchQuery, selectedMonth])
 
   const handleChange = (field, value) => {
-    if (field === 'category') {
-      const nextType = inferredTypeFromCategory(value)
-      setForm((prev) => ({ ...prev, category: value, type: nextType }))
-      return
-    }
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -103,16 +84,6 @@ function TransactionsPage({
     }
   }
 
-  const handleViewInvoice = (transaction) => {
-    setSelectedInvoice(transaction)
-    setIsInvoiceModalOpen(true)
-  }
-
-  const handleCloseInvoiceModal = () => {
-    setIsInvoiceModalOpen(false)
-    setSelectedInvoice(null)
-  }
-
   const generateInvoiceNumber = (existingTransactions, date) => {
     const year = date?.slice(0, 4) || new Date().getFullYear().toString()
     const invoiceNumbers = existingTransactions
@@ -129,37 +100,71 @@ function TransactionsPage({
     return `INV-${year}-${String(nextNumber).padStart(4, '0')}`
   }
 
+  const isLinkedStockCategory = form.category === 'Penjualan' || form.category === 'Piutang Pelanggan'
+  const isStockPurchaseCategory = form.category === 'Beli Bahan Baku / Stok' || form.category === 'Utang Supplier'
+  const isCreditCategory = form.category === 'Piutang Pelanggan' || form.category === 'Utang Supplier'
+
   const handleSubmit = (event) => {
     event.preventDefault()
     if (!form.title || !form.amount || !form.date) {
       alert('Mohon isi semua field yang wajib (Judul, Jumlah, Tanggal)')
       return
     }
+
+    const amount = parseInt(form.amount, 10)
+    const stockQty = parseInt(form.stockQty, 10) || 1
+
     const newTransaction = {
       title: form.title,
-      amount: parseInt(form.amount),
+      amount,
       category: form.category,
-      wallet: form.wallet,
-      bank: form.bank,
       date: form.date,
       note: form.note,
-      type: form.type,
+      type:
+        form.category === 'Penjualan' ||
+        form.category === 'Pemasukan Lain' ||
+        form.category === 'Piutang Pelanggan'
+          ? 'income'
+          : 'expense',
       invoice: generateInvoiceNumber(transactions, form.date),
       receipt: form.receipt,
+      businessCategory: form.category,
+      linkedStock: form.linkedStock,
+      stockItemId: form.stockItemId,
+      stockQty,
+      isCredit: isCreditCategory,
+      isSettled: form.isSettled,
+      typeLabel:
+        form.category === 'Penjualan' || form.category === 'Pemasukan Lain' || form.category === 'Piutang Pelanggan'
+          ? 'Pemasukan'
+          : 'Pengeluaran',
     }
-    onAddTransaction(newTransaction)
-    alert('Transaksi baru berhasil ditambahkan!')
-    setForm({ title: '', amount: '', category: 'Makan', wallet: 'UMKM', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null })
+
+    onAddUmkmTransaction(newTransaction)
+    alert('Transaksi UMKM berhasil ditambahkan!')
+    setForm({
+      title: '',
+      amount: '',
+      category: 'Penjualan',
+      date: '',
+      note: '',
+      linkedStock: false,
+      stockItemId: umkmSummary.inventory[1].id,
+      stockQty: '1',
+      isSettled: false,
+      receipt: null,
+    })
   }
 
   return (
     <div className="space-y-8">
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6">
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Tambah Transaksi</p>
-            <h2 className="text-xl font-semibold text-slate-900">Input data transaksi</h2>
-          </div>
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Transaksi UMKM</p>
+          <h2 className="text-xl font-semibold text-slate-900">Kelola arus kas, stok, dan kredit usaha</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Rekam penjualan, biaya operasional, pembelian stok, piutang, dan utang secara terpisah.
+          </p>
         </div>
 
         <form className="grid gap-5 lg:grid-cols-2" onSubmit={handleSubmit}>
@@ -171,22 +176,24 @@ function TransactionsPage({
               onChange={(e) => handleChange('title', e.target.value)}
               required
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-              placeholder="Contoh: Makan siang"
+              placeholder="Contoh: Penjualan kue bolu"
             />
           </div>
+
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah Uang</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
             <input
               type="number"
               value={form.amount}
               onChange={(e) => handleChange('amount', e.target.value)}
               required
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-              placeholder="Rp"
+              placeholder="0"
             />
           </div>
+
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Kategori</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Kategori Bisnis</label>
             <select
               value={form.category}
               onChange={(e) => handleChange('category', e.target.value)}
@@ -197,30 +204,7 @@ function TransactionsPage({
               ))}
             </select>
           </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Dompet</label>
-            <select
-              value={form.wallet}
-              onChange={(e) => handleChange('wallet', e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-            >
-              {walletOptions.map((wallet) => (
-                <option key={wallet} value={wallet}>{wallet}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Bank</label>
-            <select
-              value={form.bank}
-              onChange={(e) => handleChange('bank', e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-            >
-              {bank.map((bank) => (
-                <option key={bank} value={bank}>{bank}</option>
-              ))}
-            </select>
-          </div>
+
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Tanggal</label>
             <input
@@ -231,6 +215,7 @@ function TransactionsPage({
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             />
           </div>
+
           <div className="lg:col-span-2">
             <label className="mb-2 block text-sm font-medium text-slate-700">Catatan</label>
             <textarea
@@ -238,10 +223,69 @@ function TransactionsPage({
               onChange={(e) => handleChange('note', e.target.value)}
               rows="3"
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-              placeholder="Contoh: Makan siang di kantor"
+              placeholder="Contoh: Penjualan kredit pelanggan A"
             />
           </div>
-          {form.type === 'expense' && (
+
+          {(isLinkedStockCategory || isStockPurchaseCategory) && (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Pilih Item Stok</label>
+                <select
+                  value={form.stockItemId}
+                  onChange={(e) => handleChange('stockItemId', e.target.value)}
+                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                >
+                  {umkmSummary.inventory.map((item) => (
+                    <option key={item.id} value={item.id}>{item.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Kuantitas</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.stockQty}
+                  onChange={(e) => handleChange('stockQty', e.target.value)}
+                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                />
+              </div>
+            </>
+          )}
+
+          {isLinkedStockCategory && (
+            <div className="lg:col-span-2 flex items-center gap-3">
+              <input
+                id="linkedStock"
+                type="checkbox"
+                checked={form.linkedStock}
+                onChange={(e) => handleChange('linkedStock', e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
+              />
+              <label htmlFor="linkedStock" className="text-sm text-slate-700">
+                Hubungkan transaksi ke stok produk siap jual
+              </label>
+            </div>
+          )}
+
+          {isCreditCategory && (
+            <div className="lg:col-span-2 flex items-center gap-3">
+              <input
+                id="isSettled"
+                type="checkbox"
+                checked={form.isSettled}
+                onChange={(e) => handleChange('isSettled', e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
+              />
+              <label htmlFor="isSettled" className="text-sm text-slate-700">
+                Tandai sebagai sudah dibayar / dilunasi sekarang
+              </label>
+            </div>
+          )}
+
+          {form.category !== 'Penjualan' && (
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Upload Bukti Nota</label>
               <input
@@ -255,9 +299,10 @@ function TransactionsPage({
               )}
             </div>
           )}
+
           <div className="lg:col-span-2">
             <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
-              Simpan Transaksi
+              Simpan Transaksi UMKM
             </button>
           </div>
         </form>
@@ -266,59 +311,41 @@ function TransactionsPage({
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi</p>
-            <h2 className="text-xl font-semibold text-slate-900">Daftar terbaru</h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'all' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              onClick={() => setFilters({ type: 'all' })}
-            >
-              Semua
-            </button>
-            <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'income' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              onClick={() => setFilters({ type: 'income' })}
-            >
-              Pemasukan
-            </button>
-            <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'expense' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              onClick={() => setFilters({ type: 'expense' })}
-            >
-              Pengeluaran
-            </button>
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi UMKM</p>
+            <h2 className="text-xl font-semibold text-slate-900">Catatan bisnis terbaru</h2>
           </div>
           <span className="rounded-2xl bg-slate-100 px-3 py-1 text-sm text-slate-600">{visibleTransactions.length} transaksi</span>
         </div>
 
-        <div className="mb-6 grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Cari Transaksi</label>
+        <div className="mb-6 grid gap-4 md:grid-cols-3">
+         
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Filter Kategori Bisnis</label>
+            <select
+              value={filters.type}
+              onChange={(e) => setFilters({ type: e.target.value })}
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+            >
+              <option value="all">Semua</option>
+              <option value="Penjualan">Penjualan</option>
+              <option value="Pemasukan Lain">Pemasukan Lain</option>
+              <option value="Keluar Operasional">Keluar Operasional</option>
+              <option value="Beli Bahan Baku / Stok">Beli Bahan Baku / Stok</option>
+              <option value="Piutang Pelanggan">Piutang Pelanggan</option>
+              <option value="Utang Supplier">Utang Supplier</option>
+            </select>
+          </div>
+           <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Cari Transaksi</label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari judul, catatan, atau invoice..."
+              placeholder="Cari judul, kategori, catatan, atau invoice..."
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             />
           </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Filter Kategori</label>
-            <select
-              value={filters.category || 'all'}
-              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-            >
-              <option value="all">Semua Kategori</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="md:col-span-2">
+          <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Filter Bulan</label>
             <select
               value={selectedMonth}
@@ -326,30 +353,31 @@ function TransactionsPage({
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             >
               <option value="">Semua Bulan</option>
-              <option value="2026-01">Januari 2026</option>
-              <option value="2026-02">Februari 2026</option>
-              <option value="2026-03">Maret 2026</option>
-              <option value="2026-04">April 2026</option>
-              <option value="2026-05">Mei 2026</option>
-              <option value="2026-06">Juni 2026</option>
-              <option value="2026-07">Juli 2026</option>
-              <option value="2026-08">Agustus 2026</option>
-              <option value="2026-09">September 2026</option>
-              <option value="2026-10">Oktober 2026</option>
-              <option value="2026-11">November 2026</option>
-              <option value="2026-12">Desember 2026</option>
+              {Array.from({ length: 12 }, (_, index) => {
+                const month = String(index + 1).padStart(2, '0')
+                const year = new Date().getFullYear()
+                const label = new Date(year, index).toLocaleString('id-ID', { month: 'long', year: 'numeric' })
+                return <option key={month} value={`${year}-${month}`}>{label}</option>
+              })}
             </select>
           </div>
         </div>
 
         <div className="space-y-4">
           {visibleTransactions.length > 0 ? (
-            visibleTransactions.map((trx) => (
-              <TransactionCard key={trx.id} transaction={trx} onViewInvoice={handleViewInvoice} />
+            visibleTransactions.map((transaction) => (
+              <TransactionCard
+                key={transaction.id}
+                transaction={transaction}
+                onViewInvoice={(trx) => {
+                  setSelectedInvoice(trx)
+                  setIsInvoiceModalOpen(true)
+                }}
+              />
             ))
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
-              <p className="text-slate-500">Tidak ada transaksi yang cocok dengan pencarian.</p>
+              <p className="text-slate-500">Tidak ada transaksi yang cocok dengan filter ini.</p>
             </div>
           )}
         </div>
@@ -358,10 +386,13 @@ function TransactionsPage({
       <InvoiceModal
         isOpen={isInvoiceModalOpen}
         transaction={selectedInvoice}
-        onClose={handleCloseInvoiceModal}
+        onClose={() => {
+          setIsInvoiceModalOpen(false)
+          setSelectedInvoice(null)
+        }}
       />
     </div>
   )
 }
 
-export default TransactionsPage
+export default TransactionsUMKMPage

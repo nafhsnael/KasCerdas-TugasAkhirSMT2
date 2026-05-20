@@ -1,24 +1,8 @@
 import TransactionCard from '../components/TransactionCard'
 import StatCard from '../components/StatCard'
 
-function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userProfile, umkmSummary }) {
+function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletInfo, userProfile }) {
   const recentTransactions = transactions.slice(0, 4)
-  const isUmkm = userProfile?.usertype === 'umkm'
-  const businessIncome = isUmkm ? umkmSummary.income : walletSummary.income || 0
-  const businessExpense = isUmkm ? umkmSummary.operationalExpense : walletSummary.expense || 0
-  const inventoryItems = isUmkm
-    ? umkmSummary.inventory
-    : [
-        { name: 'Bahan baku utama', stock: 18, reorderLevel: 10 },
-        { name: 'Produk siap jual', stock: 6, reorderLevel: 15 },
-        { name: 'Kemasan & label', stock: 32, reorderLevel: 8 },
-      ]
-  const lowStockItems = inventoryItems.filter((item) => item.stock <= item.reorderLevel)
-  const totalPayables = isUmkm ? umkmSummary.payables : 4200000
-  const totalReceivables = isUmkm ? umkmSummary.receivables : 1750000
-  const estimatedHpp = isUmkm ? umkmSummary.estimatedHpp : Math.round(businessIncome * 0.42)
-  const costOfGoodsSold = estimatedHpp
-  const profitLoss = businessIncome - costOfGoodsSold - businessExpense
   const totalPoints = 4250
   const carbonSaved = 125
   const quickActions = [
@@ -48,82 +32,6 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
           </div>
         </div>
       </section>
-
-      {isUmkm && (
-        <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">UMKM</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-900">Ringkasan Usaha</h2>
-              <p className="mt-3 text-sm text-slate-500">
-                Fitur khusus UMKM untuk memisahkan keuangan usaha dan pribadi, memantau arus kas, stok, laba rugi, dan utang/piutang.
-              </p>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-4 text-slate-900">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Dompet</p>
-              <p className="mt-2 text-xl font-semibold">Dompet Usaha</p>
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Arus Kas Usaha</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-900">Rp {businessIncome.toLocaleString('id-ID')}</p>
-              <p className="mt-2 text-sm text-slate-600">Pemasukan usaha</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <p className="text-sm text-slate-500">Keluar Operasional</p>
-                  <p className="mt-2 text-lg font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</p>
-                </div>
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <p className="text-sm text-slate-500">HPP Diperkirakan</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-900">Rp {costOfGoodsSold.toLocaleString('id-ID')}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Laba Rugi Otomatis</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-900">Rp {profitLoss.toLocaleString('id-ID')}</p>
-              <p className="mt-2 text-sm text-slate-600">Pendapatan dikurangi HPP dan biaya operasional</p>
-            </div>
-
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Stok Barang</p>
-              <div className="mt-3 space-y-3">
-                {inventoryItems.map((item) => (
-                  <div key={item.name} className="rounded-2xl bg-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="font-semibold text-slate-900">{item.name}</p>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.stock <= item.reorderLevel ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                        {item.stock <= item.reorderLevel ? 'Menipis' : 'Aman'}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm text-slate-500">Stok: {item.stock} unit</p>
-                  </div>
-                ))}
-              </div>
-              {lowStockItems.length > 0 && (
-                <p className="mt-4 text-sm text-rose-600">{lowStockItems.length} produk hampir menipis. Segera restock.</p>
-              )}
-            </div>
-
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Utang & Piutang</p>
-              <div className="mt-3 space-y-3">
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <p className="text-sm text-slate-500">Total Utang</p>
-                  <p className="mt-2 text-xl font-semibold text-slate-900">Rp {totalPayables.toLocaleString('id-ID')}</p>
-                </div>
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <p className="text-sm text-slate-500">Total Piutang</p>
-                  <p className="mt-2 text-xl font-semibold text-slate-900">Rp {totalReceivables.toLocaleString('id-ID')}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
       <section className="grid gap-4 xl:grid-cols-[1.7fr_1fr_1fr]">
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
@@ -216,4 +124,4 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
   )
 }
 
-export default DashboardPage
+export default DashboardMasyarakatPage

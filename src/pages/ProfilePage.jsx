@@ -151,22 +151,30 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
 
         <div>
           <label className="block text-sm font-medium text-slate-700">Dompet</label>
-          <textarea
+          <input
+            type="text"
             value={profile.dompet}
             onChange={(e) => handleChange('dompet', e.target.value)}
-            rows="1"
             className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
+            placeholder="Dompet Usaha / Dompet Pribadi"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">User</label>
-          <textarea
+          <label className="block text-sm font-medium text-slate-700">Jenis Profil</label>
+          <select
             value={profile.usertype}
             onChange={(e) => handleChange('usertype', e.target.value)}
-            rows="1"
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
-          />
+            className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
+          >
+            <option value="">Pilih jenis profil</option>
+            <option value="umkm">UMKM</option>
+            <option value="mahasiswa">Mahasiswa</option>
+            <option value="masyarakat_umum">Masyarakat Umum</option>
+          </select>
+          <p className="mt-2 text-sm text-slate-500">
+            Pilih jenis profil yang paling sesuai dengan kebutuhan penggunaan aplikasi.
+          </p>
         </div>
 
 
