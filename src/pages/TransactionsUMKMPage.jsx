@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
 const categories = [
   'Penjualan',
   'Pemasukan Lain',
-  'Keluar Operasional',
+  'Pengeluaran Operasional',
   'Beli Bahan Baku / Stok',
   'Piutang Pelanggan',
   'Utang Supplier',
@@ -17,9 +18,25 @@ function TransactionsUMKMPage({
   setFilters,
   onAddUmkmTransaction,
   umkmSummary,
+  defaultCategory,
 }) {
-  const defaultStockItemId =
-    umkmSummary?.inventory?.[1]?.id ?? umkmSummary?.inventory?.[0]?.id ?? ''
+
+  useEffect(() => {
+    // Sinkronisasi filter ketika datang dari quick action / defaultCategory
+    if (defaultCategory && filters?.type !== defaultCategory) {
+      setFilters((prev) => ({ ...prev, type: defaultCategory }))
+    }
+  }, [defaultCategory, filters?.type, setFilters])
+
+  useEffect(() => {
+    // Pastikan dropdown input "Kategori Bisnis" ikut berubah saat filter dipakai
+    if (filters?.type && filters.type !== 'all' && categories.includes(filters.type)) {
+      setForm((prev) => ({ ...prev, category: filters.type }))
+    }
+  }, [filters?.type])
+
+
+  const defaultStockItemId = umkmSummary?.inventory?.[1]?.id ?? umkmSummary?.inventory?.[0]?.id ?? ''
 
   const [form, setForm] = useState({
     title: '',
@@ -332,7 +349,7 @@ function TransactionsUMKMPage({
               <option value="all">Semua</option>
               <option value="Penjualan">Penjualan</option>
               <option value="Pemasukan Lain">Pemasukan Lain</option>
-              <option value="Keluar Operasional">Keluar Operasional</option>
+              <option value="Pengeluaran Operasional">Pengeluaran Operasional</option>
               <option value="Beli Bahan Baku / Stok">Beli Bahan Baku / Stok</option>
               <option value="Piutang Pelanggan">Piutang Pelanggan</option>
               <option value="Utang Supplier">Utang Supplier</option>

@@ -1,25 +1,9 @@
-# TODO - KasCerdas Backend (Laravel + Sanctum) + FE Integration
+# TODO
+- [x] Integrasikan Quick Action Dashboard -> otomatis set filter kategori bisnis pada halaman Transaksi (UMKM).
 
-> Track progress in this file.
-
-## Auth (Sanctum) — BE & FE
-- [x] Fix backend Sanctum token creation (User model must use HasApiTokens)
-
-- [x] Add `/api/auth/me` usage from FE after login/register
-- [x] Implement FE API calls for register/login using Axios/fetch
-- [x] Persist token in FE and attach `Authorization: Bearer <token>` to protected requests
-
-## Database & Minimal API (Wallet + Transactions + Budgets)
-- [ ] Update migrations for `wallets`, `transactions`, `budgets` (fields + relations)
-- [ ] Run migrations + ensure schema exists
-- [ ] Add models relations (User<->Wallet, Wallet<->Transaction, Wallet<->Budget)
-- [ ] Create API controllers:
-  - [ ] Wallet: create/list + initial balance (minimal)
-  - [ ] Transactions: list/filter/create/delete (minimal)
-  - [ ] Budgets: create/list by period_month (minimal)
-- [ ] Register routes in `backend/routes/api.php`
-
-## Seeders & Testing
-- [ ] Add seeder dummy wallet/transactions/budgets
-- [ ] Smoke test via FE pages: login -> set wallet -> add/view transactions & budgets
+- [ ] Pastikan mapping: Penjualan, Pemasukan Lain, Pengeluaran Operasional, Beli Bahan Baku, Piutang Pelanggan, Utang Supplier -> value select `filters.type` (TransactionsUMKMPage).
+- [ ] Propagasi callback dari DashboardPage ke App lalu ke TransactionsUMKMPage.
+- [ ] Tambahkan efek (useEffect) di TransactionsUMKMPage agar saat menerima `defaultCategory` dari App/quick action, select "Filter Kategori Bisnis" ter-set dan transaksi ter-filter.
+- [ ] Tambahkan jenis halaman non-UMKM bila diperlukan (opsional).
+- [ ] Jalankan build/lint/dev server untuk memastikan tidak ada error kompilasi.
 

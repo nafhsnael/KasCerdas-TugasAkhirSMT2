@@ -71,8 +71,18 @@ function App() {
   const [showInitialBalance, setShowInitialBalance] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
   const [filters, setFilters] = useState({ type: 'all' })
+  const [selectedUmkmCategory, setSelectedUmkmCategory] = useState('Penjualan')
   const [transactions, setTransactions] = useState([])
+
+  const handleUmkmQuickAction = (businessCategory) => {
+    // Quick action di Dashboard -> otomatis pilih kategori bisnis di halaman Transaksi UMKM
+    setSelectedUmkmCategory(businessCategory)
+    setFilters({ type: businessCategory })
+    navigateTo('transactions')
+  }
   const budgets = []
+
+
 
 
   const [umkmTransactions, setUmkmTransactions] = useState([])
@@ -430,6 +440,7 @@ function App() {
               setFilters={setFilters}
               onAddUmkmTransaction={addUmkmTransaction}
               umkmSummary={umkmSummary}
+              defaultCategory={selectedUmkmCategory}
             />
           )
         }
@@ -481,6 +492,7 @@ function App() {
               walletInfo={walletInfo}
               userProfile={userProfile}
               umkmSummary={umkmSummary}
+              onQuickAction={handleUmkmQuickAction}
             />
           )
         )
@@ -493,7 +505,7 @@ function App() {
           </div>
         )
     }
-  }, [currentPage, isAuthenticated, showUserType, showWallet, showInitialBalance, initialBalance, filters, transactions, debts, savings, userProfile, walletInfo])
+  }, [currentPage, isAuthenticated, showUserType, showWallet, showInitialBalance, initialBalance, filters, selectedUmkmCategory, transactions, debts, savings, userProfile, walletInfo])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">

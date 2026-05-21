@@ -1,7 +1,8 @@
 import TransactionCard from '../components/TransactionCard'
 import StatCard from '../components/StatCard'
 
-function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userProfile, umkmSummary }) {
+function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userProfile, umkmSummary, onQuickAction }) {
+
   const recentTransactions = transactions.slice(0, 4)
   const isUmkm = userProfile?.usertype === 'umkm'
   const businessIncome = isUmkm ? umkmSummary.income : walletSummary.income || 0
@@ -19,16 +20,35 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
   const estimatedHpp = isUmkm ? umkmSummary.estimatedHpp : Math.round(businessIncome * 0.42)
   const costOfGoodsSold = estimatedHpp
   const profitLoss = businessIncome - costOfGoodsSold - businessExpense
-  const totalPoints = 4250
-  const carbonSaved = 125
-  const quickActions = [
-    { label: 'Transfer', icon: '🔁' },
-    { label: 'Tagihan', icon: '📄' },
-    { label: 'Investasi', icon: '📈' },
-    { label: 'QRIS', icon: '🔲' },
-    { label: 'Donasi', icon: '💚' },
-    { label: 'Riwayat', icon: '🕘' },
+  const netCash = profitLoss
+  const financialHealthRaw = businessIncome > 0 ? (netCash / businessIncome) * 100 : 0
+  const financialHealthPercent = Math.max(0, Math.min(100, financialHealthRaw))
+
+  const financialHealthStatus = financialHealthPercent >= 60 ? 'Aman' : 'Perlu perhatian'
+
+  const smartCashPerDay = walletSummary?.smartCashPerDay ?? 0
+  const smartReductionPerDay = walletSummary?.smartReductionPerDay ?? 0
+
+  const umkmQuickActions = [
+    { label: 'Penjualan', icon: '🧾', businessCategory: 'Penjualan' },
+    { label: 'Pemasukan Lain', icon: '＋', businessCategory: 'Pemasukan Lain' },
+    { label: 'Pengeluaran Operasional', icon: '−', businessCategory: 'Pengeluaran Operasional' },
+    { label: 'Beli Bahan Baku', icon: '📦', businessCategory: 'Beli Bahan Baku / Stok' },
+    { label: 'Piutang Pelanggan', icon: '👥', businessCategory: 'Piutang Pelanggan' },
+    { label: 'Utang Supplier', icon: '🏭', businessCategory: 'Utang Supplier' },
   ]
+
+  const quickActions = isUmkm
+    ? umkmQuickActions
+    : [
+        { label: 'Transfer', icon: '🔁' },
+        { label: 'Tagihan', icon: '📄' },
+        { label: 'Investasi', icon: '📈' },
+        { label: 'QRIS', icon: '🔲' },
+        { label: 'Donasi', icon: '💚' },
+        { label: 'Riwayat', icon: '🕘' },
+      ]
+
 
   return (
     <div className="space-y-8">
@@ -42,9 +62,9 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
             </p>
           </div>
           <div className="rounded-[28px] border border-white/20 bg-white/10 p-4 text-right">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-100/80">Skor Dampak</p>
-            <p className="mt-2 text-3xl font-semibold">850</p>
-            <p className="text-sm text-slate-100/80">Mencerminkan kontribusi hijau Anda</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-100/80">Financial Score Health</p>
+            <p className="mt-2 text-3xl font-semibold">{financialHealthPercent.toLocaleString('id-ID')}%</p>
+            <p className="text-sm text-slate-100/80">Status: {financialHealthStatus}</p>
           </div>
         </div>
       </section>
@@ -72,7 +92,7 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
               <p className="mt-2 text-sm text-slate-600">Pemasukan usaha</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <p className="text-sm text-slate-500">Keluar Operasional</p>
+                  <p className="text-sm text-slate-500">Pengeluaran Operasional</p>
                   <p className="mt-2 text-lg font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</p>
                 </div>
                 <div className="rounded-2xl bg-white p-4 shadow-sm">
@@ -129,7 +149,7 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Eco-Wallet</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
               <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {walletSummary.current.toLocaleString('id-ID')}</h2>
               <p className="mt-3 text-sm text-slate-500">+12,5% dibanding bulan lalu</p>
             </div>
@@ -140,19 +160,28 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
         </div>
 
         <div className="rounded-[32px] bg-slate-900 p-6 text-white shadow-sm border border-slate-800">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-300">Pengurangan Karbon</p>
-          <h2 className="mt-4 text-4xl font-semibold">{carbonSaved} kg CO₂e</h2>
-          <p className="mt-3 text-sm text-slate-300">Setara dengan menanam 5 pohon mangrove</p>
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-300">Financial Score Health</p>
+          <h2
+            className="mt-4 text-4xl font-semibold"
+            style={{ color: '#fdfdfd' }}
+          >
+            {financialHealthPercent.toLocaleString('id-ID')}%
+          </h2>
+          <p className="mt-3 text-sm text-slate-300">Status: {financialHealthStatus}</p>
         </div>
 
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Poin Eco</p>
-          <h2 className="mt-4 text-4xl font-semibold text-slate-900">{totalPoints.toLocaleString('id-ID')} Poin</h2>
-          <div className="mt-4 rounded-full bg-slate-100 h-3 overflow-hidden">
-            <div className="h-3 rounded-full bg-[#38ADA9]" style={{ width: '85%' }} />
-          </div>
-          <p className="mt-3 text-sm text-slate-500">Progress Voucher Emas 4.250 / 5.000</p>
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
+          <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {smartCashPerDay.toLocaleString('id-ID')}</h2>
+          <p className="mt-3 text-sm text-slate-500">Pemasukan per hari</p>
         </div>
+
+        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
+          <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {smartReductionPerDay.toLocaleString('id-ID')}</h2>
+          <p className="mt-3 text-sm text-slate-500">Pengeluaran per hari</p>
+        </div>
+
       </section>
 
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
@@ -166,6 +195,7 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
           {quickActions.map((action) => (
             <button
               key={action.label}
+              onClick={() => onQuickAction?.(action.businessCategory)}
               className="group flex items-center gap-3 rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-[#38ADA9] hover:bg-[#f5fffd]"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f6f3] text-2xl text-[#2e8b87]">
