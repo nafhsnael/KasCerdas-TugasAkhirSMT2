@@ -18,6 +18,9 @@ function TransactionsUMKMPage({
   onAddUmkmTransaction,
   umkmSummary,
 }) {
+  const defaultStockItemId =
+    umkmSummary?.inventory?.[1]?.id ?? umkmSummary?.inventory?.[0]?.id ?? ''
+
   const [form, setForm] = useState({
     title: '',
     amount: '',
@@ -25,7 +28,7 @@ function TransactionsUMKMPage({
     date: '',
     note: '',
     linkedStock: false,
-    stockItemId: umkmSummary.inventory[1].id,
+    stockItemId: defaultStockItemId,
     stockQty: '1',
     isSettled: false,
     receipt: null,
@@ -149,7 +152,7 @@ function TransactionsUMKMPage({
       date: '',
       note: '',
       linkedStock: false,
-      stockItemId: umkmSummary.inventory[1].id,
+      stockItemId: defaultStockItemId,
       stockQty: '1',
       isSettled: false,
       receipt: null,
