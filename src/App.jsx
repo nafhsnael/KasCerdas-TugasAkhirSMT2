@@ -3,8 +3,8 @@ import Sidebar from './components/Sidebar'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import UserTypePage from './pages/UserTypePage'
-import DompetPage from './pages/DompetPage'
 import InitialBalancePage from './pages/InitialBalancePage'
+import LandingPage from './pages/LandingPage'
 import AnalysisPage from './pages/AnalysisPage'
 import TransactionsUMKMPage from './pages/TransactionsUMKMPage'
 import TransactionsMahasiswaPage from './pages/TransactionsMahasiswaPage'
@@ -65,11 +65,19 @@ function App() {
   const [authLoading, setAuthLoading] = useState(Boolean(token))
   const [showUserType, setShowUserType] = useState(false)
   const [userType, setUserType] = useState(null)
-  const [showWallet, setShowWallet] = useState(false)
-  const [wallet, setWallet] = useState(null)
   const [walletInfo, setWalletInfo] = useState(null)
   const [showInitialBalance, setShowInitialBalance] = useState(false)
+  const [showLanding, setShowLanding] = useState(true)
   const [initialBalance, setInitialBalance] = useState(0)
+
+  const buildWalletSummary = ({ walletInfoOverride = null } = {}) => {
+    const current = Number(walletInfoOverride?.balance ?? walletInfo?.balance ?? initialBalance ?? 0)
+    return {
+      current,
+      income: current,
+      expense: 0,
+    }
+  }
   const [filters, setFilters] = useState({ type: 'all' })
   const [selectedUmkmCategory, setSelectedUmkmCategory] = useState('Penjualan')
   const [transactions, setTransactions] = useState([])
@@ -225,6 +233,7 @@ function App() {
       isUmkm: true,
     }
 
+    // Koneksikan UMKM ke laporan: UMKM masuk juga ke daftar transaksi utama (`transactions`)
     setTransactions((prev) => [transaction, ...prev])
     setUmkmTransactions((prev) => [transaction, ...prev])
     syncBudgetWithTransaction(transaction)
@@ -359,7 +368,6 @@ function App() {
         user: userData.username || prev.user,
         email: userData.email || prev.email,
         usertype: userData.user_type || userData.role || prev.usertype,
-        dompet: prev.dompet,
       }))
     }
 
@@ -402,14 +410,7 @@ function App() {
 
     setUserType(selectedUserType)
     setShowUserType(false)
-    setShowWallet(true)
-  }
-
-  const handleWalletNext = (selectedWallet) => {
-    setWallet(selectedWallet)
-    setShowWallet(false)
     setShowInitialBalance(true)
-    setUserProfile(prev => ({ ...prev, usertype: userType, dompet: selectedWallet }))
   }
 
   const handleSaveInitialBalance = (data) => {
@@ -426,11 +427,10 @@ function App() {
     setToken(null)
     setIsAuthenticated(false)
     navigateTo('login')
+    setShowLanding(true)
     setUserType(null)
-    setWallet(null)
     setWalletInfo(null)
     setShowUserType(false)
-    setShowWallet(false)
     setShowInitialBalance(false)
 
     try {
@@ -440,17 +440,27 @@ function App() {
     }
   }
 
+  const handleLandingLogin = () => {
+    setShowLanding(false)
+    navigateTo('login')
+  }
+
+  const handleLandingRegister = () => {
+    setShowLanding(false)
+    navigateTo('register')
+  }
+
   const pageComponent = useMemo(() => {
     if (isAuthenticated && showUserType) {
       return <UserTypePage onNext={handleUserTypeNext} />
     }
 
-    if (isAuthenticated && showWallet) {
-      return <DompetPage onNext={handleWalletNext} />
-    }
-
     if (showInitialBalance) {
       return <InitialBalancePage onSave={handleSaveInitialBalance} initialBalance={initialBalance} />
+    }
+
+    if (!isAuthenticated && showLanding) {
+      return <LandingPage onLoginClick={handleLandingLogin} onRegisterClick={handleLandingRegister} />
     }
 
     if (!isAuthenticated) {
@@ -503,26 +513,70 @@ function App() {
         return (
           userProfile?.usertype === 'mahasiswa' ? (
             <DashboardMahasiswaPage
-              walletSummary={{ current: 0, income: 0, expense: 0 }}
+              walletSummary={{
+                current: initialBalance,
+                income: initialBalance,
+                expense: 0,
+                smartCashPerDay: initialBalance,
+                smartReductionPerDay: 0,
+              }}
               transactions={transactions}
               budgets={budgets}
               walletInfo={walletInfo}
               userProfile={userProfile}
+              onQuickAction={(category) => {
+                setFilters({ type: category })
+                navigateTo('transactions')
+              }}
             />
           ) : userProfile?.usertype === 'masyarakat' ? (
             <DashboardMasyarakatPage
-              walletSummary={{ current: 0, income: 0, expense: 0 }}
+              walletSummary={{
+                current: initialBalance,
+                income: initialBalance,
+                expense: 0,
+                smartCashPerDay: initialBalance,
+                smartReductionPerDay: 0,
+              }}
               transactions={transactions}
               budgets={budgets}
               walletInfo={walletInfo}
               userProfile={userProfile}
+              onQuickAction={(category) => {
+                setFilters({ type: 'expense' })
+                // Navigasi ke Transactions Masyarakat, lalu preset kategori melalui search agar sesuai label quick action.
+                navigateTo('transactions')
+                setTimeout(() => {
+                  try {
+                    window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: category }))
+                  } catch (e) {}
+                }, 0)
+              }}
+            />
+          ) : userProfile?.usertype === 'umkm' ? (
+            <DashboardUMKMPage
+              walletSummary={{
+                current: initialBalance || Number(walletInfo?.balance ?? 0),
+                income: initialBalance,
+                expense: 0,
+                smartCashPerDay: initialBalance,
+                smartReductionPerDay: 0,
+              }}
+              transactions={umkmTransactions}
+              budgets={budgets}
+              walletInfo={walletInfo}
+              userProfile={userProfile}
+              umkmSummary={umkmSummary}
+              onQuickAction={handleUmkmQuickAction}
             />
           ) : (
             <DashboardPage
               walletSummary={{
-                current: Number(walletInfo?.balance ?? 0),
-                income: 0,
+                current: initialBalance || Number(walletInfo?.balance ?? 0),
+                income: initialBalance,
                 expense: 0,
+                smartCashPerDay: initialBalance,
+                smartReductionPerDay: 0,
               }}
               transactions={transactions}
               budgets={budgets}
@@ -542,11 +596,11 @@ function App() {
           </div>
         )
     }
-  }, [currentPage, isAuthenticated, showUserType, showWallet, showInitialBalance, initialBalance, filters, selectedUmkmCategory, transactions, debts, savings, userProfile, walletInfo])
+  }, [currentPage, isAuthenticated, showUserType, showLanding, showInitialBalance, initialBalance, filters, selectedUmkmCategory, transactions, debts, savings, userProfile, walletInfo])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      {isAuthenticated && !showUserType && !showWallet && !showInitialBalance && (
+      {isAuthenticated && !showUserType && !showInitialBalance && (
         <Sidebar
           currentPage={currentPage}
           onNavigate={(page) => navigateTo(page)}
@@ -554,7 +608,7 @@ function App() {
           onLogout={handleLogout}
         />
       )}
-      <div className={`flex-1 flex flex-col ${isAuthenticated && !showUserType && !showWallet && !showInitialBalance ? 'ml-64' : ''}`}>
+      <div className={`flex-1 flex flex-col ${isAuthenticated && !showUserType && !showInitialBalance ? 'ml-64' : ''}`}>
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="mt-6">
             {pageComponent}

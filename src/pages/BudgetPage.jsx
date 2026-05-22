@@ -3,7 +3,8 @@ import BudgetCard from '../components/BudgetCard'
 
 function BudgetPage({ transactions, budgets, setBudgets }) {
   const [formData, setFormData] = useState({
-    category: '',
+    category: '', // kategori (dropdown)
+    operationalDetail: '', // kebutuhan operasional (manual, opsional)
     limit: '',
   })
   const [editingId, setEditingId] = useState(null)
@@ -32,14 +33,20 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
 
   const handleAddBudget = () => {
     setEditingId(null)
-    setFormData({ category: '', limit: '' })
+    setFormData({ category: '', operationalDetail: '', limit: '' })
     setShowForm(true)
   }
 
   const handleEditBudget = (budget) => {
+    const [selectedCategory, ...rest] = budget.category.split(' - ')
+    const operationalDetails = rest.join(' - ')
+
+    // dropdown hanya berisi kategori operasional. Jika user pernah menulis kategori lengkap,
+    // kita pecah pakai separator ' - '. Detail bisa kosong.
     setEditingId(budget.id)
     setFormData({
-      category: budget.category,
+      category: selectedCategory || '',
+      operationalDetail: operationalDetails || '',
       limit: budget.limit.toString(),
     })
     setShowForm(true)
@@ -48,27 +55,43 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    if (!formData.category.trim() || !formData.limit) {
-      setMessage('Silakan isi semua field')
+    const selectedOperationalCategory = formData.category
+
+    // Khusus UMKM: kategori tertentu tidak memakai input kebutuhan operasional.
+    const isKategoriTanpaDetail = [
+      'Beli Bahan Baku / Stok',
+      'Utang Supplier',
+    ].includes(selectedOperationalCategory)
+
+    const operationalDetail = isKategoriTanpaDetail
+      ? ''
+      : formData.operationalDetail.trim()
+
+    if (!selectedOperationalCategory || !formData.limit) {
+      setMessage('Silakan isi kategori dan limit')
       setTimeout(() => setMessage(''), 3000)
       return
     }
 
     const limit = parseInt(formData.limit)
-    if (limit <= 0) {
+    if (Number.isNaN(limit) || limit <= 0) {
       setMessage('Limit harus lebih dari 0')
       setTimeout(() => setMessage(''), 3000)
       return
     }
 
+    const categoryName = operationalDetail
+      ? `${selectedOperationalCategory} - ${operationalDetail}`
+      : selectedOperationalCategory
+
     if (editingId) {
       // Edit existing budget
-      setBudgets(
-        budgets.map((b) =>
+      setBudgets((currentBudgets) =>
+        currentBudgets.map((b) =>
           b.id === editingId
             ? {
                 ...b,
-                category: formData.category,
+                category: categoryName,
                 limit: limit,
               }
             : b
@@ -77,27 +100,29 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
       setMessage('Budget berhasil diperbarui!')
     } else {
       // Add new budget
-      const newId = Math.max(...budgets.map((b) => b.id), 0) + 1
-      setBudgets([
-        ...budgets,
-        {
-          id: newId,
-          category: formData.category,
-          limit: limit,
-          usage: 0,
-        },
-      ])
+      setBudgets((currentBudgets) => {
+        const newId = Math.max(0, ...currentBudgets.map((b) => b.id)) + 1
+        return [
+          ...currentBudgets,
+          {
+            id: newId,
+            category: categoryName,
+            limit: limit,
+            usage: 0,
+          },
+        ]
+      })
       setMessage('Budget berhasil ditambahkan!')
     }
 
     setTimeout(() => setMessage(''), 3000)
     setShowForm(false)
-    setFormData({ category: '', limit: '' })
+    setFormData({ category: '', customCategory: '', limit: '' })
   }
 
   const handleDeleteBudget = (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus budget ini?')) {
-      setBudgets(budgets.filter((b) => b.id !== id))
+      setBudgets((currentBudgets) => currentBudgets.filter((b) => b.id !== id))
       setMessage('Budget berhasil dihapus!')
       setTimeout(() => setMessage(''), 3000)
     }
@@ -105,7 +130,7 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
 
   const handleCancel = () => {
     setShowForm(false)
-    setFormData({ category: '', limit: '' })
+    setFormData({ category: '', operationalDetail: '', limit: '' })
     setEditingId(null)
   }
 
@@ -179,14 +204,30 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Kategori</label>
-              <input
-                type="text"
+              <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="Contoh: Makan, Hiburan, Transport"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
-              />
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
+              >
+                <option value="Pengeluaran Operasional">Pengeluaran Operasional</option>
+                <option value="Beli Bahan Baku / Stok">Beli Bahan Baku / Stok</option>
+                <option value="Hutang Supplier">Hutang Supplier</option>
+              </select>
             </div>
+
+            {['Beli Bahan Baku / Stok', 'Hutang Supplier'].includes(formData.category) ? null : (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Kebutuhan operasional (Opsional)</label>
+                <input
+                  type="text"
+                  value={formData.operationalDetail}
+                  onChange={(e) => setFormData({ ...formData, operationalDetail: e.target.value })}
+                  placeholder="Contoh: sewa kios untuk 1 bulan / biaya internet toko"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
+                />
+                <p className="mt-2 text-xs text-slate-500">Isi kebutuhan/jenis operasionalnya agar lebih spesifik.</p>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Limit Budget (Rp)</label>
