@@ -95,6 +95,7 @@ function RegisterPage({ onSwitch, onAuthenticate }) {
                 placeholder="••••••••"
               />
             </div>
+            
             <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#38ADA9]">
               Daftar
             </button>

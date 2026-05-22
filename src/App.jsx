@@ -3,8 +3,8 @@ import Sidebar from './components/Sidebar'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import UserTypePage from './pages/UserTypePage'
-import DompetPage from './pages/DompetPage'
 import InitialBalancePage from './pages/InitialBalancePage'
+import LandingPage from './pages/LandingPage'
 import AnalysisPage from './pages/AnalysisPage'
 import TransactionsUMKMPage from './pages/TransactionsUMKMPage'
 import TransactionsMahasiswaPage from './pages/TransactionsMahasiswaPage'
@@ -65,10 +65,9 @@ function App() {
   const [authLoading, setAuthLoading] = useState(Boolean(token))
   const [showUserType, setShowUserType] = useState(false)
   const [userType, setUserType] = useState(null)
-  const [showWallet, setShowWallet] = useState(false)
-  const [wallet, setWallet] = useState(null)
   const [walletInfo, setWalletInfo] = useState(null)
   const [showInitialBalance, setShowInitialBalance] = useState(false)
+  const [showLanding, setShowLanding] = useState(true)
   const [initialBalance, setInitialBalance] = useState(0)
 
   const buildWalletSummary = ({ walletInfoOverride = null } = {}) => {
@@ -369,7 +368,6 @@ function App() {
         user: userData.username || prev.user,
         email: userData.email || prev.email,
         usertype: userData.user_type || userData.role || prev.usertype,
-        dompet: prev.dompet,
       }))
     }
 
@@ -412,14 +410,7 @@ function App() {
 
     setUserType(selectedUserType)
     setShowUserType(false)
-    setShowWallet(true)
-  }
-
-  const handleWalletNext = (selectedWallet) => {
-    setWallet(selectedWallet)
-    setShowWallet(false)
     setShowInitialBalance(true)
-    setUserProfile(prev => ({ ...prev, usertype: userType, dompet: selectedWallet }))
   }
 
   const handleSaveInitialBalance = (data) => {
@@ -436,11 +427,10 @@ function App() {
     setToken(null)
     setIsAuthenticated(false)
     navigateTo('login')
+    setShowLanding(true)
     setUserType(null)
-    setWallet(null)
     setWalletInfo(null)
     setShowUserType(false)
-    setShowWallet(false)
     setShowInitialBalance(false)
 
     try {
@@ -450,17 +440,27 @@ function App() {
     }
   }
 
+  const handleLandingLogin = () => {
+    setShowLanding(false)
+    navigateTo('login')
+  }
+
+  const handleLandingRegister = () => {
+    setShowLanding(false)
+    navigateTo('register')
+  }
+
   const pageComponent = useMemo(() => {
     if (isAuthenticated && showUserType) {
       return <UserTypePage onNext={handleUserTypeNext} />
     }
 
-    if (isAuthenticated && showWallet) {
-      return <DompetPage onNext={handleWalletNext} />
-    }
-
     if (showInitialBalance) {
       return <InitialBalancePage onSave={handleSaveInitialBalance} initialBalance={initialBalance} />
+    }
+
+    if (!isAuthenticated && showLanding) {
+      return <LandingPage onLoginClick={handleLandingLogin} onRegisterClick={handleLandingRegister} />
     }
 
     if (!isAuthenticated) {
@@ -581,11 +581,11 @@ function App() {
           </div>
         )
     }
-  }, [currentPage, isAuthenticated, showUserType, showWallet, showInitialBalance, initialBalance, filters, selectedUmkmCategory, transactions, debts, savings, userProfile, walletInfo])
+  }, [currentPage, isAuthenticated, showUserType, showLanding, showInitialBalance, initialBalance, filters, selectedUmkmCategory, transactions, debts, savings, userProfile, walletInfo])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      {isAuthenticated && !showUserType && !showWallet && !showInitialBalance && (
+      {isAuthenticated && !showUserType && !showInitialBalance && (
         <Sidebar
           currentPage={currentPage}
           onNavigate={(page) => navigateTo(page)}
@@ -593,7 +593,7 @@ function App() {
           onLogout={handleLogout}
         />
       )}
-      <div className={`flex-1 flex flex-col ${isAuthenticated && !showUserType && !showWallet && !showInitialBalance ? 'ml-64' : ''}`}>
+      <div className={`flex-1 flex flex-col ${isAuthenticated && !showUserType && !showInitialBalance ? 'ml-64' : ''}`}>
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="mt-6">
             {pageComponent}

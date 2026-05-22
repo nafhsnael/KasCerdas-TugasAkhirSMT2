@@ -108,17 +108,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
         </div>
       </section>
 
-      {walletInfo && (
-        <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Dompet Terhubung</p>
-              <h2 className="mt-2 text-lg font-semibold text-slate-900">{walletInfo.name}</h2>
-            </div>
-            <p className="text-sm text-slate-600">Saldo: Rp {Number(walletInfo.balance).toLocaleString('id-ID')}</p>
-          </div>
-        </section>
-      )}
+
     </div>
   )
 }
