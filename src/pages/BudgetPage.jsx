@@ -4,6 +4,7 @@ import BudgetCard from '../components/BudgetCard'
 function BudgetPage({ transactions, budgets, setBudgets }) {
   const [formData, setFormData] = useState({
     category: '',
+    customCategory: '',
     limit: '',
   })
   const [editingId, setEditingId] = useState(null)
@@ -32,14 +33,18 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
 
   const handleAddBudget = () => {
     setEditingId(null)
-    setFormData({ category: '', limit: '' })
+    setFormData({ category: '', customCategory: '', limit: '' })
     setShowForm(true)
   }
 
   const handleEditBudget = (budget) => {
+    const standardCategories = ['Makan', 'Transportasi', 'Kebutuhan Kuliah']
+    const isStandard = standardCategories.includes(budget.category)
+
     setEditingId(budget.id)
     setFormData({
-      category: budget.category,
+      category: isStandard ? budget.category : 'Kebutuhan Lainnya',
+      customCategory: isStandard ? '' : budget.category,
       limit: budget.limit.toString(),
     })
     setShowForm(true)
@@ -48,8 +53,18 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    if (!formData.category.trim() || !formData.limit) {
+    const selectedCategory = formData.category
+    const category = selectedCategory === 'Kebutuhan Lainnya' ? formData.customCategory.trim() : selectedCategory
+    const categoryName = category.trim()
+
+    if (!categoryName || !formData.limit) {
       setMessage('Silakan isi semua field')
+      setTimeout(() => setMessage(''), 3000)
+      return
+    }
+
+    if (selectedCategory === 'Kebutuhan Lainnya' && !formData.customCategory.trim()) {
+      setMessage('Silakan masukkan kategori kebutuhan lainnya')
       setTimeout(() => setMessage(''), 3000)
       return
     }
@@ -63,12 +78,12 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
 
     if (editingId) {
       // Edit existing budget
-      setBudgets(
-        budgets.map((b) =>
+      setBudgets((currentBudgets) =>
+        currentBudgets.map((b) =>
           b.id === editingId
             ? {
                 ...b,
-                category: formData.category,
+                category: categoryName,
                 limit: limit,
               }
             : b
@@ -77,27 +92,29 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
       setMessage('Budget berhasil diperbarui!')
     } else {
       // Add new budget
-      const newId = Math.max(...budgets.map((b) => b.id), 0) + 1
-      setBudgets([
-        ...budgets,
-        {
-          id: newId,
-          category: formData.category,
-          limit: limit,
-          usage: 0,
-        },
-      ])
+      setBudgets((currentBudgets) => {
+        const newId = Math.max(0, ...currentBudgets.map((b) => b.id)) + 1
+        return [
+          ...currentBudgets,
+          {
+            id: newId,
+            category: categoryName,
+            limit: limit,
+            usage: 0,
+          },
+        ]
+      })
       setMessage('Budget berhasil ditambahkan!')
     }
 
     setTimeout(() => setMessage(''), 3000)
     setShowForm(false)
-    setFormData({ category: '', limit: '' })
+    setFormData({ category: '', customCategory: '', limit: '' })
   }
 
   const handleDeleteBudget = (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus budget ini?')) {
-      setBudgets(budgets.filter((b) => b.id !== id))
+      setBudgets((currentBudgets) => currentBudgets.filter((b) => b.id !== id))
       setMessage('Budget berhasil dihapus!')
       setTimeout(() => setMessage(''), 3000)
     }
@@ -105,7 +122,7 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
 
   const handleCancel = () => {
     setShowForm(false)
-    setFormData({ category: '', limit: '' })
+    setFormData({ category: '', customCategory: '', limit: '' })
     setEditingId(null)
   }
 
@@ -179,14 +196,31 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Kategori</label>
-              <input
-                type="text"
+              <select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="Contoh: Makan, Hiburan, Transport"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
-              />
+                onChange={(e) => setFormData({ ...formData, category: e.target.value, customCategory: '' })}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
+              >
+                <option value="">Pilih kategori</option>
+                <option value="Makan">Makan</option>
+                <option value="Transportasi">Transportasi</option>
+                <option value="Kebutuhan Kuliah">Kebutuhan Kuliah</option>
+                <option value="Kebutuhan Lainnya">Kebutuhan Lainnya</option>
+              </select>
             </div>
+
+            {formData.category === 'Kebutuhan Lainnya' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Isi Kategori</label>
+                <input
+                  type="text"
+                  value={formData.customCategory}
+                  onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
+                  placeholder="Masukkan kategori lain"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Limit Budget (Rp)</label>
