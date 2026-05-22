@@ -114,6 +114,41 @@ function DashboardUMKMPage({ walletSummary, transactions, budgets, walletInfo, u
         </div>
       </section>
 
+      <section className="grid gap-4 xl:grid-cols-[1.7fr_1fr_1fr]">
+        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
+              <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {walletSummary?.current?.toLocaleString?.('id-ID') ?? walletSummary?.current ?? 0}</h2>
+              <p className="mt-3 text-sm text-slate-500">+0% dibanding bulan lalu</p>
+            </div>
+            <div className="rounded-3xl bg-slate-50 p-4 text-slate-900">
+              <span className="text-2xl">💳</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[32px] bg-slate-900 p-6 text-white shadow-sm border border-slate-800">
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-300">Financial Score Health</p>
+          <h2 className="mt-4 text-4xl font-semibold" style={{ color: '#fdfdfd' }}>
+            0%
+          </h2>
+          <p className="mt-3 text-sm text-slate-300">Status: Perlu perhatian</p>
+        </div>
+
+        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
+          <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {walletSummary?.smartCashPerDay?.toLocaleString?.('id-ID') ?? walletSummary?.smartCashPerDay ?? 0}</h2>
+          <p className="mt-3 text-sm text-slate-500">Pemasukan per hari</p>
+        </div>
+
+        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
+          <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {walletSummary?.smartReductionPerDay?.toLocaleString?.('id-ID') ?? walletSummary?.smartReductionPerDay ?? 0}</h2>
+          <p className="mt-3 text-sm text-slate-500">Pengeluaran per hari</p>
+        </div>
+      </section>
+
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
@@ -138,6 +173,7 @@ function DashboardUMKMPage({ walletSummary, transactions, budgets, walletInfo, u
           ))}
         </div>
       </section>
+
 
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

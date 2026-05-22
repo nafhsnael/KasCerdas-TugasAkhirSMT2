@@ -70,6 +70,15 @@ function App() {
   const [walletInfo, setWalletInfo] = useState(null)
   const [showInitialBalance, setShowInitialBalance] = useState(false)
   const [initialBalance, setInitialBalance] = useState(0)
+
+  const buildWalletSummary = ({ walletInfoOverride = null } = {}) => {
+    const current = Number(walletInfoOverride?.balance ?? walletInfo?.balance ?? initialBalance ?? 0)
+    return {
+      current,
+      income: current,
+      expense: 0,
+    }
+  }
   const [filters, setFilters] = useState({ type: 'all' })
   const [selectedUmkmCategory, setSelectedUmkmCategory] = useState('Penjualan')
   const [transactions, setTransactions] = useState([])
@@ -225,6 +234,7 @@ function App() {
       isUmkm: true,
     }
 
+    // Koneksikan UMKM ke laporan: UMKM masuk juga ke daftar transaksi utama (`transactions`)
     setTransactions((prev) => [transaction, ...prev])
     setUmkmTransactions((prev) => [transaction, ...prev])
     syncBudgetWithTransaction(transaction)
@@ -503,7 +513,13 @@ function App() {
         return (
           userProfile?.usertype === 'mahasiswa' ? (
             <DashboardMahasiswaPage
-              walletSummary={{ current: 0, income: 0, expense: 0 }}
+              walletSummary={{
+                current: initialBalance,
+                income: initialBalance,
+                expense: 0,
+                smartCashPerDay: initialBalance,
+                smartReductionPerDay: 0,
+              }}
               transactions={transactions}
               budgets={budgets}
               walletInfo={walletInfo}
@@ -511,18 +527,41 @@ function App() {
             />
           ) : userProfile?.usertype === 'masyarakat' ? (
             <DashboardMasyarakatPage
-              walletSummary={{ current: 0, income: 0, expense: 0 }}
+              walletSummary={{
+                current: initialBalance,
+                income: initialBalance,
+                expense: 0,
+                smartCashPerDay: initialBalance,
+                smartReductionPerDay: 0,
+              }}
               transactions={transactions}
               budgets={budgets}
               walletInfo={walletInfo}
               userProfile={userProfile}
             />
+          ) : userProfile?.usertype === 'umkm' ? (
+            <DashboardUMKMPage
+              walletSummary={{
+                current: initialBalance || Number(walletInfo?.balance ?? 0),
+                income: initialBalance,
+                expense: 0,
+                smartCashPerDay: initialBalance,
+                smartReductionPerDay: 0,
+              }}
+              transactions={umkmTransactions}
+              budgets={budgets}
+              walletInfo={walletInfo}
+              userProfile={userProfile}
+              umkmSummary={umkmSummary}
+            />
           ) : (
             <DashboardPage
               walletSummary={{
-                current: Number(walletInfo?.balance ?? 0),
-                income: 0,
+                current: initialBalance || Number(walletInfo?.balance ?? 0),
+                income: initialBalance,
                 expense: 0,
+                smartCashPerDay: initialBalance,
+                smartReductionPerDay: 0,
               }}
               transactions={transactions}
               budgets={budgets}
