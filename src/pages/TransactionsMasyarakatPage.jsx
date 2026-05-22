@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
@@ -18,6 +18,17 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
     receipt: null,
   })
   const [searchQuery, setSearchQuery] = useState('')
+
+  useEffect(() => {
+    const handler = (e) => {
+      const category = e?.detail
+      if (typeof category === 'string' && category.trim()) {
+        setSearchQuery(category)
+      }
+    }
+    window.addEventListener('quickActionCategory', handler)
+    return () => window.removeEventListener('quickActionCategory', handler)
+  }, [])
   const [selectedMonth, setSelectedMonth] = useState('')
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState(null)

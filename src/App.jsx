@@ -524,6 +524,10 @@ function App() {
               budgets={budgets}
               walletInfo={walletInfo}
               userProfile={userProfile}
+              onQuickAction={(category) => {
+                setFilters({ type: category })
+                navigateTo('transactions')
+              }}
             />
           ) : userProfile?.usertype === 'masyarakat' ? (
             <DashboardMasyarakatPage
@@ -538,6 +542,16 @@ function App() {
               budgets={budgets}
               walletInfo={walletInfo}
               userProfile={userProfile}
+              onQuickAction={(category) => {
+                setFilters({ type: 'expense' })
+                // Navigasi ke Transactions Masyarakat, lalu preset kategori melalui search agar sesuai label quick action.
+                navigateTo('transactions')
+                setTimeout(() => {
+                  try {
+                    window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: category }))
+                  } catch (e) {}
+                }, 0)
+              }}
             />
           ) : userProfile?.usertype === 'umkm' ? (
             <DashboardUMKMPage
@@ -553,6 +567,7 @@ function App() {
               walletInfo={walletInfo}
               userProfile={userProfile}
               umkmSummary={umkmSummary}
+              onQuickAction={handleUmkmQuickAction}
             />
           ) : (
             <DashboardPage

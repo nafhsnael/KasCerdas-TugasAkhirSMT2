@@ -19,12 +19,19 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/20">
         {isExpanded && (
-          <div className="h-10 w-10 rounded-full bg-white p-1 flex items-center justify-center">
-            <img
-              src="/logo.png"
-              alt="KasCerdas"
-              className="h-8 w-8 object-contain"
-            />
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-white p-1 flex items-center justify-center">
+              <img
+                src="/logo.png"
+                alt="KasCerdas"
+                className="h-8 w-8 object-contain"
+              />
+            </div>
+            {isExpanded && (
+              <div className="text-white">
+                <span className="text-lg font-semibold leading-tight">KasCerdas</span>
+              </div>
+            )}
           </div>
         )}
         <button

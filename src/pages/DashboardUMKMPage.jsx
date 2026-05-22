@@ -1,8 +1,18 @@
 import TransactionCard from '../components/TransactionCard'
-import StatCard from '../components/StatCard'
 
-function DashboardUMKMPage({ walletSummary, transactions, budgets, walletInfo, userProfile, umkmSummary }) {
+import { useMemo } from 'react'
+
+function DashboardUMKMPage({
+  walletSummary,
+  transactions,
+  budgets,
+  walletInfo,
+  userProfile,
+  umkmSummary,
+  onQuickAction,
+}) {
   const recentTransactions = transactions.slice(0, 4)
+
   const businessIncome = umkmSummary.income
   const businessExpense = umkmSummary.operationalExpense
   const inventoryItems = umkmSummary.inventory
@@ -12,14 +22,18 @@ function DashboardUMKMPage({ walletSummary, transactions, budgets, walletInfo, u
   const costOfGoodsSold = umkmSummary.estimatedHpp
   const profitLoss = businessIncome - costOfGoodsSold - businessExpense
 
-  const quickActions = [
-    { label: 'Penjualan', icon: '💰' },
-    { label: 'Pembelian', icon: '📦' },
-    { label: 'Piutang', icon: '📋' },
-    { label: 'Utang', icon: '💳' },
-    { label: 'Stok', icon: '📊' },
-    { label: 'Laporan', icon: '📈' },
-  ]
+  const quickActions = useMemo(
+    () => [
+      { label: 'Penjualan', icon: '💰', category: 'Penjualan' },
+      { label: 'Pemasukan', icon: '💸', category: 'Pemasukan' },
+      { label: 'Pengeluaran Operasional', icon: '🧾', category: 'Pengeluaran Operasional' },
+      { label: 'Beli Bahan Baku / Stok', icon: '📦', category: 'Beli Bahan Baku / Stok' },
+      { label: 'Piutang Pelanggan', icon: '📋', category: 'Piutang Pelanggan' },
+      { label: 'Hutang Supplier', icon: '💳', category: 'Hutang Supplier' },
+    ],
+    []
+  )
+
 
   return (
     <div className="space-y-8">
@@ -160,6 +174,7 @@ function DashboardUMKMPage({ walletSummary, transactions, budgets, walletInfo, u
           {quickActions.map((action) => (
             <button
               key={action.label}
+              onClick={() => onQuickAction?.(action.category)}
               className="group flex items-center gap-3 rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-[#38ADA9] hover:bg-[#f5fffd]"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f6f3] text-2xl text-[#2e8b87]">
@@ -171,28 +186,6 @@ function DashboardUMKMPage({ walletSummary, transactions, budgets, walletInfo, u
               </div>
             </button>
           ))}
-        </div>
-      </section>
-
-
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi Terakhir</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-900">Transaksi terbaru</h2>
-          </div>
-          <span className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-            {transactions.length} transaksi
-          </span>
-        </div>
-        <div className="space-y-4">
-          {recentTransactions.length > 0 ? (
-            recentTransactions.map((transaction) => (
-              <TransactionCard key={transaction.id} transaction={transaction} />
-            ))
-          ) : (
-            <p className="text-sm text-slate-500">Tidak ada transaksi terbaru saat ini.</p>
-          )}
         </div>
       </section>
 
