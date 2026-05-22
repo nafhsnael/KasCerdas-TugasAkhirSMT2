@@ -11,6 +11,37 @@ function DashboardUMKMPage({ walletSummary, transactions, budgets, walletInfo, u
   const totalReceivables = umkmSummary.receivables
   const costOfGoodsSold = umkmSummary.estimatedHpp
   const profitLoss = businessIncome - costOfGoodsSold - businessExpense
+  
+  // Hitung E-Wallet Saldo (dari walletInfo atau initial balance)
+  const eWalletBalance = Number(walletInfo?.balance ?? 0)
+  
+  // Hitung Financial Score Health (0-100%)
+  const calculateFinancialScore = () => {
+    let score = 50 // Base score
+    
+    // Bonus untuk memiliki pemasukan
+    if (businessIncome > 0) score += 15
+    
+    // Bonus untuk pengeluaran terkontrol
+    if (businessExpense > 0 && businessExpense <= businessIncome * 0.5) score += 20
+    else if (businessExpense > businessIncome * 0.5) score -= 10
+    
+    // Bonus untuk stok yang sehat
+    const lowStockRatio = inventoryItems.length > 0 ? lowStockItems.length / inventoryItems.length : 0
+    if (lowStockRatio < 0.2) score += 15
+    else if (lowStockRatio > 0.5) score -= 10
+    
+    // Bonus untuk profit positif
+    if (profitLoss > 0) score += 20
+    else if (profitLoss < 0) score -= 20
+    
+    // Bonus untuk piutang terkontrol
+    if (totalReceivables <= businessIncome * 0.3) score += 10
+    
+    return Math.max(0, Math.min(100, score))
+  }
+  
+  const financialScore = calculateFinancialScore()
 
   const quickActions = [
     { label: 'Penjualan', icon: '💰' },
@@ -52,6 +83,46 @@ function DashboardUMKMPage({ walletSummary, transactions, budgets, walletInfo, u
           <div className="rounded-3xl bg-slate-50 p-4 text-slate-900">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Status</p>
             <p className="mt-2 text-xl font-semibold">Aktif</p>
+          </div>
+        </div>
+
+        {/* 4 Stat Cards dalam 1 Baris */}
+        <div className="mb-6 grid gap-4 lg:grid-cols-4">
+          {/* E-Wallet Saldo */}
+          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#f0fffe] to-[#e6f6f3] p-5">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-900">Rp {eWalletBalance.toLocaleString('id-ID')}</p>
+            <p className="mt-2 text-xs text-slate-600">Saldo dompet usaha</p>
+          </div>
+          
+          {/* Saldo Pemasukan */}
+          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#f0fdf4] to-[#dcfce7] p-5">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
+            <p className="mt-3 text-2xl font-semibold text-emerald-600">Rp {businessIncome.toLocaleString('id-ID')}</p>
+            <p className="mt-2 text-xs text-slate-600">Pemasukan bulan ini</p>
+          </div>
+          
+          {/* Saldo Pengeluaran */}
+          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#fef2f2] to-[#fee2e2] p-5">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
+            <p className="mt-3 text-2xl font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</p>
+            <p className="mt-2 text-xs text-slate-600">Pengeluaran operasional</p>
+          </div>
+          
+          {/* Financial Score Health */}
+          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#fffbf0] to-[#fef3c7] p-5">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Financial Score</p>
+            <p className="mt-3 text-2xl font-semibold" style={{ color: '#F6B93B' }}>{Math.round(financialScore)}%</p>
+            <p className="mt-2 text-xs text-slate-600">Kesehatan keuangan bisnis</p>
+            <div className="mt-2 h-1.5 rounded-full bg-slate-200">
+              <div 
+                className="h-full rounded-full transition-all duration-300" 
+                style={{ 
+                  width: `${financialScore}%`,
+                  backgroundColor: '#F6B93B'
+                }}
+              />
+            </div>
           </div>
         </div>
 
