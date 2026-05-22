@@ -31,11 +31,11 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
 
   const umkmQuickActions = [
     { label: 'Penjualan', icon: '🧾', businessCategory: 'Penjualan' },
-    { label: 'Pemasukan Lain', icon: '＋', businessCategory: 'Pemasukan Lain' },
+    { label: 'Pemasukan', icon: '＋', businessCategory: 'Pemasukan' },
     { label: 'Pengeluaran Operasional', icon: '−', businessCategory: 'Pengeluaran Operasional' },
     { label: 'Beli Bahan Baku', icon: '📦', businessCategory: 'Beli Bahan Baku / Stok' },
     { label: 'Piutang Pelanggan', icon: '👥', businessCategory: 'Piutang Pelanggan' },
-    { label: 'Utang Supplier', icon: '🏭', businessCategory: 'Utang Supplier' },
+    { label: 'Hutang Supplier', icon: '🏭', businessCategory: 'Hutang Supplier' },
   ]
 
   const quickActions = isUmkm
@@ -76,7 +76,7 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">UMKM</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-900">Ringkasan Usaha</h2>
               <p className="mt-3 text-sm text-slate-500">
-                Fitur khusus UMKM untuk memisahkan keuangan usaha dan pribadi, memantau arus kas, stok, laba rugi, dan utang/piutang.
+                Fitur khusus UMKM untuk memisahkan keuangan usaha dan pribadi, memantau arus kas, stok, laba rugi, dan hutang/piutang.
               </p>
             </div>
             <div className="rounded-3xl bg-slate-50 p-4 text-slate-900">
@@ -129,10 +129,10 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
             </div>
 
             <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Utang & Piutang</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Hutang & Piutang</p>
               <div className="mt-3 space-y-3">
                 <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <p className="text-sm text-slate-500">Total Utang</p>
+                  <p className="text-sm text-slate-500">Total Hutang</p>
                   <p className="mt-2 text-xl font-semibold text-slate-900">Rp {totalPayables.toLocaleString('id-ID')}</p>
                 </div>
                 <div className="rounded-2xl bg-white p-4 shadow-sm">

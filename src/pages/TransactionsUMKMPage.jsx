@@ -5,11 +5,11 @@ import InvoiceModal from '../components/InvoiceModal'
 
 const categories = [
   'Penjualan',
-  'Pemasukan Lain',
+  'Pemasukan',
   'Pengeluaran Operasional',
   'Beli Bahan Baku / Stok',
   'Piutang Pelanggan',
-  'Utang Supplier',
+  'Hutang Supplier',
 ]
 
 function TransactionsUMKMPage({
@@ -23,10 +23,13 @@ function TransactionsUMKMPage({
 
   useEffect(() => {
     // Sinkronisasi filter ketika datang dari quick action / defaultCategory
-    if (defaultCategory && filters?.type !== defaultCategory) {
-      setFilters((prev) => ({ ...prev, type: defaultCategory }))
-    }
-  }, [defaultCategory, filters?.type, setFilters])
+    // Normalisasi agar "Semua" selalu benar-benar menghapus filter.
+    if (!defaultCategory) return
+
+    const nextType = defaultCategory === 'all' ? 'all' : defaultCategory
+    setFilters((prev) => ({ ...prev, type: nextType }))
+  }, [defaultCategory, setFilters])
+
 
   useEffect(() => {
     // Pastikan dropdown input "Kategori Bisnis" ikut berubah saat filter dipakai
@@ -50,6 +53,7 @@ function TransactionsUMKMPage({
     isSettled: false,
     receipt: null,
   })
+
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMonth, setSelectedMonth] = useState('')
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
@@ -61,30 +65,72 @@ function TransactionsUMKMPage({
     if (filters.type !== 'all') {
       filtered = filtered.filter((item) => {
         const category = item.businessCategory || item.category
+
+        // Normalisasi agar label filter cocok dengan data transaksi.
+        // Berdasarkan perilaku form: kategori UMKM disimpan ke businessCategory.
+        if (filters.type === 'Pemasukan') {
+          return category === 'Pemasukan' || category === 'Penjualan'
+        }
+
+        if (filters.type === 'Penjualan') {
+          return category === 'Penjualan'
+        }
+
+        if (filters.type === 'Piutang Pelanggan') {
+          return category === 'Piutang Pelanggan'
+        }
+
+        if (filters.type === 'Hutang Supplier') {
+          return category === 'Hutang Supplier'
+        }
+
+        // fallback: match exact
         return category === filters.type
       })
     }
 
+
     if (selectedMonth) {
-      filtered = filtered.filter((item) => item.date.startsWith(selectedMonth))
+      filtered = filtered.filter((item) => item.date && item.date.startsWith(selectedMonth))
     }
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      filtered = filtered.filter((item) =>
-        item.title.toLowerCase().includes(query) ||
-        (item.businessCategory || item.category).toLowerCase().includes(query) ||
-        item.note.toLowerCase().includes(query) ||
-        (item.invoice && item.invoice.toLowerCase().includes(query))
-      )
+      filtered = filtered.filter((item) => {
+        const title = (item.title || '').toLowerCase()
+        const category = (item.businessCategory || item.category || '').toLowerCase()
+        const note = (item.note || '').toLowerCase()
+        const invoice = (item.invoice || '').toLowerCase()
+
+        return (
+          title.includes(query) ||
+          category.includes(query) ||
+          note.includes(query) ||
+          invoice.includes(query)
+        )
+      })
     }
 
     return filtered
   }, [filters.type, transactions, searchQuery, selectedMonth])
 
   const handleChange = (field, value) => {
+    if (field === 'category') {
+      const isLinkedCategory = value === 'Penjualan' || value === 'Beli Bahan Baku / Stok' || value === 'Piutang Pelanggan' || value === 'Hutang Supplier'
+      const isCreditType = value === 'Piutang Pelanggan' || value === 'Hutang Supplier'
+
+      return setForm((prev) => ({
+        ...prev,
+        category: value,
+        linkedStock: isLinkedCategory,
+        isSettled: isCreditType,
+      }))
+    }
+
     setForm((prev) => ({ ...prev, [field]: value }))
   }
+
+
 
   const handleReceiptChange = (e) => {
     const file = e.target.files?.[0]
@@ -121,8 +167,8 @@ function TransactionsUMKMPage({
   }
 
   const isLinkedStockCategory = form.category === 'Penjualan' || form.category === 'Piutang Pelanggan'
-  const isStockPurchaseCategory = form.category === 'Beli Bahan Baku / Stok' || form.category === 'Utang Supplier'
-  const isCreditCategory = form.category === 'Piutang Pelanggan' || form.category === 'Utang Supplier'
+  const isStockPurchaseCategory = form.category === 'Beli Bahan Baku / Stok' || form.category === 'Hutang Supplier'
+  const isCreditCategory = form.category === 'Piutang Pelanggan' || form.category === 'Hutang Supplier'
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -142,7 +188,7 @@ function TransactionsUMKMPage({
       note: form.note,
       type:
         form.category === 'Penjualan' ||
-        form.category === 'Pemasukan Lain' ||
+        form.category === 'Pemasukan' ||
         form.category === 'Piutang Pelanggan'
           ? 'income'
           : 'expense',
@@ -150,12 +196,13 @@ function TransactionsUMKMPage({
       receipt: form.receipt,
       businessCategory: form.category,
       linkedStock: form.linkedStock,
+
       stockItemId: form.stockItemId,
       stockQty,
       isCredit: isCreditCategory,
       isSettled: form.isSettled,
       typeLabel:
-        form.category === 'Penjualan' || form.category === 'Pemasukan Lain' || form.category === 'Piutang Pelanggan'
+        form.category === 'Penjualan' || form.category === 'Pemasukan' || form.category === 'Piutang Pelanggan'
           ? 'Pemasukan'
           : 'Pengeluaran',
     }
@@ -174,6 +221,7 @@ function TransactionsUMKMPage({
       isSettled: false,
       receipt: null,
     })
+
   }
 
   return (
@@ -183,7 +231,7 @@ function TransactionsUMKMPage({
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Transaksi UMKM</p>
           <h2 className="text-xl font-semibold text-slate-900">Kelola arus kas, stok, dan kredit usaha</h2>
           <p className="mt-2 text-sm text-slate-500">
-            Rekam penjualan, biaya operasional, pembelian stok, piutang, dan utang secara terpisah.
+            Rekam penjualan, biaya operasional, pembelian stok, piutang, dan hutang secara terpisah.
           </p>
         </div>
 
@@ -225,6 +273,9 @@ function TransactionsUMKMPage({
             </select>
           </div>
 
+
+
+
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Tanggal</label>
             <input
@@ -235,6 +286,7 @@ function TransactionsUMKMPage({
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             />
           </div>
+
 
           <div className="lg:col-span-2">
             <label className="mb-2 block text-sm font-medium text-slate-700">Catatan</label>
@@ -251,15 +303,14 @@ function TransactionsUMKMPage({
             <>
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">Pilih Item Stok</label>
-                <select
-                  value={form.stockItemId}
-                  onChange={(e) => handleChange('stockItemId', e.target.value)}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-                >
-                  {umkmSummary.inventory.map((item) => (
-                    <option key={item.id} value={item.id}>{item.name}</option>
-                  ))}
-                </select>
+            <input
+              type="text"
+              value={form.title}
+              onChange={(e) => handleChange('title', e.target.value)}
+              required
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+              placeholder="Contoh: Penjualan kue bolu"
+            />
               </div>
 
               <div>
@@ -305,7 +356,7 @@ function TransactionsUMKMPage({
             </div>
           )}
 
-          {form.category !== 'Penjualan' && (
+          {(form.category === 'Pengeluaran Operasional' || form.category === 'Beli Bahan Baku / Stok') && (
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Upload Bukti Nota</label>
               <input
@@ -322,7 +373,7 @@ function TransactionsUMKMPage({
 
           <div className="lg:col-span-2">
             <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
-              Simpan Transaksi UMKM
+              Simpan Transaksi
             </button>
           </div>
         </form>
@@ -348,11 +399,11 @@ function TransactionsUMKMPage({
             >
               <option value="all">Semua</option>
               <option value="Penjualan">Penjualan</option>
-              <option value="Pemasukan Lain">Pemasukan Lain</option>
+              <option value="Pemasukan">Pemasukan</option>
               <option value="Pengeluaran Operasional">Pengeluaran Operasional</option>
               <option value="Beli Bahan Baku / Stok">Beli Bahan Baku / Stok</option>
               <option value="Piutang Pelanggan">Piutang Pelanggan</option>
-              <option value="Utang Supplier">Utang Supplier</option>
+              <option value="Hutang Supplier">Hutang Supplier</option>
             </select>
           </div>
            <div>

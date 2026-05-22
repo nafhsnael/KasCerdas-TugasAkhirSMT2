@@ -1,14 +1,8 @@
 import { useState } from 'react'
 import BudgetCard from '../components/BudgetCard'
 
-function BudgetPage({ transactions }) {
-  const [budgets, setBudgets] = useState([
-    { id: 1, category: 'Makan', limit: 1000000, usage: 860000 },
-    { id: 2, category: 'Hiburan', limit: 500000, usage: 450000 },
-    { id: 3, category: 'Transport', limit: 700000, usage: 240000 },
-    { id: 4, category: 'Belanja', limit: 1500000, usage: 830000 },
-  ])
-   const [formData, setFormData] = useState({
+function BudgetPage({ transactions, budgets, setBudgets }) {
+  const [formData, setFormData] = useState({
     category: '',
     limit: '',
   })
@@ -122,9 +116,10 @@ function BudgetPage({ transactions }) {
     return sum + actualUsage
   }, 0)
   const totalRemaining = totalBudget - totalUsage
+  const totalUsagePercent = totalBudget > 0 ? Math.round((totalUsage / totalBudget) * 100) : 0
   const budgetsExceeded = budgets.filter((b) => {
     const actualUsage = getActualUsage(b.category)
-    return actualUsage > b.limit
+    return b.limit > 0 ? actualUsage > b.limit : actualUsage > 0
   }).length
 
   return (
@@ -149,7 +144,7 @@ function BudgetPage({ transactions }) {
         <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-sm uppercase tracking-[0.12em] text-slate-500">Terpakai</p>
           <h3 className="mt-2 text-2xl font-semibold text-slate-900">Rp {totalUsage.toLocaleString('id-ID')}</h3>
-          <p className="mt-2 text-xs text-slate-500">{Math.round((totalUsage / totalBudget) * 100)}% dari total</p>
+          <p className="mt-2 text-xs text-slate-500">{totalUsagePercent}% dari total</p>
         </div>
 
         <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">

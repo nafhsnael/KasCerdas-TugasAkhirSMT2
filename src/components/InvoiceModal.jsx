@@ -50,14 +50,7 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
                 <p className="text-xs text-slate-600">Tanggal</p>
                 <p className="text-sm font-semibold text-slate-900">{transaction.date}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-xs text-slate-600">Dompet</p>
-                <p className="text-sm font-semibold text-slate-900">{transaction.wallet}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-xs text-slate-600">Bank</p>
-                <p className="text-sm font-semibold text-slate-900">{transaction.bank}</p>
-              </div>
+
               <div className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-xs text-slate-600">Jumlah</p>
                 <p className="text-sm font-semibold text-slate-900">
@@ -80,7 +73,7 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
           )}
 
           {/* Bukti Nota */}
-          {transaction.receipt ? (
+          {transaction.receipt && (
             <div>
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
                 Bukti Nota
@@ -114,23 +107,6 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
                   </div>
                 )}
               </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-              <svg
-                className="mx-auto mb-2 h-8 w-8 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              <p className="text-sm text-slate-500">Tidak ada bukti nota</p>
             </div>
           )}
         </div>

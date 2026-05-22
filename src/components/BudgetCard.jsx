@@ -1,6 +1,6 @@
 function BudgetCard({ category, usage, limit, children }) {
-  const progress = Math.min(100, Math.round((usage / limit) * 100))
-  const isExceeded = usage > limit
+  const progress = limit > 0 ? Math.min(100, Math.round((usage / limit) * 100)) : usage > 0 ? 100 : 0
+  const isExceeded = limit > 0 ? usage > limit : usage > 0
   const progressClasses = isExceeded ? 'bg-rose-500' : 'bg-brand-500'
 
   return (

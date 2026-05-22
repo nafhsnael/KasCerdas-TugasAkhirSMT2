@@ -1,9 +1,13 @@
-# TODO
-- [x] Integrasikan Quick Action Dashboard -> otomatis set filter kategori bisnis pada halaman Transaksi (UMKM).
+# TODO - DiTransaksi UMKM
 
-- [ ] Pastikan mapping: Penjualan, Pemasukan Lain, Pengeluaran Operasional, Beli Bahan Baku, Piutang Pelanggan, Utang Supplier -> value select `filters.type` (TransactionsUMKMPage).
-- [ ] Propagasi callback dari DashboardPage ke App lalu ke TransactionsUMKMPage.
-- [ ] Tambahkan efek (useEffect) di TransactionsUMKMPage agar saat menerima `defaultCategory` dari App/quick action, select "Filter Kategori Bisnis" ter-set dan transaksi ter-filter.
-- [ ] Tambahkan jenis halaman non-UMKM bila diperlukan (opsional).
-- [ ] Jalankan build/lint/dev server untuk memastikan tidak ada error kompilasi.
+- [x] Edit `src/pages/TransactionsUMKMPage.jsx`: hapus field & UI dropdown **Bank & Wallet**.
+
+- [x] Edit `src/pages/TransactionsUMKMPage.jsx`: hapus logic yang mengosongkan bank per kategori dan pastikan saat submit payload tidak menyertakan `bank`.
+
+- [x] Edit `src/components/TransactionCard.jsx`: jika `bank`/`wallet` kosong tampilkan tanda `-`.
+- [x] Jalankan frontend (npm run dev) dan verifikasi form UMKM + daftar transaksi.
+
+
+
+
 

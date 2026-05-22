@@ -73,6 +73,12 @@ function App() {
   const [filters, setFilters] = useState({ type: 'all' })
   const [selectedUmkmCategory, setSelectedUmkmCategory] = useState('Penjualan')
   const [transactions, setTransactions] = useState([])
+  const [budgets, setBudgets] = useState([
+    { id: 1, category: 'Makan', limit: 1000000, usage: 860000 },
+    { id: 2, category: 'Hiburan', limit: 500000, usage: 450000 },
+    { id: 3, category: 'Transport', limit: 700000, usage: 240000 },
+    { id: 4, category: 'Belanja', limit: 1500000, usage: 830000 },
+  ])
 
   const handleUmkmQuickAction = (businessCategory) => {
     // Quick action di Dashboard -> otomatis pilih kategori bisnis di halaman Transaksi UMKM
@@ -80,10 +86,6 @@ function App() {
     setFilters({ type: businessCategory })
     navigateTo('transactions')
   }
-  const budgets = []
-
-
-
 
   const [umkmTransactions, setUmkmTransactions] = useState([])
   const [umkmSummary, setUmkmSummary] = useState({
@@ -172,12 +174,48 @@ function App() {
     }
   }, [currentPage, isAuthenticated])
 
+  const syncBudgetWithTransaction = (transaction) => {
+    const amount = Number(transaction.amount) || 0
+    setBudgets((prevBudgets) => {
+      const existingBudget = prevBudgets.find((b) => b.category === transaction.category)
+      if (existingBudget) {
+        return prevBudgets.map((budget) => {
+          if (budget.category !== transaction.category) return budget
+
+          if (transaction.type === 'expense') {
+            return {
+              ...budget,
+              usage: (budget.usage || 0) + amount,
+            }
+          }
+
+          return {
+            ...budget,
+            limit: (budget.limit || 0) + amount,
+          }
+        })
+      }
+
+      const nextId = Math.max(0, ...prevBudgets.map((b) => b.id)) + 1
+      return [
+        ...prevBudgets,
+        {
+          id: nextId,
+          category: transaction.category,
+          limit: transaction.type === 'income' ? amount : 0,
+          usage: transaction.type === 'expense' ? amount : 0,
+        },
+      ]
+    })
+  }
+
   const addTransaction = (newTransaction) => {
     const transaction = {
       id: `t${Date.now()}`,
       ...newTransaction,
     }
     setTransactions((prev) => [transaction, ...prev])
+    syncBudgetWithTransaction(transaction)
   }
 
   const addUmkmTransaction = (newTransaction) => {
@@ -189,6 +227,7 @@ function App() {
 
     setTransactions((prev) => [transaction, ...prev])
     setUmkmTransactions((prev) => [transaction, ...prev])
+    syncBudgetWithTransaction(transaction)
 
     setUmkmSummary((prevSummary) => {
       const amount = Number(newTransaction.amount) || 0
@@ -453,7 +492,7 @@ function App() {
       case 'reports':
         return <ReportsPage transactions={transactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
       case 'budget':
-        return <BudgetPage transactions={transactions} />
+        return <BudgetPage transactions={transactions} budgets={budgets} setBudgets={setBudgets} />
       case 'add-debt':
         return <AddDebtPage onAddDebt={addDebt} onNavigate={setCurrentPage} />
       case 'add-savings':
@@ -466,8 +505,7 @@ function App() {
             <DashboardMahasiswaPage
               walletSummary={{ current: 0, income: 0, expense: 0 }}
               transactions={transactions}
-              budgets={[]}
-
+              budgets={budgets}
               walletInfo={walletInfo}
               userProfile={userProfile}
             />
@@ -475,8 +513,7 @@ function App() {
             <DashboardMasyarakatPage
               walletSummary={{ current: 0, income: 0, expense: 0 }}
               transactions={transactions}
-              budgets={[]}
-
+              budgets={budgets}
               walletInfo={walletInfo}
               userProfile={userProfile}
             />

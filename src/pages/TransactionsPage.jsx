@@ -4,15 +4,12 @@ import InvoiceModal from '../components/InvoiceModal'
 
 const defaultCategories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
 const bank = ['Cash', 'Ovo', 'Dana', 'Bank']
-const wallets = ['UMKM', 'Mahasiswa', 'Masyarakat Luas']
 
 function TransactionsPage({
   transactions,
   filters,
   setFilters,
   onAddTransaction,
-  defaultWallet = 'UMKM',
-  walletOptions = wallets,
   categories: categoriesProp,
 }) {
   const categories = categoriesProp && categoriesProp.length ? categoriesProp : defaultCategories
@@ -23,7 +20,6 @@ function TransactionsPage({
     title: '',
     amount: '',
     category: initialCategory,
-    wallet: defaultWallet,
     bank: 'Cash',
     date: '',
     note: '',
@@ -139,7 +135,6 @@ function TransactionsPage({
       title: form.title,
       amount: parseInt(form.amount),
       category: form.category,
-      wallet: form.wallet,
       bank: form.bank,
       date: form.date,
       note: form.note,
@@ -149,7 +144,7 @@ function TransactionsPage({
     }
     onAddTransaction(newTransaction)
     alert('Transaksi baru berhasil ditambahkan!')
-    setForm({ title: '', amount: '', category: 'Makan', wallet: 'UMKM', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null })
+    setForm({ title: '', amount: '', category: 'Makan', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null })
   }
 
   return (
@@ -194,18 +189,6 @@ function TransactionsPage({
             >
               {categories.map((category) => (
                 <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Dompet</label>
-            <select
-              value={form.wallet}
-              onChange={(e) => handleChange('wallet', e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-            >
-              {walletOptions.map((wallet) => (
-                <option key={wallet} value={wallet}>{wallet}</option>
               ))}
             </select>
           </div>

@@ -4,7 +4,8 @@ function TransactionCard({ transaction, onViewInvoice }) {
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-base font-semibold text-slate-900">{transaction.title}</p>
-          <p className="text-sm text-slate-500">{transaction.category} • {transaction.wallet}</p>
+          <p className="text-sm text-slate-500">{transaction.category} • {transaction.bank || transaction.wallet || '-'}</p>
+
         </div>
         <span className={`rounded-2xl px-3 py-1 text-sm font-semibold ${transaction.type === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
           {transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}

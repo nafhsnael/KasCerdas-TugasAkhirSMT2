@@ -2,17 +2,16 @@ import { useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
-const categories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
+const incomeCategories = ['Penghasilan Kerja', 'Uang Saku']
+const expenseCategories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
 const bank = ['Cash', 'Ovo', 'Dana', 'Bank']
-const wallets = ['UMKM', 'Mahasiswa', 'Masyarakat Luas']
 
 function TransactionsPage({ transactions, filters, setFilters, onAddTransaction }) {
   const [form, setForm] = useState({
     title: '',
     amount: '',
     category: 'Makan',
-    wallet: 'UMKM',
-    bank : 'Cash',
+    bank: 'Cash',
     date: '',
     note: '',
     type: 'expense',
@@ -51,6 +50,19 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
   }, [filters.type, transactions, searchQuery, selectedMonth])
 
   const handleChange = (field, value) => {
+    if (field === 'type') {
+      const nextCategory = value === 'income' ? incomeCategories[0] : expenseCategories[0]
+      return setForm((prev) => ({
+        ...prev,
+        type: value,
+        category: value === 'income' && incomeCategories.includes(prev.category)
+          ? prev.category
+          : value === 'expense' && expenseCategories.includes(prev.category)
+          ? prev.category
+          : nextCategory,
+      }))
+    }
+
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -108,7 +120,6 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
       title: form.title,
       amount: parseInt(form.amount),
       category: form.category,
-      wallet: form.wallet,
       bank: form.bank,
       date: form.date,
       note: form.note,
@@ -118,16 +129,35 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
     }
     onAddTransaction(newTransaction)
     alert('Transaksi baru berhasil ditambahkan!')
-    setForm({ title: '', amount: '', category: 'Makan', wallet: 'UMKM', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null })
+    setForm({ title: '', amount: '', category: 'Makan', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null })
   }
 
   return (
     <div className="space-y-8">
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-6">
+        <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Tambah Transaksi</p>
             <h2 className="text-xl font-semibold text-slate-900">Input data transaksi</h2>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <p className="text-sm font-medium text-slate-700"></p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => handleChange('type', 'income')}
+                className={`rounded-3xl px-4 py-3 text-sm font-semibold transition ${form.type === 'income' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
+              >
+                Pemasukan
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChange('type', 'expense')}
+                className={`rounded-3xl px-4 py-3 text-sm font-semibold transition ${form.type === 'expense' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
+              >
+                Pengeluaran
+              </button>
+            </div>
           </div>
         </div>
 
@@ -161,20 +191,8 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               onChange={(e) => handleChange('category', e.target.value)}
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             >
-              {categories.map((category) => (
+              {(form.type === 'income' ? incomeCategories : expenseCategories).map((category) => (
                 <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Dompet</label>
-            <select
-              value={form.wallet}
-              onChange={(e) => handleChange('wallet', e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-            >
-              {wallets.map((wallet) => (
-                <option key={wallet} value={wallet}>{wallet}</option>
               ))}
             </select>
           </div>
@@ -224,25 +242,6 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               )}
             </div>
           )}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Tipe Transaksi</label>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => handleChange('type', 'income')}
-                className={`rounded-3xl px-4 py-3 text-sm font-semibold transition ${form.type === 'income' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              >
-                Pemasukan
-              </button>
-              <button
-                type="button"
-                onClick={() => handleChange('type', 'expense')}
-                className={`rounded-3xl px-4 py-3 text-sm font-semibold transition ${form.type === 'expense' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              >
-                Pengeluaran
-              </button>
-            </div>
-          </div>
           <div className="lg:col-span-2">
             <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
               Simpan Transaksi
