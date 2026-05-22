@@ -96,6 +96,7 @@ function App() {
   }
 
   const [umkmTransactions, setUmkmTransactions] = useState([])
+  const [umkmEWalletBalance, setUmkmEWalletBalance] = useState(0)
   const [umkmSummary, setUmkmSummary] = useState({
     income: 0,
     operationalExpense: 0,
@@ -238,6 +239,49 @@ function App() {
     setUmkmTransactions((prev) => [transaction, ...prev])
     syncBudgetWithTransaction(transaction)
 
+    // Update e-wallet balance berdasarkan kategori transaksi
+    const amount = Number(newTransaction.amount) || 0
+    setUmkmEWalletBalance((prevBalance) => {
+      let newBalance = prevBalance
+
+      switch (newTransaction.businessCategory) {
+        case 'Penjualan':
+          // Penjualan menambah saldo
+          newBalance += amount
+          break
+        case 'Pemasukan':
+          // Pemasukan menambah saldo
+          newBalance += amount
+          break
+        case 'Pengeluaran Operasional':
+          // Pengeluaran mengurangi saldo
+          newBalance -= amount
+          break
+        case 'Beli Bahan Baku / Stok':
+          // Beli bahan baku mengurangi saldo
+          newBalance -= amount
+          break
+        case 'Piutang Pelanggan':
+          if (newTransaction.isSettled) {
+            // Jika sudah dibayar, tambah saldo
+            newBalance += amount
+          }
+          // Jika belum dibayar, saldo tidak berubah (hanya utang/piutang record)
+          break
+        case 'Hutang Supplier':
+          if (newTransaction.isSettled) {
+            // Jika pembayaran hutang, kurangi saldo
+            newBalance -= amount
+          }
+          // Jika hutang baru, saldo tidak berubah (hanya hutang record)
+          break
+        default:
+          break
+      }
+
+      return Math.max(0, newBalance)
+    })
+
     setUmkmSummary((prevSummary) => {
       const amount = Number(newTransaction.amount) || 0
       const stockQty = Number(newTransaction.stockQty) || 1
@@ -262,17 +306,20 @@ function App() {
             nextSummary.inventory = updateInventory(-stockQty)
           }
           break
-        case 'Pemasukan Lain':
+        case 'Pemasukan':
           nextSummary.income += amount
           break
-        case 'Keluar Operasional':
+        case 'Pengeluaran Operasional':
+          // Pengeluaran operasional selalu mengurangi kas usaha
           nextSummary.operationalExpense += amount
           break
         case 'Beli Bahan Baku / Stok':
+          // Pembelian stok menambah stok (dan HPP diperkirakan), bukan langsung jadi expense operasional
           nextSummary.inventory = updateInventory(stockQty)
           nextSummary.estimatedHpp += amount
           break
         case 'Piutang Pelanggan':
+          // Jika sudah dilunasi, masuk sebagai pemasukan; jika belum, masuk piutang
           if (newTransaction.isSettled) {
             nextSummary.income += amount
           } else {
@@ -283,10 +330,12 @@ function App() {
             nextSummary.estimatedHpp += estimatedHpp
           }
           break
-        case 'Utang Supplier':
+        case 'Hutang Supplier':
+          // Saat membuat hutang, itu masuk payables + menambah stok + HPP
           nextSummary.payables += amount
           nextSummary.inventory = updateInventory(stockQty)
           nextSummary.estimatedHpp += amount
+          // Saat hutang dilunasi, barulah jadi pengeluaran operasional (kas keluar)
           if (newTransaction.isSettled) {
             nextSummary.payables = Math.max(0, nextSummary.payables - amount)
             nextSummary.operationalExpense += amount
@@ -414,7 +463,23 @@ function App() {
   }
 
   const handleSaveInitialBalance = (data) => {
-    setInitialBalance(data.balance)
+    const balance = data.balance
+    setInitialBalance(balance)
+
+    // UMKM: saldo awal harus masuk ke e-wallet UMKM + ringkasan pemasukan (agar Dompet Usaha ikut terisi)
+    if (userProfile?.usertype === 'umkm') {
+      setUmkmEWalletBalance(balance)
+
+      setUmkmSummary((prevSummary) => {
+        // Di dashboard UMKM, 'Saldo Pemasukan' memakai umkmSummary.income.
+        // Jadi saat saldo awal dimasukkan, income harus ikut terisi.
+        return {
+          ...prevSummary,
+          income: balance,
+        }
+      })
+    }
+
     setShowInitialBalance(false)
     navigateTo('dashboard')
   }
@@ -556,10 +621,12 @@ function App() {
           ) : userProfile?.usertype === 'umkm' ? (
             <DashboardUMKMPage
               walletSummary={{
-                current: initialBalance || Number(walletInfo?.balance ?? 0),
-                income: initialBalance,
+                // Untuk UMKM: dompet usaha (e-wallet) di dashboard memakai umkmEWalletBalance
+                current: umkmEWalletBalance || initialBalance || Number(walletInfo?.balance ?? 0),
+                // income/expense pada e-wallet dashboard UMKM tidak dipakai, jadi set 0 agar tidak dobel
+                income: 0,
                 expense: 0,
-                smartCashPerDay: initialBalance,
+                smartCashPerDay: 0,
                 smartReductionPerDay: 0,
               }}
               transactions={umkmTransactions}
@@ -567,6 +634,7 @@ function App() {
               walletInfo={walletInfo}
               userProfile={userProfile}
               umkmSummary={umkmSummary}
+              eWalletBalance={umkmEWalletBalance || initialBalance}
               onQuickAction={handleUmkmQuickAction}
             />
           ) : (

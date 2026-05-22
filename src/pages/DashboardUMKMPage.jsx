@@ -9,6 +9,7 @@ function DashboardUMKMPage({
   walletInfo,
   userProfile,
   umkmSummary,
+  eWalletBalance,
   onQuickAction,
 }) {
   const recentTransactions = transactions.slice(0, 4)
@@ -21,6 +22,37 @@ function DashboardUMKMPage({
   const totalReceivables = umkmSummary.receivables
   const costOfGoodsSold = umkmSummary.estimatedHpp
   const profitLoss = businessIncome - costOfGoodsSold - businessExpense
+  
+  // Gunakan eWalletBalance dari props untuk Saldo E-Wallet
+  const eWalletBalanceValue = Number(eWalletBalance ?? 0)
+  
+  // Hitung Financial Score Health (0-100%)
+  const calculateFinancialScore = () => {
+    let score = 50 // Base score
+    
+    // Bonus untuk memiliki pemasukan
+    if (businessIncome > 0) score += 15
+    
+    // Bonus untuk pengeluaran terkontrol
+    if (businessExpense > 0 && businessExpense <= businessIncome * 0.5) score += 20
+    else if (businessExpense > businessIncome * 0.5) score -= 10
+    
+    // Bonus untuk stok yang sehat
+    const lowStockRatio = inventoryItems.length > 0 ? lowStockItems.length / inventoryItems.length : 0
+    if (lowStockRatio < 0.2) score += 15
+    else if (lowStockRatio > 0.5) score -= 10
+    
+    // Bonus untuk profit positif
+    if (profitLoss > 0) score += 20
+    else if (profitLoss < 0) score -= 20
+    
+    // Bonus untuk piutang terkontrol
+    if (totalReceivables <= businessIncome * 0.3) score += 10
+    
+    return Math.max(0, Math.min(100, score))
+  }
+  
+  const financialScore = calculateFinancialScore()
 
   const quickActions = useMemo(
     () => [
@@ -49,7 +81,7 @@ function DashboardUMKMPage({
           <div className="rounded-[28px] border border-white/20 bg-white/10 p-4 text-right">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-100/80">Dompet Usaha</p>
             <p className="mt-2 text-3xl font-semibold">Rp {businessIncome.toLocaleString('id-ID')}</p>
-            <p className="text-sm text-slate-100/80">Pemasukan bulan ini</p>
+
           </div>
         </div>
       </section>
@@ -69,7 +101,44 @@ function DashboardUMKMPage({
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        {/* 4 Stat Cards dalam 1 Baris */}
+          <div className="mb-6 grid gap-4 lg:grid-cols-4">
+          {/* E-Wallet Saldo */}
+          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#f0fffe] to-[#e6f6f3] p-5">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-900">Rp {eWalletBalanceValue.toLocaleString('id-ID')}</p>
+          </div>
+          
+          {/* Saldo Pemasukan */}
+          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#f0fdf4] to-[#dcfce7] p-5">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
+            <p className="mt-3 text-2xl font-semibold text-emerald-600">Rp {businessIncome.toLocaleString('id-ID')}</p>
+          </div>
+          
+          {/* Saldo Pengeluaran */}
+          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#fef2f2] to-[#fee2e2] p-5">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
+            <p className="mt-3 text-2xl font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</p>
+          </div>
+          
+          {/* Financial Score Health */}
+          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#fffbf0] to-[#fef3c7] p-5">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Financial Score</p>
+            <p className="mt-3 text-2xl font-semibold" style={{ color: '#F6B93B' }}>{Math.round(financialScore)}%</p>
+            <p className="mt-2 text-xs text-slate-600">Kesehatan keuangan bisnis</p>
+            <div className="mt-2 h-1.5 rounded-full bg-slate-200">
+              <div 
+                className="h-full rounded-full transition-all duration-300" 
+                style={{ 
+                  width: `${financialScore}%`,
+                  backgroundColor: '#F6B93B'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Arus Kas Usaha</p>
             <p className="mt-3 text-3xl font-semibold text-slate-900">Rp {businessIncome.toLocaleString('id-ID')}</p>
@@ -94,22 +163,19 @@ function DashboardUMKMPage({
 
           <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Stok Barang</p>
-            <div className="mt-3 space-y-3">
+            <p className="mt-2 text-sm text-slate-600">Jumlah stok tiap item (update otomatis saat ada transaksi <span className="font-semibold">Beli Bahan Baku / Stok</span>).</p>
+
+            <div className="mt-4 space-y-3">
               {inventoryItems.map((item) => (
                 <div key={item.name} className="rounded-2xl bg-white p-4 shadow-sm">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-baseline justify-between gap-4">
                     <p className="font-semibold text-slate-900">{item.name}</p>
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.stock <= item.reorderLevel ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                      {item.stock <= item.reorderLevel ? 'Menipis' : 'Aman'}
-                    </span>
+                    <p className="text-lg font-semibold text-slate-900">{item.stock} unit</p>
                   </div>
-                  <p className="mt-2 text-sm text-slate-500">Stok: {item.stock} unit</p>
+                  <p className="mt-1 text-xs text-slate-500">{item.stock <= item.reorderLevel ? 'Mulai menipis' : 'Stok aman'}</p>
                 </div>
               ))}
             </div>
-            {lowStockItems.length > 0 && (
-              <p className="mt-4 text-sm text-rose-600">{lowStockItems.length} produk hampir menipis. Segera restock.</p>
-            )}
           </div>
 
           <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
@@ -128,38 +194,37 @@ function DashboardUMKMPage({
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.7fr_1fr_1fr]">
+      <section className="grid gap-4 lg:grid-cols-4">
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
-              <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {walletSummary?.current?.toLocaleString?.('id-ID') ?? walletSummary?.current ?? 0}</h2>
-              <p className="mt-3 text-sm text-slate-500">+0% dibanding bulan lalu</p>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-4 text-slate-900">
-              <span className="text-2xl">💳</span>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-900">Rp {eWalletBalanceValue.toLocaleString?.('id-ID') ?? eWalletBalanceValue ?? 0}</h2>
+
             </div>
           </div>
         </div>
 
-        <div className="rounded-[32px] bg-slate-900 p-6 text-white shadow-sm border border-slate-800">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-300">Financial Score Health</p>
-          <h2 className="mt-4 text-4xl font-semibold" style={{ color: '#fdfdfd' }}>
-            0%
+        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Financial Score Health</p>
+          <h2 className="mt-2 text-2xl font-semibold" style={{ color: '#F6B93B' }}>
+            {Math.round(financialScore)}%
           </h2>
-          <p className="mt-3 text-sm text-slate-300">Status: Perlu perhatian</p>
+          <p className="mt-2 text-xs text-slate-600">
+            {financialScore >= 70 ? 'Sangat Sehat' : financialScore >= 50 ? 'Sehat' : financialScore >= 30 ? 'Cukup' : 'Perlu Perhatian'}
+          </p>
         </div>
 
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
-          <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {walletSummary?.smartCashPerDay?.toLocaleString?.('id-ID') ?? walletSummary?.smartCashPerDay ?? 0}</h2>
-          <p className="mt-3 text-sm text-slate-500">Pemasukan per hari</p>
+          <h2 className="mt-2 text-2xl font-semibold text-emerald-600">Rp {businessIncome.toLocaleString('id-ID')}</h2>
+            <p className="mt-2 text-xs text-slate-600">Ini adalah saldo pemasukan hari ini</p>
         </div>
 
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
-          <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {walletSummary?.smartReductionPerDay?.toLocaleString?.('id-ID') ?? walletSummary?.smartReductionPerDay ?? 0}</h2>
-          <p className="mt-3 text-sm text-slate-500">Pengeluaran per hari</p>
+          <h2 className="mt-2 text-2xl font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</h2>
+            <p className="mt-2 text-xs text-slate-600">Ini adalah saldo pengeluaran hari ini</p>
         </div>
       </section>
 

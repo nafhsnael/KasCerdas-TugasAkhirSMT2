@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
@@ -64,6 +65,23 @@ class TransactionController extends Controller
             'date' => $validated['date'],
         ]);
 
+        // Mutasi saldo wallet untuk update e-wallet dashboard.
+        // Catatan: transaksi kategori 'Initial' dipakai untuk reporting, bukan untuk mengubah saldo.
+        if ($validated['category'] !== 'Initial') {
+            $wallet = Wallet::query()->where('user_id', $request->user()->id)->where('id', $validated['wallet_id'])->first();
+
+            if ($wallet) {
+                $delta = (float) $validated['amount'];
+                if ($validated['type'] === 'income') {
+                    $wallet->balance = (float) $wallet->balance + $delta;
+                } else {
+                    $wallet->balance = (float) $wallet->balance - $delta;
+                }
+
+                $wallet->save();
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Transaksi berhasil dibuat',
@@ -78,6 +96,24 @@ class TransactionController extends Controller
                 'success' => false,
                 'message' => 'Tidak diizinkan',
             ], 403);
+        }
+
+        // Rollback saldo wallet saat transaksi dihapus (kecuali transaksi Initial).
+        if ($transaction->category !== 'Initial') {
+            $wallet = Wallet::query()->where('user_id', $request->user()->id)->where('id', $transaction->wallet_id)->first();
+
+            if ($wallet) {
+                $delta = (float) $transaction->amount;
+                if ($transaction->type === 'income') {
+                    // menghapus income => kurangi delta
+                    $wallet->balance = (float) $wallet->balance - $delta;
+                } else {
+                    // menghapus expense => tambah delta
+                    $wallet->balance = (float) $wallet->balance + $delta;
+                }
+
+                $wallet->save();
+            }
         }
 
         $transaction->delete();
