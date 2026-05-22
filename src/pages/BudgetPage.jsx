@@ -3,8 +3,8 @@ import BudgetCard from '../components/BudgetCard'
 
 function BudgetPage({ transactions, budgets, setBudgets }) {
   const [formData, setFormData] = useState({
-    category: '',
-    customCategory: '',
+    category: '', // kategori (dropdown)
+    operationalDetail: '', // kebutuhan operasional (manual, opsional)
     limit: '',
   })
   const [editingId, setEditingId] = useState(null)
@@ -33,18 +33,20 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
 
   const handleAddBudget = () => {
     setEditingId(null)
-    setFormData({ category: '', customCategory: '', limit: '' })
+    setFormData({ category: '', operationalDetail: '', limit: '' })
     setShowForm(true)
   }
 
   const handleEditBudget = (budget) => {
-    const standardCategories = ['Makan', 'Transportasi', 'Kebutuhan Kuliah']
-    const isStandard = standardCategories.includes(budget.category)
+    const [selectedCategory, ...rest] = budget.category.split(' - ')
+    const operationalDetails = rest.join(' - ')
 
+    // dropdown hanya berisi kategori operasional. Jika user pernah menulis kategori lengkap,
+    // kita pecah pakai separator ' - '. Detail bisa kosong.
     setEditingId(budget.id)
     setFormData({
-      category: isStandard ? budget.category : 'Kebutuhan Lainnya',
-      customCategory: isStandard ? '' : budget.category,
+      category: selectedCategory || '',
+      operationalDetail: operationalDetails || '',
       limit: budget.limit.toString(),
     })
     setShowForm(true)
@@ -53,28 +55,34 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    const selectedCategory = formData.category
-    const category = selectedCategory === 'Kebutuhan Lainnya' ? formData.customCategory.trim() : selectedCategory
-    const categoryName = category.trim()
+    const selectedOperationalCategory = formData.category
 
-    if (!categoryName || !formData.limit) {
-      setMessage('Silakan isi semua field')
-      setTimeout(() => setMessage(''), 3000)
-      return
-    }
+    // Khusus UMKM: kategori tertentu tidak memakai input kebutuhan operasional.
+    const isKategoriTanpaDetail = [
+      'Beli Bahan Baku / Stok',
+      'Utang Supplier',
+    ].includes(selectedOperationalCategory)
 
-    if (selectedCategory === 'Kebutuhan Lainnya' && !formData.customCategory.trim()) {
-      setMessage('Silakan masukkan kategori kebutuhan lainnya')
+    const operationalDetail = isKategoriTanpaDetail
+      ? ''
+      : formData.operationalDetail.trim()
+
+    if (!selectedOperationalCategory || !formData.limit) {
+      setMessage('Silakan isi kategori dan limit')
       setTimeout(() => setMessage(''), 3000)
       return
     }
 
     const limit = parseInt(formData.limit)
-    if (limit <= 0) {
+    if (Number.isNaN(limit) || limit <= 0) {
       setMessage('Limit harus lebih dari 0')
       setTimeout(() => setMessage(''), 3000)
       return
     }
+
+    const categoryName = operationalDetail
+      ? `${selectedOperationalCategory} - ${operationalDetail}`
+      : selectedOperationalCategory
 
     if (editingId) {
       // Edit existing budget
@@ -122,7 +130,7 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
 
   const handleCancel = () => {
     setShowForm(false)
-    setFormData({ category: '', customCategory: '', limit: '' })
+    setFormData({ category: '', operationalDetail: '', limit: '' })
     setEditingId(null)
   }
 
@@ -198,27 +206,26 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
               <label className="block text-sm font-medium text-slate-700 mb-2">Kategori</label>
               <select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value, customCategory: '' })}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
               >
-                <option value="">Pilih kategori</option>
-                <option value="Makan">Makan</option>
-                <option value="Transportasi">Transportasi</option>
-                <option value="Kebutuhan Kuliah">Kebutuhan Kuliah</option>
-                <option value="Kebutuhan Lainnya">Kebutuhan Lainnya</option>
+                <option value="Pengeluaran Operasional">Pengeluaran Operasional</option>
+                <option value="Beli Bahan Baku / Stok">Beli Bahan Baku / Stok</option>
+                <option value="Hutang Supplier">Hutang Supplier</option>
               </select>
             </div>
 
-            {formData.category === 'Kebutuhan Lainnya' && (
+            {['Beli Bahan Baku / Stok', 'Hutang Supplier'].includes(formData.category) ? null : (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Isi Kategori</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Kebutuhan operasional (Opsional)</label>
                 <input
                   type="text"
-                  value={formData.customCategory}
-                  onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
-                  placeholder="Masukkan kategori lain"
+                  value={formData.operationalDetail}
+                  onChange={(e) => setFormData({ ...formData, operationalDetail: e.target.value })}
+                  placeholder="Contoh: sewa kios untuk 1 bulan / biaya internet toko"
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
                 />
+                <p className="mt-2 text-xs text-slate-500">Isi kebutuhan/jenis operasionalnya agar lebih spesifik.</p>
               </div>
             )}
 
