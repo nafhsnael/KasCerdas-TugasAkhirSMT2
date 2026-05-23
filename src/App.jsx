@@ -104,6 +104,7 @@ function App() {
     payables: 0,
     receivables: 0,
     inventory: [],
+    stockCount: 0,
   })
 
   const [debts, setDebts] = useState([])
@@ -302,7 +303,7 @@ function App() {
 
       const updateInventory = (change) =>
         prevSummary.inventory.map((item) =>
-          item.id === selectedStockId
+          String(item.id) === String(selectedStockId)
             ? { ...item, stock: Math.max(0, item.stock + change) }
             : item
         )
@@ -326,8 +327,26 @@ function App() {
           break
         case 'Beli Bahan Baku / Stok':
           // Pembelian stok menambah stok (dan HPP diperkirakan), bukan langsung jadi expense operasional
-          nextSummary.inventory = updateInventory(stockQty)
+          // Jika item belum ada di inventory tapi frontend mengirimkan stockItemName, tambahkan item baru.
+          if (selectedStockId) {
+            const exists = (prevSummary.inventory || []).some((it) => String(it.id) === String(selectedStockId))
+            if (!exists && newTransaction.stockItemName) {
+              const newItem = {
+                id: selectedStockId,
+                name: newTransaction.stockItemName,
+                stock: Math.max(0, Number(stockQty) || 0),
+                reorderLevel: 0,
+              }
+              nextSummary.inventory = [newItem, ...(prevSummary.inventory || [])]
+            } else {
+              nextSummary.inventory = updateInventory(stockQty)
+            }
+          } else {
+            nextSummary.inventory = updateInventory(stockQty)
+          }
           nextSummary.estimatedHpp += amount
+          // Increment stock input counter (1 per transaction input)
+          nextSummary.stockCount = (prevSummary.stockCount || 0) + 1
           break
         case 'Piutang Pelanggan':
           // Jika sudah dilunasi, masuk sebagai pemasukan; jika belum, masuk piutang

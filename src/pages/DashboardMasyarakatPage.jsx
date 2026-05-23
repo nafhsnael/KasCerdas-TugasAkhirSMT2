@@ -25,30 +25,24 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
             </p>
           </div>
           <div className="rounded-[28px] border border-white/20 bg-white/10 p-4 text-right">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-100/80">Skor Dampak</p>
-            <p className="mt-2 text-3xl font-semibold">850</p>
-            <p className="text-sm text-slate-100/80">Mencerminkan kontribusi hijau Anda</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-100/80">Saldo E-Wallet</p>
+            <p className="mt-2 text-3xl font-semibold">Rp {walletSummary.current.toLocaleString('id-ID')}</p>
+            <p className="text-sm text-slate-100/80">Saldo e-wallet saat ini</p>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.7fr_1fr_1fr]">
+      <section className="grid gap-4 xl:grid-cols-2">
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
               <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {walletSummary.current.toLocaleString('id-ID')}</h2>
             </div>
             <div className="rounded-3xl bg-slate-50 p-4 text-slate-900">
               <span className="text-2xl">💳</span>
             </div>
           </div>
-        </div>
-
-        <div className="rounded-[32px] bg-slate-900 p-6 text-white shadow-sm border border-slate-800">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-300">Pengurangan Karbon</p>
-          <h2 className="mt-4 text-4xl font-semibold">{carbonSaved} kg CO₂e</h2>
-          <p className="mt-3 text-sm text-slate-300">Setara dengan menanam 5 pohon mangrove</p>
         </div>
 
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
