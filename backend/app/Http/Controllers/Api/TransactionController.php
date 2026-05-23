@@ -5,10 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\Wallet;
-<<<<<<< HEAD
 use App\Models\ActivityLog;
-=======
->>>>>>> ef7446cccf060ac35a0f05d37eb109b8876474a9
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -161,8 +158,10 @@ class TransactionController extends Controller
             'invoice' => $this->generateInvoiceNumber($request->user()->id, $validated['date']),
         ]);
 
-        // Update wallet balance
-        $this->updateWalletBalance($wallet, $transaction->type, $transaction->amount, 'add');
+        // Update wallet balance (skip for Initial/Saldo Awal category to avoid double-applying)
+        if (!in_array($validated['category'] ?? '', ['Initial', 'Saldo Awal'], true)) {
+            $this->updateWalletBalance($wallet, $transaction->type, $transaction->amount, 'add');
+        }
 
         // Log activity
         $this->logActivity($request->user()->id, 'CREATE', 'Transaction', $transaction->id, [
@@ -172,8 +171,8 @@ class TransactionController extends Controller
         ]);
 
         // Mutasi saldo wallet untuk update e-wallet dashboard.
-        // Catatan: transaksi kategori 'Initial' dipakai untuk reporting, bukan untuk mengubah saldo.
-        if ($validated['category'] !== 'Initial') {
+        // Catatan: transaksi kategori 'Initial' atau 'Saldo Awal' dipakai untuk reporting, bukan untuk mengubah saldo.
+        if (!in_array($validated['category'] ?? '', ['Initial', 'Saldo Awal'], true)) {
             $wallet = Wallet::query()->where('user_id', $request->user()->id)->where('id', $validated['wallet_id'])->first();
 
             if ($wallet) {
@@ -208,7 +207,7 @@ class TransactionController extends Controller
             ], 403);
         }
 
-<<<<<<< HEAD
+
         $validated = $request->validate([
             'wallet_id' => ['nullable', 'integer', 'exists:wallets,id'],
             'title' => ['nullable', 'string', 'max:150'],
@@ -306,19 +305,8 @@ class TransactionController extends Controller
             \Storage::disk('public')->delete($transaction->receipt_url);
         }
 
-        // Reverse wallet balance
-        $this->updateWalletBalance($wallet, $transaction->type, $transaction->amount, 'subtract');
-
-        // Log activity
-        $this->logActivity($request->user()->id, 'DELETE', 'Transaction', $transaction->id, [
-            'title' => $transaction->title,
-            'amount' => $transaction->amount,
-            'type' => $transaction->type,
-        ]);
-
-=======
-        // Rollback saldo wallet saat transaksi dihapus (kecuali transaksi Initial).
-        if ($transaction->category !== 'Initial') {
+        // Rollback saldo wallet saat transaksi dihapus (kecuali transaksi Initial atau Saldo Awal).
+        if (!in_array($transaction->category, ['Initial', 'Saldo Awal'], true)) {
             $wallet = Wallet::query()->where('user_id', $request->user()->id)->where('id', $transaction->wallet_id)->first();
 
             if ($wallet) {
@@ -335,7 +323,14 @@ class TransactionController extends Controller
             }
         }
 
->>>>>>> ef7446cccf060ac35a0f05d37eb109b8876474a9
+        // Log activity
+        $this->logActivity($request->user()->id, 'DELETE', 'Transaction', $transaction->id, [
+            'title' => $transaction->title,
+            'amount' => $transaction->amount,
+            'type' => $transaction->type,
+        ]);
+
+
         $transaction->delete();
 
         return response()->json([

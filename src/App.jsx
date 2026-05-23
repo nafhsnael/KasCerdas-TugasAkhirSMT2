@@ -517,16 +517,73 @@ function App() {
 
     setShowInitialBalance(false)
     
-    // Re-fetch wallet info agar updated
+    // Re-fetch wallet info agar updated, lalu simpan transaksi Saldo Awal ke backend
     try {
       const walletData = await fetchWalletInfo()
       if (walletData) {
         setWalletInfo(walletData)
       }
+
+      const walletId = walletData?.id ?? walletInfo?.id ?? null
+      const hasInitialTransaction = (walletData?.last_transactions || []).some(
+        (t) => t.category === 'Initial' && Number(t.amount) === Number(balance)
+      )
+
+      // Jika wallet baru dibuat, backend sudah membuat transaksi Initial.
+      // Hanya buat transaksi baru bila belum ada initial transaction yang sesuai.
+      if (walletId && !hasInitialTransaction) {
+        try {
+          const res = await authFetch('/api/transactions', {
+            method: 'POST',
+            body: JSON.stringify({
+              wallet_id: walletId,
+              title: 'Saldo Awal',
+              category: 'Saldo Awal',
+              note: data.note || 'Saldo Awal',
+              type: 'income',
+              amount: Number(balance) || 0,
+              date: data.date || new Date().toISOString().slice(0, 10),
+            }),
+          })
+
+          const json = await res.json().catch(() => ({}))
+          if (res.ok && json.success) {
+            // gunakan transaksi dari backend
+            addTransaction(json.data)
+          } else {
+            // fallback: simpan lokal jika API gagal
+            addTransaction({
+              type: 'income',
+              amount: Number(balance) || 0,
+              date: data.date || new Date().toISOString(),
+              category: 'Saldo Awal',
+              note: data.note || 'Saldo Awal',
+            })
+          }
+        } catch (e) {
+          console.error('Error posting initial transaction:', e)
+          addTransaction({
+            type: 'income',
+            amount: Number(balance) || 0,
+            date: data.date || new Date().toISOString(),
+            category: 'Saldo Awal',
+            note: data.note || 'Saldo Awal',
+          })
+        }
+      } else {
+        // Tidak ada wallet id, tetap tambahkan lokal agar UI konsisten
+        addTransaction({
+          type: 'income',
+          amount: Number(balance) || 0,
+          date: data.date || new Date().toISOString(),
+          category: 'Saldo Awal',
+          note: data.note || 'Saldo Awal',
+        })
+      }
     } catch (e) {
       console.error('Error fetching wallet after initial balance save:', e)
     }
-    
+
     navigateTo('dashboard')
   }
 
