@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Budget;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 
 class BudgetController extends Controller
@@ -29,15 +30,29 @@ class BudgetController extends Controller
 
     public function store(Request $request)
     {
+        $userId = $request->user()->id;
+        
         $validated = $request->validate([
-            'wallet_id' => ['required', 'integer', 'exists:wallets,id'],
+            'wallet_id' => ['required', 'integer'],
             'period_month' => ['required', 'string', 'max:7'], // YYYY-MM
             'category' => ['required', 'string', 'max:100'],
             'limit' => ['required', 'numeric', 'min:0'],
         ]);
 
+        // CRITICAL: Verify wallet belongs to authenticated user
+        $walletExists = Wallet::where('id', $validated['wallet_id'])
+                              ->where('user_id', $userId)
+                              ->exists();
+        
+        if (!$walletExists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Wallet tidak ditemukan atau bukan milik Anda',
+            ], 404);
+        }
+
         $budget = Budget::query()->firstOrCreate([
-            'user_id' => $request->user()->id,
+            'user_id' => $userId,
             'wallet_id' => $validated['wallet_id'],
             'period_month' => $validated['period_month'],
             'category' => $validated['category'],

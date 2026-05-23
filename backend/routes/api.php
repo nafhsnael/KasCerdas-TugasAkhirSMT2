@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ProfilController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\BudgetController;
+use App\Http\Controllers\Api\DiagnosticsController;
 
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\CategoryController;
@@ -31,11 +32,21 @@ Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
     Route::post('/wallets', [WalletController::class, 'createOrUpdate']);
 
     Route::get('/transactions', [TransactionController::class, 'index']);
+    Route::get('/transactions/summary', [TransactionController::class, 'summary']);
+    Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
     Route::post('/transactions', [TransactionController::class, 'store']);
+    Route::put('/transactions/{transaction}', [TransactionController::class, 'update']);
     Route::delete('/transactions/{transaction}', [TransactionController::class, 'destroy']);
 
     Route::get('/budgets', [BudgetController::class, 'index']);
     Route::post('/budgets', [BudgetController::class, 'store']);
+
+    // DEBUG ENDPOINTS (Remove in production!)
+    Route::prefix('debug')->group(function () {
+        Route::get('/user-data', [DiagnosticsController::class, 'checkUserData']);
+        Route::get('/all-users', [DiagnosticsController::class, 'checkAllUsers']);
+        Route::get('/transaction-issues', [DiagnosticsController::class, 'checkTransactionIssues']);
+    });
 
     // Admin routes (Requires admin role)
     Route::middleware('is_admin')->prefix('admin')->group(function () {

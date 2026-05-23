@@ -1,0 +1,447 @@
+{
+  "info": {
+    "_postman_id": "kas-cerdas-transactions",
+    "name": "KasCerdas - Transaction API",
+    "description": "Complete Transaction API endpoints for KasCerdas backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.data.token);",
+                  "    pm.environment.set('user_id', jsonData.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions - List",
+      "item": [
+        {
+          "name": "Get All Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions?limit=20&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Transactions - With Filters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions?from=2026-05-01&to=2026-05-31&type=expense&category=Makan",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-05-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-05-31"
+                },
+                {
+                  "key": "type",
+                  "value": "expense"
+                },
+                {
+                  "key": "category",
+                  "value": "Makan"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions?search=warung",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "warung"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions - Detail",
+      "item": [
+        {
+          "name": "Get Single Transaction",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions - Create",
+      "item": [
+        {
+          "name": "Create Transaction - Without Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "wallet_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Makan Siang di Warung",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "Makan",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "expense",
+                  "type": "text"
+                },
+                {
+                  "key": "amount",
+                  "value": "25000",
+                  "type": "text"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-05-23",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "Makan di warung mak citra",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions"]
+            }
+          }
+        },
+        {
+          "name": "Create Transaction - Income",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "wallet_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Gaji Bulan Mei",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "Penghasilan Kerja Paruh Waktu",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "income",
+                  "type": "text"
+                },
+                {
+                  "key": "amount",
+                  "value": "2000000",
+                  "type": "text"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-05-23",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions - Update",
+      "item": [
+        {
+          "name": "Update Transaction",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Makan Siang - Updated",
+                  "type": "text"
+                },
+                {
+                  "key": "amount",
+                  "value": "30000",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "Updated note",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions - Delete",
+      "item": [
+        {
+          "name": "Delete Transaction",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions - Summary",
+      "item": [
+        {
+          "name": "Get Summary - All Time",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions/summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "summary"]
+            }
+          }
+        },
+        {
+          "name": "Get Summary - Monthly",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions/summary?from=2026-05-01&to=2026-05-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "summary"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-05-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-05-31"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    }
+  ]
+}
