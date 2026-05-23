@@ -1,7 +1,7 @@
 import TransactionCard from '../components/TransactionCard'
 import BudgetCard from '../components/BudgetCard'
 
-function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletInfo, userProfile }) {
+function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletInfo, userProfile, onQuickAction }) {
   const recentTransactions = transactions.slice(0, 4)
   const now = new Date()
   const currentMonth = now.getMonth()
@@ -48,13 +48,14 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
   const carbonSaved = 125
 
   const quickActions = [
-    { label: 'Cicilan', icon: '📚' },
-    { label: 'Beasiswa', icon: '🎓' },
-    { label: 'Kos', icon: '🏠' },
-    { label: 'Makan', icon: '🍜' },
-    { label: 'Transfer', icon: '💸' },
-    { label: 'Riwayat', icon: '📋' },
+    { label: 'Kos', category: 'Kos', icon: '🏠' },
+    { label: 'UKT', category: 'UKT', icon: '📚' },
+    { label: 'Makan', category: 'Makan', icon: '🍜' },
+    { label: 'Transportasi', category: 'Transportasi', icon: '🚌' },
+    { label: 'Kebutuhan Kuliah', category: 'Kebutuhan Kuliah', icon: '✏️' },
+    { label: 'Kebutuhan Lainnya', category: 'Kebutuhan Lainnya', icon: '🧩' },
   ]
+
 
   return (
     <div className="space-y-8">
@@ -64,7 +65,7 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
             <p className="text-sm uppercase tracking-[0.24em] text-slate-100/80">Selamat Datang, Mahasiswa</p>
             <h1 className="mt-2 text-3xl font-semibold">{userProfile?.nama || 'Mahasiswa'}</h1>
             <p className="mt-3 max-w-2xl text-sm text-slate-100/90">
-              Kelola keuangan kuliah, cicilan, kos, dan pengeluaran sehari-hari dengan mudah.
+              Kelola keuangan kuliah, kos, dan pengeluaran sehari-hari dengan mudah.
             </p>
           </div>
           <div className="rounded-[28px] border border-white/20 bg-white/10 p-4 text-right">
@@ -99,7 +100,7 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Kategori</p>
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Aksi Cepat</p>
             <h2 className="mt-2 text-xl font-semibold text-slate-900">Kelola keuangan Anda</h2>
           </div>
         </div>
@@ -107,6 +108,8 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
           {quickActions.map((action) => (
             <button
               key={action.label}
+              type="button"
+              onClick={() => onQuickAction?.(action.category)}
               className="group flex items-center gap-3 rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-[#38ADA9] hover:bg-[#f5fffd]"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f6f3] text-2xl text-[#2e8b87]">
@@ -124,8 +127,8 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Budget Bulanan</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-900">Pengingat agar tidak boros</h2>
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Budges Reminder</p>
+            <h2 className="mt-2 text-xl font-semibold text-slate-900"></h2>
           </div>
           <span className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
             {budgets?.length || 0} kategori
@@ -146,28 +149,6 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
           <p className="text-sm text-slate-500">Belum ada budget untuk bulan ini. Tambahkan melalui halaman Budget.</p>
         )}
       </section>
-
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi Terakhir</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-900">Transaksi terbaru</h2>
-          </div>
-          <span className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-            {transactions.length} transaksi
-          </span>
-        </div>
-        <div className="space-y-4">
-          {recentTransactions.length > 0 ? (
-            recentTransactions.map((transaction) => (
-              <TransactionCard key={transaction.id} transaction={transaction} />
-            ))
-          ) : (
-            <p className="text-sm text-slate-500">Tidak ada transaksi terbaru saat ini.</p>
-          )}
-        </div>
-      </section>
-
 
     </div>
   )

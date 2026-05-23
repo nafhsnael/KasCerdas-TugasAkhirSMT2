@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\Wallet;
+<<<<<<< HEAD
 use App\Models\ActivityLog;
+=======
+>>>>>>> ef7446cccf060ac35a0f05d37eb109b8876474a9
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -168,6 +171,23 @@ class TransactionController extends Controller
             'type' => $transaction->type,
         ]);
 
+        // Mutasi saldo wallet untuk update e-wallet dashboard.
+        // Catatan: transaksi kategori 'Initial' dipakai untuk reporting, bukan untuk mengubah saldo.
+        if ($validated['category'] !== 'Initial') {
+            $wallet = Wallet::query()->where('user_id', $request->user()->id)->where('id', $validated['wallet_id'])->first();
+
+            if ($wallet) {
+                $delta = (float) $validated['amount'];
+                if ($validated['type'] === 'income') {
+                    $wallet->balance = (float) $wallet->balance + $delta;
+                } else {
+                    $wallet->balance = (float) $wallet->balance - $delta;
+                }
+
+                $wallet->save();
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Transaksi berhasil dibuat',
@@ -188,6 +208,7 @@ class TransactionController extends Controller
             ], 403);
         }
 
+<<<<<<< HEAD
         $validated = $request->validate([
             'wallet_id' => ['nullable', 'integer', 'exists:wallets,id'],
             'title' => ['nullable', 'string', 'max:150'],
@@ -295,6 +316,26 @@ class TransactionController extends Controller
             'type' => $transaction->type,
         ]);
 
+=======
+        // Rollback saldo wallet saat transaksi dihapus (kecuali transaksi Initial).
+        if ($transaction->category !== 'Initial') {
+            $wallet = Wallet::query()->where('user_id', $request->user()->id)->where('id', $transaction->wallet_id)->first();
+
+            if ($wallet) {
+                $delta = (float) $transaction->amount;
+                if ($transaction->type === 'income') {
+                    // menghapus income => kurangi delta
+                    $wallet->balance = (float) $wallet->balance - $delta;
+                } else {
+                    // menghapus expense => tambah delta
+                    $wallet->balance = (float) $wallet->balance + $delta;
+                }
+
+                $wallet->save();
+            }
+        }
+
+>>>>>>> ef7446cccf060ac35a0f05d37eb109b8876474a9
         $transaction->delete();
 
         return response()->json([
