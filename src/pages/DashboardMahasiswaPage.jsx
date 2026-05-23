@@ -11,6 +11,8 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
     'Uang Saku/Kiriman',
     'Beasiswa',
     'Penghasilan Kerja Paruh Waktu',
+    'Saldo Awal',
+    'Initial',
   ]
 
   const mahasiswaPengeluaranCategories = [
