@@ -47,12 +47,15 @@ function TransactionsUMKMPage({
     category: 'Penjualan',
     date: '',
     note: '',
+    // Linking stok (khusus kategori beli bahan baku/stok)
     linkedStock: false,
     stockItemId: defaultStockItemId,
     stockQty: '1',
+    // Kredit (piutang/hutang)
     isSettled: false,
     receipt: null,
   })
+
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMonth, setSelectedMonth] = useState('')
@@ -180,12 +183,23 @@ function TransactionsUMKMPage({
     const amount = parseInt(form.amount, 10)
     const stockQty = parseInt(form.stockQty, 10) || 1
 
+    if (form.category === 'Beli Bahan Baku / Stok') {
+      // Untuk kategori stok: item harus dipilih (stockItemId), input diketik hanya untuk membantu pencarian.
+      if (!form.stockItemId) {
+        alert('Mohon isi item stok')
+        return
+      }
+    }
+
     const newTransaction = {
       title: form.title,
       amount,
       category: form.category,
       date: form.date,
       note: form.note,
+
+
+
       type:
         form.category === 'Penjualan' ||
         form.category === 'Pemasukan' ||
@@ -261,7 +275,7 @@ function TransactionsUMKMPage({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Kategori Bisnis</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Kategori </label>
             <select
               value={form.category}
               onChange={(e) => handleChange('category', e.target.value)}
@@ -288,73 +302,153 @@ function TransactionsUMKMPage({
           </div>
 
 
-          <div className="lg:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-slate-700">Catatan</label>
-            <textarea
-              value={form.note}
-              onChange={(e) => handleChange('note', e.target.value)}
-              rows="3"
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-              placeholder="Contoh: Penjualan kredit pelanggan A"
-            />
-          </div>
 
-          {(isLinkedStockCategory || isStockPurchaseCategory) && (
-            <>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Pilih Item Stok</label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => handleChange('title', e.target.value)}
-              required
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-              placeholder="Contoh: Penjualan kue bolu"
-            />
+
+
+
+          {form.category === 'Beli Bahan Baku / Stok' && (
+            <div className="lg:col-span-2">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="">
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Item stok</label>
+
+                  <div className="mt-0 grid grid-cols-1 gap-2">
+                    <input
+                      type="text"
+                      value={form.stockItemSearch}
+                      onChange={(e) => setForm((prev) => ({ ...prev, stockItemSearch: e.target.value }))}
+                      placeholder="nama item stok (wajib)"
+                      className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    />
+
+                    <div className="mt-2 grid grid-cols-1 gap-2">
+                      {(umkmSummary?.inventory || [])
+                        .filter((it) => {
+                          const q = (form.stockItemSearch || '').trim().toLowerCase()
+                          if (!q) return true
+                          const label = String(it.name || it.stockItemName || it.id).toLowerCase()
+                          return label.includes(q)
+                        })
+                        .map((it) => {
+                          const active = String(it.id) === String(form.stockItemId)
+
+                          return (
+                            <button
+                              key={it.id}
+                              type="button"
+                              onClick={() => {
+                                setForm((prev) => ({
+                                  ...prev,
+                                  linkedStock: true,
+                                  stockItemId: it.id,
+                                }))
+                              }}
+                              className={
+                                `rounded-2xl border px-3 py-2 text-left transition ` +
+                                (active
+                                  ? 'border-[#38ADA9] bg-[#38ADA9] text-white'
+                                  : 'border-slate-200 bg-white text-slate-900 hover:border-slate-300')
+                              }
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="text-sm font-semibold">{it.name || it.stockItemName || it.id}</div>
+                                <div className="text-right">
+                                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">Kuantitas</label>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    value={form.stockQty}
+                                    onChange={(e) => handleChange('stockQty', e.target.value)}
+                                    className="mt-1 w-24 rounded-3xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                                  />
+                                </div>
+                              </div>
+
+                              {it.qty != null && (
+                                <div className="mt-1 text-xs text-white/90">Stok: {it.qty}</div>
+                              )}
+                            </button>
+                          )
+                        })}
+                    </div>
+
+                  </div>
+                </div>
+
+                <div className="">
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Kuantitas</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.stockQty}
+                    onChange={(e) => handleChange('stockQty', e.target.value)}
+                    disabled={false}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9] disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                </div>
               </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Kuantitas</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={form.stockQty}
-                  onChange={(e) => handleChange('stockQty', e.target.value)}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-                />
-              </div>
-            </>
-          )}
-
-          {isLinkedStockCategory && (
-            <div className="lg:col-span-2 flex items-center gap-3">
-              <input
-                id="linkedStock"
-                type="checkbox"
-                checked={form.linkedStock}
-                onChange={(e) => handleChange('linkedStock', e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
-              />
-              <label htmlFor="linkedStock" className="text-sm text-slate-700">
-                Hubungkan transaksi ke stok produk siap jual
-              </label>
             </div>
           )}
 
-          {isCreditCategory && (
-            <div className="lg:col-span-2 flex items-center gap-3">
-              <input
-                id="isSettled"
-                type="checkbox"
-                checked={form.isSettled}
-                onChange={(e) => handleChange('isSettled', e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
+
+          {form.category === 'Hutang Supplier' ? (
+            <div className="lg:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-slate-700">Catatan</label>
+              <textarea
+                value={form.note}
+                onChange={(e) => handleChange('note', e.target.value)}
+                rows="3"
+                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                placeholder="Contoh: Lunas hutang supplier bulan ini"
+                readOnly
               />
-              <label htmlFor="isSettled" className="text-sm text-slate-700">
-                Tandai sebagai sudah dibayar / dilunasi sekarang
-              </label>
+
+              {isCreditCategory && (
+                <div className="mt-3 flex items-center gap-3">
+                  <input
+                    id="isSettled"
+                    type="checkbox"
+                    checked={form.isSettled}
+                    onChange={(e) => handleChange('isSettled', e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
+                  />
+                  <label htmlFor="isSettled" className="text-sm text-slate-700">
+                    Tandai Sudah dibayar / dilunasi
+                  </label>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="lg:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-slate-700">Catatan</label>
+              <textarea
+                value={form.note}
+                onChange={(e) => handleChange('note', e.target.value)}
+                rows="3"
+                style={{ resize: 'none' }}
+                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                placeholder="Contoh: Penjualan kredit pelanggan A"
+              />
+
+
+
+              {isCreditCategory && (
+                <div className="mt-3 flex items-center gap-3">
+                  <input
+                    id="isSettled"
+                    type="checkbox"
+                    checked={form.isSettled}
+                    onChange={(e) => handleChange('isSettled', e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
+                  />
+                  <label htmlFor="isSettled" className="text-sm text-slate-700">
+                    TandaiSudah dibayar / dilunasi
+                  </label>
+                </div>
+              )}
             </div>
           )}
+
 
           {(form.category === 'Pengeluaran Operasional' || form.category === 'Beli Bahan Baku / Stok') && (
             <div>
@@ -370,6 +464,7 @@ function TransactionsUMKMPage({
               )}
             </div>
           )}
+
 
           <div className="lg:col-span-2">
             <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
@@ -391,7 +486,7 @@ function TransactionsUMKMPage({
         <div className="mb-6 grid gap-4 md:grid-cols-3">
          
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Filter Kategori Bisnis</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Filter Kategori </label>
             <select
               value={filters.type}
               onChange={(e) => setFilters({ type: e.target.value })}

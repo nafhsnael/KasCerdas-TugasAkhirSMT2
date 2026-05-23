@@ -3,7 +3,7 @@ import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
 const defaultCategories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
-const bank = ['Cash', 'Ovo', 'Dana', 'Bank']
+
 
 function TransactionsPage({
   transactions,
@@ -20,7 +20,6 @@ function TransactionsPage({
     title: '',
     amount: '',
     category: initialCategory,
-    bank: 'Cash',
     date: '',
     note: '',
     type: 'expense',
@@ -135,7 +134,6 @@ function TransactionsPage({
       title: form.title,
       amount: parseInt(form.amount),
       category: form.category,
-      bank: form.bank,
       date: form.date,
       note: form.note,
       type: form.type,
@@ -144,7 +142,7 @@ function TransactionsPage({
     }
     onAddTransaction(newTransaction)
     alert('Transaksi baru berhasil ditambahkan!')
-    setForm({ title: '', amount: '', category: 'Makan', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null })
+    setForm({ title: '', amount: '', category: 'Makan', date: '', note: '', type: 'expense', receipt: null })
   }
 
   return (
@@ -189,18 +187,6 @@ function TransactionsPage({
             >
               {categories.map((category) => (
                 <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Bank</label>
-            <select
-              value={form.bank}
-              onChange={(e) => handleChange('bank', e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-            >
-              {bank.map((bank) => (
-                <option key={bank} value={bank}>{bank}</option>
               ))}
             </select>
           </div>

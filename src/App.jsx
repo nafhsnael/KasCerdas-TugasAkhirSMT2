@@ -440,21 +440,29 @@ function App() {
     setIsAuthenticated(true)
 
     // Alur: Register atau Login -> UserType (jika belum) -> InitialBalance -> Dashboard
-    // Jika sudah ada user_type dan wallet, langsung ke dashboard
+    // Jika sudah ada user_type, langsung arahkan ke dashboard (dengan tetap menjaga kondisi UserType/InitialBalance yang memang perlu).
     const userTypeFromData = userData.user_type || userData.role
     const hasUserType = Boolean(userTypeFromData)
-    
+
+    // Pastikan overlay state tidak menghalangi dashboard.
+    // (Tapi jika memang perlu UserType/InitialBalance, akan di-set lagi di bawah.)
+    setShowUserType(false)
+    setShowInitialBalance(false)
+
     if (isRegister || !hasUserType) {
+
       // Register baru atau login tanpa user_type -> pilih user type dulu
       setShowUserType(true)
       setShowInitialBalance(false)
-    } else {
-      // Sudah punya user_type, cek apakah perlu initial balance
-      // Jika wallet kosong/tidak ada, tampilkan InitialBalancePage
-      // Ini akan di-handle di useEffect yang fetch wallet info
       navigateTo('dashboard')
+      return
     }
+
+    // Jika user punya user_type, arahkan ke dashboard.
+    // Need check InitialBalance akan diputuskan oleh useEffect setelah wallet info dipanggil.
+    navigateTo('dashboard')
   }
+
 
 
   const handleUserTypeNext = async (selectedUserType) => {

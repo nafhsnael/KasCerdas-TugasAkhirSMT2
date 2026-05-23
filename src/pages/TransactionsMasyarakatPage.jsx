@@ -4,14 +4,12 @@ import InvoiceModal from '../components/InvoiceModal'
 
 const incomeCategories = ['Penghasilan Kerja', 'Uang Saku']
 const expenseCategories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
-const bank = ['Cash', 'Ovo', 'Dana', 'Bank']
 
 function TransactionsPage({ transactions, filters, setFilters, onAddTransaction }) {
   const [form, setForm] = useState({
     title: '',
     amount: '',
     category: 'Makan',
-    bank: 'Cash',
     date: '',
     note: '',
     type: 'expense',
@@ -131,7 +129,6 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
       title: form.title,
       amount: parseInt(form.amount),
       category: form.category,
-      bank: form.bank,
       date: form.date,
       note: form.note,
       type: form.type,
@@ -140,7 +137,7 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
     }
     onAddTransaction(newTransaction)
     alert('Transaksi baru berhasil ditambahkan!')
-    setForm({ title: '', amount: '', category: 'Makan', bank: 'Cash', date: '', note: '', type: 'expense', receipt: null })
+    setForm({ title: '', amount: '', category: 'Makan', date: '', note: '', type: 'expense', receipt: null })
   }
 
   return (
@@ -148,8 +145,11 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Tambah Transaksi</p>
-            <h2 className="text-xl font-semibold text-slate-900">Input data transaksi</h2>
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Transaksi Masyarakat</p>
+            <h2 className="text-xl font-semibold text-slate-900">Kelola pengeluaran dan pemasukan</h2>
+              <p className="mt-2 text-sm text-slate-500">
+            Rekam pemasukan dari uang saku dan penghasilan kerja, kebutuhan sehari-hari, dan lainnya.
+          </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <p className="text-sm font-medium text-slate-700"></p>
@@ -207,18 +207,7 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               ))}
             </select>
           </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Bank</label>
-            <select
-              value={form.bank}
-              onChange={(e) => handleChange('bank', e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-            >
-              {bank.map((bank) => (
-                <option key={bank} value={bank}>{bank}</option>
-              ))}
-            </select>
-          </div>
+        
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Tanggal</label>
             <input
@@ -264,28 +253,20 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi</p>
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi Masyarakat</p>
             <h2 className="text-xl font-semibold text-slate-900">Daftar terbaru</h2>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'all' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              onClick={() => setFilters({ type: 'all' })}
+         <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Filter Kategori </label>
+            <select
+              value={filters.type}
+              onChange={(e) => setFilters({ type: e.target.value })}
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             >
-              Semua
-            </button>
-            <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'income' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              onClick={() => setFilters({ type: 'income' })}
-            >
-              Pemasukan
-            </button>
-            <button
-              className={`rounded-3xl px-4 py-2 text-sm transition ${filters.type === 'expense' ? 'bg-[#38ADA9] text-white' : 'bg-slate-100 text-slate-700'}`}
-              onClick={() => setFilters({ type: 'expense' })}
-            >
-              Pengeluaran
-            </button>
+              <option value="all">Semua</option>
+              <option value="Pemasukan">Pemasukan</option>
+              <option value="Pengeluaran Operasional">Pengeluaran</option>
+            </select>
           </div>
           <span className="rounded-2xl bg-slate-100 px-3 py-1 text-sm text-slate-600">{visibleTransactions.length} transaksi</span>
         </div>
