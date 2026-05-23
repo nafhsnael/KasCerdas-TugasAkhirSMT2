@@ -155,6 +155,17 @@ function App() {
           dompet: walletData?.name || prev.dompet,
         }))
         setWalletInfo(walletData)
+        
+        // Jika user sudah punya user_type, tapi belum ada wallet (balance 0 atau null)
+        // maka tampilkan InitialBalancePage
+        const userHasType = Boolean(authUser.user_type || authUser.role)
+        const walletHasBalance = walletData?.balance && Number(walletData.balance) > 0
+        
+        if (userHasType && !walletHasBalance && !showInitialBalance) {
+          // User punya type tapi belum ada balance -> show InitialBalance
+          setShowInitialBalance(true)
+        }
+        
         setIsAuthenticated(true)
       })
       .catch(() => {
@@ -385,13 +396,19 @@ function App() {
   }
 
   const fetchWalletInfo = async () => {
-    const res = await authFetch('/api/wallet/me', { method: 'GET' })
-    if (!res.ok) {
-      throw new Error('Gagal mengambil data wallet')
-    }
+    try {
+      const res = await authFetch('/api/wallet/me', { method: 'GET' })
+      if (!res.ok) {
+        // Wallet belum ada/belum dibuat - return null
+        return null
+      }
 
-    const json = await res.json()
-    return json.data
+      const json = await res.json()
+      return json.data
+    } catch (e) {
+      // Jika error, return null agar InitialBalance bisa di-tampilkan
+      return null
+    }
   }
 
   const handleAuthenticate = async (userData = {}, isRegister = false) => {
@@ -422,9 +439,19 @@ function App() {
 
     setIsAuthenticated(true)
 
-    if (isRegister) {
+    // Alur: Register atau Login -> UserType (jika belum) -> InitialBalance -> Dashboard
+    // Jika sudah ada user_type dan wallet, langsung ke dashboard
+    const userTypeFromData = userData.user_type || userData.role
+    const hasUserType = Boolean(userTypeFromData)
+    
+    if (isRegister || !hasUserType) {
+      // Register baru atau login tanpa user_type -> pilih user type dulu
       setShowUserType(true)
+      setShowInitialBalance(false)
     } else {
+      // Sudah punya user_type, cek apakah perlu initial balance
+      // Jika wallet kosong/tidak ada, tampilkan InitialBalancePage
+      // Ini akan di-handle di useEffect yang fetch wallet info
       navigateTo('dashboard')
     }
   }
@@ -462,7 +489,7 @@ function App() {
     setShowInitialBalance(true)
   }
 
-  const handleSaveInitialBalance = (data) => {
+  const handleSaveInitialBalance = async (data) => {
     const balance = data.balance
     setInitialBalance(balance)
 
@@ -481,6 +508,17 @@ function App() {
     }
 
     setShowInitialBalance(false)
+    
+    // Re-fetch wallet info agar updated
+    try {
+      const walletData = await fetchWalletInfo()
+      if (walletData) {
+        setWalletInfo(walletData)
+      }
+    } catch (e) {
+      console.error('Error fetching wallet after initial balance save:', e)
+    }
+    
     navigateTo('dashboard')
   }
 

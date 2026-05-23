@@ -23,8 +23,8 @@ function LoginPage({ onSwitch, onAuthenticate }) {
       token: json.data.token,
       username: json.data.user.username,
       email: json.data.user.email,
-      usertype: 'Mahasiswa',
-      dompet: 'pribadi',
+      user_type: json.data.user.user_type,
+      name: json.data.user.name,
     })
   }
 

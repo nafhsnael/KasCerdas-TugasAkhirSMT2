@@ -4,16 +4,49 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
   const [balance, setBalance] = useState(initialBalance.toString())
   const [date, setDate] = useState('')
   const [note, setNote] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     if (!balance || !date) {
       alert('Mohon isi saldo awal dan tanggal')
       return
     }
+    
+    setIsLoading(true)
     const parsedBalance = parseInt(balance) || 0
-    onSave({ balance: parsedBalance, date, note })
-    alert('Saldo awal berhasil disimpan!')
+    
+    try {
+      // Simpan ke backend
+      const token = window.localStorage.getItem('token')
+      const res = await fetch('/api/wallets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: 'Dompet Pribadi',
+          balance: parsedBalance,
+        }),
+      })
+      
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        alert(json?.message || 'Gagal menyimpan saldo awal')
+        setIsLoading(false)
+        return
+      }
+      
+      // Jika berhasil, call onSave
+      onSave({ balance: parsedBalance, date, note })
+      alert('Saldo awal berhasil disimpan!')
+    } catch (e) {
+      console.error('Error saving wallet:', e)
+      alert('Terjadi kesalahan saat menyimpan saldo awal')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -47,7 +80,8 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
                 value={balance}
                 onChange={(e) => setBalance(e.target.value)}
                 required
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-slate-900 transition-all focus:border-[#38ADA9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20"
+                disabled={isLoading}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-slate-900 transition-all disabled:opacity-50 focus:border-[#38ADA9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20"
                 placeholder="0"
               />
             </div>
@@ -62,7 +96,8 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 transition-all focus:border-[#38ADA9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20"
+              disabled={isLoading}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 transition-all disabled:opacity-50 focus:border-[#38ADA9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20"
             />
           </div>
 
@@ -73,14 +108,17 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 transition-all focus:border-[#38ADA9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20"
+              disabled={isLoading}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 transition-all disabled:opacity-50 focus:border-[#38ADA9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20"
               placeholder="Tambahkan catatan (opsional)"
               rows={3}
             />
           </div>
 
-          <button className="w-full rounded-2xl bg-gradient-to-r from-[#38ADA9] to-[#38ADA9] py-3.5 text-base font-semibold text-white shadow-lg shadow-[#38ADA9]/25 transition-all hover:shadow-xl hover:shadow-[#38ADA9]/30 hover:-translate-y-0.5">
-            Simpan Saldo
+          <button 
+            disabled={isLoading}
+            className="w-full rounded-2xl bg-gradient-to-r from-[#38ADA9] to-[#38ADA9] py-3.5 text-base font-semibold text-white shadow-lg shadow-[#38ADA9]/25 transition-all hover:shadow-xl hover:shadow-[#38ADA9]/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+            {isLoading ? 'Menyimpan...' : 'Simpan Saldo'}
           </button>
         </form>
       </div>
