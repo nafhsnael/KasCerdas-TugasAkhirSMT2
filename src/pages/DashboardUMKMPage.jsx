@@ -101,8 +101,8 @@ function DashboardUMKMPage({
           </div>
         </div>
 
-        {/* 4 Stat Cards dalam 1 Baris */}
-          <div className="mb-6 grid gap-4 lg:grid-cols-4">
+        {/* Stat Cards dalam 1 Baris (termasuk Stock Count) */}
+          <div className="mb-6 grid gap-4 lg:grid-cols-5">
           {/* E-Wallet Saldo */}
           <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#f0fffe] to-[#e6f6f3] p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
@@ -135,6 +135,13 @@ function DashboardUMKMPage({
                 }}
               />
             </div>
+          </div>
+          
+          {/* Stock input counter */}
+          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#fff7ed] to-[#fff1e6] p-5">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Stok Masuk (Transaksi)</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-900">{umkmSummary?.stockCount || 0}</p>
+            <p className="mt-2 text-xs text-slate-600">Jumlah input pembelian stok</p>
           </div>
         </div>
 
@@ -194,37 +201,14 @@ function DashboardUMKMPage({
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-4">
+      <section className="grid gap-4 lg:grid-cols-1">
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-900">Rp {eWalletBalanceValue.toLocaleString?.('id-ID') ?? eWalletBalanceValue ?? 0}</h2>
-
             </div>
           </div>
-        </div>
-
-        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Financial Score Health</p>
-          <h2 className="mt-2 text-2xl font-semibold" style={{ color: '#F6B93B' }}>
-            {Math.round(financialScore)}%
-          </h2>
-          <p className="mt-2 text-xs text-slate-600">
-            {financialScore >= 70 ? 'Sangat Sehat' : financialScore >= 50 ? 'Sehat' : financialScore >= 30 ? 'Cukup' : 'Perlu Perhatian'}
-          </p>
-        </div>
-
-        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
-          <h2 className="mt-2 text-2xl font-semibold text-emerald-600">Rp {businessIncome.toLocaleString('id-ID')}</h2>
-            <p className="mt-2 text-xs text-slate-600">Ini adalah saldo pemasukan hari ini</p>
-        </div>
-
-        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
-          <h2 className="mt-2 text-2xl font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</h2>
-            <p className="mt-2 text-xs text-slate-600">Ini adalah saldo pengeluaran hari ini</p>
         </div>
       </section>
 

@@ -39,7 +39,7 @@ function TransactionsUMKMPage({
   }, [filters?.type])
 
 
-  const defaultStockItemId = umkmSummary?.inventory?.[1]?.id ?? umkmSummary?.inventory?.[0]?.id ?? ''
+  const defaultStockItemId = umkmSummary?.inventory?.[0]?.id ?? ''
 
   const [form, setForm] = useState({
     title: '',
@@ -183,11 +183,53 @@ function TransactionsUMKMPage({
     const amount = parseInt(form.amount, 10)
     const stockQty = parseInt(form.stockQty, 10) || 1
 
+    // If category is stock purchase, ensure we have a selected stock item.
+    // Try to auto-match the typed search to a single inventory item before rejecting.
+    let selectedStockId = form.stockItemId
     if (form.category === 'Beli Bahan Baku / Stok') {
-      // Untuk kategori stok: item harus dipilih (stockItemId), input diketik hanya untuk membantu pencarian.
-      if (!form.stockItemId) {
-        alert('Mohon isi item stok')
-        return
+      const qRaw = (form.stockItemSearch || '').trim()
+      const q = qRaw.toLowerCase()
+
+      if (!selectedStockId && q) {
+        const inventory = umkmSummary?.inventory || []
+
+        // First try exact name match (case-insensitive)
+        const exact = inventory.find((it) => String(it.name || it.stockItemName || it.id).trim().toLowerCase() === q)
+        if (exact) {
+          selectedStockId = exact.id
+        } else {
+          // Fallback to contains match
+          const matches = inventory.filter((it) => {
+            const label = String(it.name || it.stockItemName || it.id).toLowerCase()
+            return label.includes(q)
+          })
+          if (matches.length === 1) {
+            selectedStockId = matches[0].id
+          } else if (matches.length > 1) {
+            // Prefer item whose name starts with query
+            const starts = matches.find((it) => String(it.name || it.stockItemName || it.id).toLowerCase().startsWith(q))
+            selectedStockId = (starts && starts.id) || matches[0].id
+          }
+        }
+      }
+
+      // If user typed an id directly, accept it if it exists in inventory
+      if (!selectedStockId && form.stockItemSearch) {
+        const asId = form.stockItemSearch.trim()
+        const foundById = (umkmSummary?.inventory || []).find((it) => String(it.id) === asId)
+        if (foundById) selectedStockId = foundById.id
+      }
+
+      let createdStockName = null
+      if (!selectedStockId) {
+        if (form.stockItemSearch && form.stockItemSearch.trim()) {
+          // create a temporary new stock id and carry the name to backend handler
+          selectedStockId = `new-${Date.now()}`
+          createdStockName = form.stockItemSearch.trim()
+        } else {
+          alert('Mohon isi item stok')
+          return
+        }
       }
     }
 
@@ -211,7 +253,8 @@ function TransactionsUMKMPage({
       businessCategory: form.category,
       linkedStock: form.linkedStock,
 
-      stockItemId: form.stockItemId,
+      stockItemId: selectedStockId,
+      stockItemName: createdStockName,
       stockQty,
       isCredit: isCreditCategory,
       isSettled: form.isSettled,
