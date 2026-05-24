@@ -41,7 +41,28 @@ function TransactionsUMKMPage({
 
   const defaultStockItemId = umkmSummary?.inventory?.[0]?.id ?? ''
 
+  // Jika inventory baru ter-load dan form belum punya selected stock, isi otomatis.
+  useEffect(() => {
+    if (form.category !== 'Beli Bahan Baku / Stok') return
+    if (!umkmSummary?.inventory?.length) return
+
+    setForm((prev) => {
+      // Kalau stockItemId sudah ada, jangan override.
+      if (prev.stockItemId) return prev
+
+      const nextId = umkmSummary.inventory[0]?.id ?? ''
+      return {
+        ...prev,
+        stockItemId: nextId,
+        stockItemSearch: '',
+        linkedStock: Boolean(nextId),
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [umkmSummary?.inventory])
+
   const [form, setForm] = useState({
+
     title: '',
     amount: '',
     category: 'Penjualan',
@@ -51,10 +72,12 @@ function TransactionsUMKMPage({
     linkedStock: false,
     stockItemId: defaultStockItemId,
     stockQty: '1',
+    stockItemSearch: '',
     // Kredit (piutang/hutang)
     isSettled: false,
     receipt: null,
   })
+
 
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -231,9 +254,25 @@ function TransactionsUMKMPage({
           return
         }
       }
+
+      // pastikan createdStockName terbaca saat membangun newTransaction di scope luar
+      // (buat variabel yang sama di scope luar)
+      // eslint-disable-next-line no-unused-vars
+    }
+
+    // createdStockName hanya relevan untuk kategori beli stok
+    // deklarasi di scope luar agar tidak menimbulkan ReferenceError
+    let createdStockName = null
+    if (form.category === 'Beli Bahan Baku / Stok') {
+      const qRaw = (form.stockItemSearch || '').trim()
+      // kalau selectedStockId dibuat menjadi new-*, ambil nama dari input
+      if (qRaw && (!form.stockItemId || String(form.stockItemId).startsWith('new-'))) {
+        createdStockName = qRaw
+      }
     }
 
     const newTransaction = {
+
       title: form.title,
       amount,
       category: form.category,
@@ -266,6 +305,7 @@ function TransactionsUMKMPage({
 
     onAddUmkmTransaction(newTransaction)
     alert('Transaksi UMKM berhasil ditambahkan!')
+
     setForm({
       title: '',
       amount: '',
@@ -274,10 +314,12 @@ function TransactionsUMKMPage({
       note: '',
       linkedStock: false,
       stockItemId: defaultStockItemId,
+      stockItemSearch: '',
       stockQty: '1',
       isSettled: false,
       receipt: null,
     })
+
 
   }
 
@@ -510,10 +552,11 @@ function TransactionsUMKMPage({
 
 
           <div className="lg:col-span-2">
-            <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
+            <button type="submit" className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
               Simpan Transaksi
             </button>
           </div>
+
         </form>
       </section>
 

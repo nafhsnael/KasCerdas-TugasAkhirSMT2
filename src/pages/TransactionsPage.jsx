@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
-const defaultCategories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
+const defaultCategories = ['Makan', 'Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
 
 
 function TransactionsPage({

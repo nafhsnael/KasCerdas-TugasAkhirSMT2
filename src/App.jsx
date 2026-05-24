@@ -297,8 +297,7 @@ function App() {
       isUmkm: true,
     }
 
-    // Koneksikan UMKM ke laporan: UMKM masuk juga ke daftar transaksi utama (`transactions`)
-    setTransactions((prev) => [transaction, ...prev])
+    // UMKM hanya masuk ke `umkmTransactions`, supaya tidak muncul di riwayat transaksi Mahasiswa/Masyarakat.
     setUmkmTransactions((prev) => [transaction, ...prev])
     syncBudgetWithTransaction(transaction)
 
@@ -377,11 +376,16 @@ function App() {
           nextSummary.operationalExpense += amount
           break
         case 'Beli Bahan Baku / Stok':
-          // Pembelian stok menambah stok (dan HPP diperkirakan), bukan langsung jadi expense operasional
-          nextSummary.inventory = updateInventory(stockQty)
+          // Pembelian stok menambah stok (dan HPP diperkirakan)
+          // Inventory harus update berdasarkan selectedStockId + stockQty.
+          if (selectedStockId) {
+            nextSummary.inventory = updateInventory(stockQty)
+          }
           nextSummary.estimatedHpp += amount
           break
+
         case 'Piutang Pelanggan':
+
           // Jika sudah dilunasi, masuk sebagai pemasukan; jika belum, masuk piutang
           if (newTransaction.isSettled) {
             nextSummary.income += amount

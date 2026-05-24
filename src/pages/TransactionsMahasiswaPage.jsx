@@ -204,13 +204,16 @@ function TransactionsMahasiswaPage({
             <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
             <input
               type="number"
+              inputMode="numeric"
               value={form.amount}
               onChange={(e) => handleChange('amount', e.target.value)}
               required
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+              // hilangkan spinner ▲▼ agar tidak mengganggu tampilan
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0"
             />
           </div>
+
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Kategori</label>
@@ -240,10 +243,10 @@ function TransactionsMahasiswaPage({
             <label className="mb-2 block text-sm font-medium text-slate-700">Catatan</label>
             <textarea
               value={form.note}
-              onChange={(e) => handleChange('note', e.target.value)}
               rows="3"
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
               placeholder="Contoh: Makan siang di kantin kampus"
+              onChange={(e) => handleChange('note', e.target.value)}
             />
           </div>
 

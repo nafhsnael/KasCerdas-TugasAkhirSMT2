@@ -72,6 +72,29 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
             </div>
           )}
 
+          {/* Detail Stok (khusus kategori beli bahan baku/stok) */}
+          {(transaction.businessCategory === 'Beli Bahan Baku / Stok' || transaction.category === 'Beli Bahan Baku / Stok') && (
+            <div>
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
+              
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs text-slate-600">Item</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {transaction.stockItemName || transaction.stockItemId || '-'}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs text-slate-600">Kuantitas</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {transaction.stockQty ?? '-'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Bukti Nota */}
           {transaction.receipt && (
             <div>
@@ -109,6 +132,7 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
               </div>
             </div>
           )}
+
         </div>
 
         {/* Footer */}

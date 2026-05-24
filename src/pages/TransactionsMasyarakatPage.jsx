@@ -3,7 +3,7 @@ import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
 const incomeCategories = ['Penghasilan Kerja', 'Uang Saku']
-const expenseCategories = ['Makan', 'Transport', 'Hiburan', 'Belanja', 'Tagihan']
+const expenseCategories = ['Makan', 'Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
 
 function TransactionsPage({ transactions, filters, setFilters, onAddTransaction }) {
   const [form, setForm] = useState({
@@ -222,10 +222,10 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
             <label className="mb-2 block text-sm font-medium text-slate-700">Catatan</label>
             <textarea
               value={form.note}
-              onChange={(e) => handleChange('note', e.target.value)}
               rows="3"
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
               placeholder="Contoh: Makan siang di kantor"
+              onChange={(e) => handleChange('note', e.target.value)}
             />
           </div>
           {form.type === 'expense' && (
@@ -256,8 +256,13 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi Masyarakat</p>
             <h2 className="text-xl font-semibold text-slate-900">Daftar terbaru</h2>
           </div>
-         <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Filter Kategori </label>
+          <span className="rounded-2xl bg-slate-100 px-3 py-1 text-sm text-slate-600">{visibleTransactions.length} transaksi</span>
+        </div>
+        
+        
+        <div className="mb-6 grid gap-4 md:grid-cols-3">
+          <div>
+           <label className="mb-2 block text-sm font-medium text-slate-700">Filter Kategori</label>
             <select
               value={filters.type}
               onChange={(e) => setFilters({ type: e.target.value })}
@@ -268,12 +273,9 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               <option value="Pengeluaran Operasional">Pengeluaran</option>
             </select>
           </div>
-          <span className="rounded-2xl bg-slate-100 px-3 py-1 text-sm text-slate-600">{visibleTransactions.length} transaksi</span>
-        </div>
 
-        <div className="mb-6 grid gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Cari Transaksi</label>
+           <label className="mb-2 block text-sm font-medium text-slate-700">Cari Transaksi</label>
             <input
               type="text"
               value={searchQuery}
@@ -282,6 +284,7 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             />
           </div>
+
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Filter Bulan</label>
             <select
