@@ -1,9 +1,9 @@
 # TODO
-
-## UMKM - Transaksi Beli Bahan Baku / Stok (UI)
-- [x] Reorder blok input **Item stok** dan **Kuantitas** agar tampil **di atas** textarea **Catatan** untuk kategori `Beli Bahan Baku / Stok`.
-- [x] Perbaiki bug field input **Item stok** yang saat ini memakai `form.Itemstock` (tidak dipakai oleh logic). Pastikan form hanya memakai `stockItemId` dan `stockQty`.
-- [x] Verifikasi UI manual: stok/kuantitas berubah saat submit transaksi.
-
-
+- [ ] Update `src/pages/BudgetPage.jsx`:
+  - [x] Pastikan form reset field operasional/manual saat tambah budget baru atau pindah kategori
+- [ ] Pastikan kategori untuk masyarakat_umum:
+    - [x] Saat pilih `Kebutuhan Lain`, simpan menjadi `Kebutuhan Lain - <operationalDetail>`
+    - [x] Selain `Kebutuhan Lain`, simpan kategori tanpa suffix
+- [x] Pastikan perhitungan usage (`getActualUsage`) tetap cocok dengan format kategori
+- [ ] Test manual flow tambah budget masyarakat umum (Kebutuhan Lain -> tambah lagi kategori lain)
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import BudgetCard from '../components/BudgetCard'
 
-function BudgetPage({ transactions, budgets, setBudgets }) {
+function BudgetPage({ transactions, budgets, setBudgets, userType }) {
   const [formData, setFormData] = useState({
     category: '', // kategori (dropdown)
     operationalDetail: '', // kebutuhan operasional (manual, opsional)
@@ -9,6 +9,9 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
   })
   const [editingId, setEditingId] = useState(null)
   const [showForm, setShowForm] = useState(false)
+
+  // debug (temporer)
+  const debugLog = (...args) => console.log('[BudgetPage]', ...args)
 
   const [message, setMessage] = useState('')
 
@@ -38,15 +41,24 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
   }
 
   const handleEditBudget = (budget) => {
-    const [selectedCategory, ...rest] = budget.category.split(' - ')
-    const operationalDetails = rest.join(' - ')
+    // For masyarakat_umum, try to split the category
+    let categoryName = budget.category
+    let categoryDetail = ''
+    
+    if (userType === 'masyarakat_umum') {
+      const [mainCategory, ...rest] = budget.category.split(' - ')
+      categoryName = mainCategory
+      categoryDetail = rest.join(' - ')
+    } else if (userType === 'umkm') {
+      const [mainCategory, ...rest] = budget.category.split(' - ')
+      categoryName = mainCategory
+      categoryDetail = rest.join(' - ')
+    }
 
-    // dropdown hanya berisi kategori operasional. Jika user pernah menulis kategori lengkap,
-    // kita pecah pakai separator ' - '. Detail bisa kosong.
     setEditingId(budget.id)
     setFormData({
-      category: selectedCategory || '',
-      operationalDetail: operationalDetails || '',
+      category: categoryName || '',
+      operationalDetail: categoryDetail || '',
       limit: budget.limit.toString(),
     })
     setShowForm(true)
@@ -57,11 +69,22 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
 
     const selectedOperationalCategory = formData.category
 
-    // Khusus UMKM: kategori tertentu tidak memakai input kebutuhan operasional.
+    // Validasi kategori yang tidak memerlukan detail
     const isKategoriTanpaDetail = [
       'Beli Bahan Baku / Stok',
       'Utang Supplier',
+      'Makan',
+      'Transport',
+      'Hiburan',
+      'Belanja',
     ].includes(selectedOperationalCategory)
+
+    // Untuk "Kebutuhan Lain" di Masyarakat Lain, detail harus diisi
+    if (selectedOperationalCategory === 'Kebutuhan Lain' && !formData.operationalDetail.trim()) {
+      setMessage('Silakan jelaskan kebutuhan Anda')
+      setTimeout(() => setMessage(''), 3000)
+      return
+    }
 
     const operationalDetail = isKategoriTanpaDetail
       ? ''
@@ -73,16 +96,24 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
       return
     }
 
-    const limit = parseInt(formData.limit)
+      const limit = parseInt(formData.limit)
     if (Number.isNaN(limit) || limit <= 0) {
       setMessage('Limit harus lebih dari 0')
       setTimeout(() => setMessage(''), 3000)
       return
     }
 
-    const categoryName = operationalDetail
-      ? `${selectedOperationalCategory} - ${operationalDetail}`
-      : selectedOperationalCategory
+    // Simpan format kategori agar konsisten untuk perhitungan usage
+    // - masyarakat_umum: Kebutuhan Lain harus include detail ("Kebutuhan Lain - <detail>")
+    // - kategori lain: tanpa suffix
+    let categoryName
+    if (userType === 'masyarakat_umum' && selectedOperationalCategory === 'Kebutuhan Lain') {
+      categoryName = operationalDetail
+        ? `Kebutuhan Lain - ${operationalDetail}`
+        : 'Kebutuhan Lain'
+    } else {
+      categoryName = selectedOperationalCategory
+    }
 
     if (editingId) {
       // Edit existing budget
@@ -100,24 +131,31 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
       setMessage('Budget berhasil diperbarui!')
     } else {
       // Add new budget
-      setBudgets((currentBudgets) => {
-        const newId = Math.max(0, ...currentBudgets.map((b) => b.id)) + 1
-        return [
-          ...currentBudgets,
-          {
-            id: newId,
-            category: categoryName,
-            limit: limit,
-            usage: 0,
-          },
-        ]
-      })
+      // update state budgets harus benar-benar menambah item baru
+      const newBudget = {
+      id: Math.max(0, ...budgets.map((b) => b.id)) + 1,
+      category: categoryName,
+      limit: limit,
+      usage: 0,
+    }
+
+    setBudgets((currentBudgets) => {
+      // pastikan id unik meski ada race condition
+      const nextId = Math.max(0, ...currentBudgets.map((b) => b.id)) + 1
+      return [
+        ...currentBudgets,
+        {
+          ...newBudget,
+          id: nextId,
+        },
+      ]
+    })
       setMessage('Budget berhasil ditambahkan!')
     }
 
     setTimeout(() => setMessage(''), 3000)
     setShowForm(false)
-    setFormData({ category: '', customCategory: '', limit: '' })
+    setFormData({ category: '', operationalDetail: '', limit: '' })
   }
 
   const handleDeleteBudget = (id) => {
@@ -132,6 +170,43 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
     setShowForm(false)
     setFormData({ category: '', operationalDetail: '', limit: '' })
     setEditingId(null)
+  }
+
+  // Get category options based on user type
+  const getCategoryOptions = () => {
+    if (userType === 'masyarakat_umum') {
+      return [
+        { value: 'Makan', label: 'Makan' },
+        { value: 'Transport', label: 'Transport' },
+        { value: 'Hiburan', label: 'Hiburan' },
+        { value: 'Belanja', label: 'Belanja' },
+        { value: 'Kebutuhan Lain', label: 'Kebutuhan Lain' },
+      ]
+    } else if (userType === 'umkm') {
+      return [
+        { value: 'Pengeluaran Operasional', label: 'Pengeluaran Operasional' },
+        { value: 'Beli Bahan Baku / Stok', label: 'Beli Bahan Baku / Stok' },
+        { value: 'Hutang Supplier', label: 'Hutang Supplier' },
+      ]
+    } else {
+      // Default for mahasiswa or other types
+      return [
+        { value: 'Makan', label: 'Makan' },
+        { value: 'Transport', label: 'Transport' },
+        { value: 'Hiburan', label: 'Hiburan' },
+        { value: 'Belanja', label: 'Belanja' },
+      ]
+    }
+  }
+
+  // Check if custom input is needed
+  const shouldShowCustomInput = () => {
+    if (userType === 'masyarakat_umum') {
+      return formData.category === 'Kebutuhan Lain'
+    } else if (userType === 'umkm') {
+      return !["Beli Bahan Baku / Stok", "Hutang Supplier"].includes(formData.category)
+    }
+    return false
   }
 
   // Calculate totals
@@ -209,23 +284,30 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
               >
-                <option value="Pengeluaran Operasional">Pengeluaran Operasional</option>
-                <option value="Beli Bahan Baku / Stok">Beli Bahan Baku / Stok</option>
-                <option value="Hutang Supplier">Hutang Supplier</option>
+                <option value="">Pilih Kategori</option>
+                {getCategoryOptions().map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
-            {['Beli Bahan Baku / Stok', 'Hutang Supplier'].includes(formData.category) ? null : (
+            {shouldShowCustomInput() && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Kebutuhan operasional (Opsional)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {userType === 'masyarakat_umum' ? 'Jelaskan Kebutuhan Lain' : 'Kebutuhan operasional'}
+                </label>
                 <input
                   type="text"
                   value={formData.operationalDetail}
                   onChange={(e) => setFormData({ ...formData, operationalDetail: e.target.value })}
-                  placeholder="Contoh: sewa kios untuk 1 bulan / biaya internet toko"
+                  placeholder={userType === 'masyarakat_umum' ? 'Contoh: Perawatan, Pakaian, dll' : 'Contoh: sewa kios untuk 1 bulan / biaya internet toko'}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
                 />
-                <p className="mt-2 text-xs text-slate-500">Isi kebutuhan/jenis operasionalnya agar lebih spesifik.</p>
+                <p className="mt-2 text-xs text-slate-500">
+                  {userType === 'masyarakat_umum' ? 'Jelaskan jenis kebutuhan Anda' : 'Isi kebutuhan/jenis operasionalnya agar lebih spesifik.'}
+                </p>
               </div>
             )}
 
@@ -298,17 +380,7 @@ function BudgetPage({ transactions, budgets, setBudgets }) {
         </div>
       </div>
 
-      {/* Budget Tips */}
-      <div className="rounded-[32px] border border-slate-200 bg-blue-50 p-6">
-        <h3 className="font-semibold text-slate-900 mb-3">💡 Tips Manajemen Budget</h3>
-        <ul className="space-y-2 text-sm text-slate-600">
-          <li>✓ Tentukan budget untuk setiap kategori pengeluaran</li>
-          <li>✓ Monitor penggunaan budget secara berkala</li>
-          <li>✓ Kurangi pengeluaran jika mendekati atau melampaui budget</li>
-          <li>✓ Sesuaikan budget berdasarkan pola pengeluaran Anda</li>
-          <li>✓ Prioritaskan kebutuhan pokok terlebih dahulu</li>
-        </ul>
-      </div>
+
     </div>
   )
 }

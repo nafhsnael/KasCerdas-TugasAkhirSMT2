@@ -689,7 +689,7 @@ function App() {
       case 'reports':
         return <ReportsPage transactions={transactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
       case 'budget':
-        return <BudgetPage transactions={transactions} budgets={budgets} setBudgets={setBudgets} />
+        return <BudgetPage transactions={transactions} budgets={budgets} setBudgets={setBudgets} userType={userProfile?.usertype} />
       case 'add-debt':
         return <AddDebtPage onAddDebt={addDebt} onNavigate={setCurrentPage} />
       case 'add-savings':
