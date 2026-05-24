@@ -15,8 +15,12 @@ function DashboardUMKMPage({
   const recentTransactions = transactions.slice(0, 4)
 
   const businessIncome = umkmSummary.income
-  const businessExpense = umkmSummary.operationalExpense
-  const inventoryItems = umkmSummary.inventory
+  const businessExpense = transactions
+    .filter((t) => (t.businessCategory || t.category) === 'Pengeluaran Operasional')
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+
+  const inventoryItems = Array.isArray(umkmSummary.inventory) ? umkmSummary.inventory : []
+
   const lowStockItems = inventoryItems.filter((item) => item.stock <= item.reorderLevel)
   const totalPayables = umkmSummary.payables
   const totalReceivables = umkmSummary.receivables
@@ -101,51 +105,48 @@ function DashboardUMKMPage({
           </div>
         </div>
 
-        {/* Stat Cards dalam 1 Baris (termasuk Stock Count) */}
-          <div className="mb-6 grid gap-4 lg:grid-cols-5">
+        {/* Stat Cards (4 fitur) dalam 1 baris agar full satu baris */}
+        <div className="mb-6 grid gap-4 lg:grid-cols-4">
           {/* E-Wallet Saldo */}
           <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#f0fffe] to-[#e6f6f3] p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
             <p className="mt-3 text-2xl font-semibold text-slate-900">Rp {eWalletBalanceValue.toLocaleString('id-ID')}</p>
+            <p className="mt-2 text-xs text-slate-600">Saldo yang kamu miliki saat ini</p>
           </div>
-          
+
+
           {/* Saldo Pemasukan */}
           <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#f0fdf4] to-[#dcfce7] p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
             <p className="mt-3 text-2xl font-semibold text-emerald-600">Rp {businessIncome.toLocaleString('id-ID')}</p>
+            <p className="mt-2 text-xs text-slate-600">Saldo dihitung per bulan.</p>
           </div>
-          
+
           {/* Saldo Pengeluaran */}
           <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#fef2f2] to-[#fee2e2] p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
             <p className="mt-3 text-2xl font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</p>
+            <p className="mt-2 text-xs text-slate-600">Saldo dihitung per bulan.</p>
           </div>
-          
+
           {/* Financial Score Health */}
           <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#fffbf0] to-[#fef3c7] p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Financial Score</p>
             <p className="mt-3 text-2xl font-semibold" style={{ color: '#F6B93B' }}>{Math.round(financialScore)}%</p>
             <p className="mt-2 text-xs text-slate-600">Kesehatan keuangan bisnis</p>
             <div className="mt-2 h-1.5 rounded-full bg-slate-200">
-              <div 
-                className="h-full rounded-full transition-all duration-300" 
-                style={{ 
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
                   width: `${financialScore}%`,
-                  backgroundColor: '#F6B93B'
+                  backgroundColor: '#F6B93B',
                 }}
               />
             </div>
           </div>
-          
-          {/* Stock input counter */}
-          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#fff7ed] to-[#fff1e6] p-5">
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Stok Masuk (Transaksi)</p>
-            <p className="mt-3 text-2xl font-semibold text-slate-900">{umkmSummary?.stockCount || 0}</p>
-            <p className="mt-2 text-xs text-slate-600">Jumlah input pembelian stok</p>
-          </div>
         </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Arus Kas Usaha</p>
             <p className="mt-3 text-3xl font-semibold text-slate-900">Rp {businessIncome.toLocaleString('id-ID')}</p>
@@ -170,20 +171,46 @@ function DashboardUMKMPage({
 
           <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Stok Barang</p>
-            <p className="mt-2 text-sm text-slate-600">Jumlah stok tiap item (update otomatis saat ada transaksi <span className="font-semibold">Beli Bahan Baku / Stok</span>).</p>
+            <p className="mt-2 text-sm text-slate-600">Recap stok berdasarkan transaksi pembelian.</p>
 
             <div className="mt-4 space-y-3">
-              {inventoryItems.map((item) => (
-                <div key={item.name} className="rounded-2xl bg-white p-4 shadow-sm">
-                  <div className="flex items-baseline justify-between gap-4">
-                    <p className="font-semibold text-slate-900">{item.name}</p>
-                    <p className="text-lg font-semibold text-slate-900">{item.stock} unit</p>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">{item.stock <= item.reorderLevel ? 'Mulai menipis' : 'Stok aman'}</p>
-                </div>
-              ))}
+              {(() => {
+                // SUM Kuantitas dari semua transaksi kategori "Beli Bahan Baku / Stok"
+                const stockTotal = transactions
+                  .filter((t) => (t.businessCategory || t.category) === 'Beli Bahan Baku / Stok')
+                  .reduce((sum, t) => sum + (Number(t.stockQty) || 0), 0)
+
+                if (!stockTotal) {
+                  return (
+                    <p className="text-sm text-slate-500">0</p>
+                  )
+                }
+
+                // Tetap tampilkan list recap per item (desain tetap), dengan stock berasal dari inventoryItems.
+                return inventoryItems
+                  .slice()
+                  .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+                  .map((item, idx) => (
+                    <div key={item.name} className="rounded-2xl bg-white p-4 shadow-sm">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <div className="flex items-baseline gap-3">
+                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
+                            {idx + 1}
+                          </span>
+                          <p className="font-semibold text-slate-900">{item.name}</p>
+                        </div>
+                        <p className="text-lg font-semibold text-slate-900">{item.stock} unit</p>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {item.stock <= item.reorderLevel ? 'Mulai menipis' : 'Stok aman'}
+                      </p>
+                    </div>
+                  ))
+              })()}
             </div>
+
           </div>
+
 
           <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Utang & Piutang</p>
@@ -198,19 +225,12 @@ function DashboardUMKMPage({
               </div>
             </div>
           </div>
+
+
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-1">
-        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-900">Rp {eWalletBalanceValue.toLocaleString?.('id-ID') ?? eWalletBalanceValue ?? 0}</h2>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between gap-4">

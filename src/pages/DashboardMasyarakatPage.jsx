@@ -13,6 +13,24 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
     { label: 'Tagihan', icon: '📄' },
   ]
 
+  const now = new Date()
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+
+  const monthTransactions = transactions.filter((t) => {
+    const d = new Date(t.date)
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear
+  })
+
+  // saldo pemasukan/pengeluaran = dihitung per bulan
+  const saldoPemasukanBulanIni = monthTransactions
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+
+  const saldoPengeluaranBulanIni = monthTransactions
+    .filter((t) => t.type === 'expense')
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+
   return (
     <div className="space-y-8">
       <section className="rounded-[32px] bg-gradient-to-r from-[#2e8b87] via-[#38ADA9] to-[#4fb7b2] p-6 text-white shadow-xl">
@@ -26,7 +44,9 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
           </div>
           <div className="rounded-[28px] border border-white/20 bg-white/10 p-4 text-right">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-100/80">Saldo E-Wallet</p>
-            <p className="mt-2 text-3xl font-semibold">Rp {walletSummary.current.toLocaleString('id-ID')}</p>
+            <p className="mt-2 text-3xl font-semibold">
+              Rp {walletSummary.current.toLocaleString('id-ID')}
+            </p>
             <p className="text-sm text-slate-100/80">Saldo e-wallet saat ini</p>
           </div>
         </div>
@@ -36,18 +56,31 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo E-Wallet</p>
-              <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {walletSummary.current.toLocaleString('id-ID')}</h2>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
+              <h2 className="mt-4 text-4xl font-semibold text-slate-900">
+                Rp {saldoPemasukanBulanIni.toLocaleString('id-ID')}
+              </h2>
+              <p className="mt-3 text-sm text-slate-500">Pemasukan total bulan ini</p>
             </div>
             <div className="rounded-3xl bg-slate-50 p-4 text-slate-900">
-              <span className="text-2xl">💳</span>
+              <span className="text-2xl">💚</span>
             </div>
           </div>
         </div>
 
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
+          <h2 className="mt-4 text-4xl font-semibold text-slate-900">
+            Rp {saldoPengeluaranBulanIni.toLocaleString('id-ID')}
+          </h2>
+          <p className="mt-3 text-sm text-slate-500">Pengeluaran total bulan ini</p>
+        </div>
+
+        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Poin Eco</p>
-          <h2 className="mt-4 text-4xl font-semibold text-slate-900">{totalPoints.toLocaleString('id-ID')} Poin</h2>
+          <h2 className="mt-4 text-4xl font-semibold text-slate-900">
+            {totalPoints.toLocaleString('id-ID')} Poin
+          </h2>
           <div className="mt-4 rounded-full bg-slate-100 h-3 overflow-hidden">
             <div className="h-3 rounded-full bg-[#38ADA9]" style={{ width: '85%' }} />
           </div>
@@ -102,10 +135,9 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
           )}
         </div>
       </section>
-
-
     </div>
   )
 }
 
 export default DashboardMasyarakatPage
+

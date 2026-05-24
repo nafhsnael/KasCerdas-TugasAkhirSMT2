@@ -23,17 +23,49 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
     'Transportasi',
   ]
 
-  const totalIncome = transactions
-    .filter((t) => {
-      const d = new Date(t.date)
-      return (
-        t.type === 'income' &&
-        mahasiswaPemasukanCategories.includes(t.category) &&
-        d.getMonth() === currentMonth &&
-        d.getFullYear() === currentYear
-      )
-    })
-    .reduce((sum, t) => sum + (t.amount || 0), 0)
+  const getWalletBalanceAtStartOfMonth = () => {
+    const monthStart = new Date(currentYear, currentMonth, 1)
+
+    // Ambil transaksi synthetic 'Saldo Awal' / 'Initial' yang tanggalnya sebelum awal bulan ini,
+    // lalu ambil yang paling terbaru.
+    // Catatan: di flow aplikasi, saldo awal untuk bulan berikutnya biasanya dibuat sebagai transaksi
+    // kategori 'Initial' atau 'Saldo Awal' dengan tanggal di bulan tersebut.
+    const initialTx = transactions
+      .filter((t) => {
+        const d = new Date(t.date)
+        return (
+          (t.category === 'Saldo Awal' || t.category === 'Initial') &&
+          !Number.isNaN(d.getTime()) &&
+          d < monthStart
+        )
+      })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+
+    return Number(initialTx?.amount || 0)
+  }
+
+  // Kalau tidak ada transaksi 'Saldo Awal'/'Initial' sebelum bulan berjalan,
+  // fallback ke walletSummary.current agar tampilan tidak bernilai 0.
+
+  const saldoAwalBulanIni = (() => {
+    const v = getWalletBalanceAtStartOfMonth()
+    return v > 0 ? v : Number(walletSummary?.current || 0)
+  })()
+
+
+  const totalIncome = saldoAwalBulanIni +
+    transactions
+      .filter((t) => {
+        const d = new Date(t.date)
+        return (
+          t.type === 'income' &&
+          mahasiswaPemasukanCategories.includes(t.category) &&
+          d.getMonth() === currentMonth &&
+          d.getFullYear() === currentYear
+        )
+      })
+      .reduce((sum, t) => sum + (t.amount || 0), 0)
+
 
   const totalExpense = transactions
     .filter((t) => {

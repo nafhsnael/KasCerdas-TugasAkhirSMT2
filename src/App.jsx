@@ -329,6 +329,7 @@ function App() {
           break
       }
 
+
       return Math.max(0, newBalance)
     })
 
