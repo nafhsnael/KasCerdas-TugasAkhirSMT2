@@ -66,12 +66,8 @@ function BiggestExpenseCard({ transactions }) {
 
             <div
               className="rounded-2xl px-3 py-2 font-semibold"
-              style={{ color: '#0F172A', backgroundColor: '#E2E8F0' }}
-            >
-              <p className="text-sm leading-none">
-                {percentText}
-              </p>
-            </div>
+              style={{ display: 'none' }}
+            />
           </div>
         </div>
       </div>

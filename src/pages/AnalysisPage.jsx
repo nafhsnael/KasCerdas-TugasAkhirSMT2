@@ -39,7 +39,7 @@ function AnalysisPage({ transactions }) {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="mx-auto max-w-6xl px-4 pt-4 pb-6 sm:px-6 lg:px-4">
+      <div className="mx-auto max-w-6xl px-3 pt-6 pb-6 sm:px-4 lg:px-4">
         <div className="rounded-[32px] border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur">
           <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-[#0F172A] sm:text-[34px]">
             Analisis Keuangan
