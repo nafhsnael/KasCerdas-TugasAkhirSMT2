@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+
 import Sidebar from './components/Sidebar'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -63,11 +64,20 @@ function App() {
   })
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(token))
   const [authLoading, setAuthLoading] = useState(Boolean(token))
+
   const [showUserType, setShowUserType] = useState(false)
   const [userType, setUserType] = useState(null)
   const [walletInfo, setWalletInfo] = useState(null)
   const [showInitialBalance, setShowInitialBalance] = useState(false)
-  const [showLanding, setShowLanding] = useState(true)
+  // Jika token tersimpan, jangan tampilkan landing dulu (hindari flash/landing saat auto-login)
+  const [showLanding, setShowLanding] = useState(() => {
+    try {
+      const t = window?.localStorage?.getItem('token')
+      return !t
+    } catch (e) {
+      return true
+    }
+  })
   const [initialBalance, setInitialBalance] = useState(0)
 
   const buildWalletSummary = ({ walletInfoOverride = null } = {}) => {
@@ -104,7 +114,6 @@ function App() {
     payables: 0,
     receivables: 0,
     inventory: [],
-    stockCount: 0,
   })
 
   const [debts, setDebts] = useState([])
@@ -142,9 +151,49 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const handleStorage = (e) => {
+      if (!e) return
+      if (e.key !== 'token') return
+
+      const nextToken = e.newValue
+
+      setToken(nextToken)
+      setIsAuthenticated(Boolean(nextToken))
+
+      if (!nextToken) {
+        setShowLanding(true)
+        setShowUserType(false)
+        setShowInitialBalance(false)
+        setUserType(null)
+        setWalletInfo(null)
+
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(null, '', '/login')
+        }
+        setCurrentPage('login')
+        return
+      }
+
+      // Token ada: jangan tampilkan landing (biar auto-auth di effect [token] jalan)
+      setShowLanding(false)
+      setShowUserType(false)
+      setShowInitialBalance(false)
+    }
+
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
+
+
+  useEffect(() => {
     if (!token) return
 
+    // Mulai auto-auth dari token: pastikan tidak menampilkan landing
+    setShowLanding(false)
+
     setAuthLoading(true)
+
+
     Promise.all([fetchCurrentUser(), fetchWalletInfo()])
       .then(([authUser, walletData]) => {
         setUserProfile(prev => ({
@@ -157,16 +206,18 @@ function App() {
         }))
         setWalletInfo(walletData)
         
-        // Jika user sudah punya user_type, tapi belum ada wallet (balance 0 atau null)
-        // maka tampilkan InitialBalancePage
-        const userHasType = Boolean(authUser.user_type || authUser.role)
+        // InitialBalance:
+        // - Saat USER BARU REGISTER: harus isi saldo awal.
+        // - Saat LOGIN biasa / auto-login: tidak diarahkan ke InitialBalance.
+        // Di sini kita biarkan InitialBalance hanya muncul jika usersedang onboarding (showUserType sudah true sebelumnya).
         const walletHasBalance = walletData?.balance && Number(walletData.balance) > 0
-        
-        if (userHasType && !walletHasBalance && !showInitialBalance) {
-          // User punya type tapi belum ada balance -> show InitialBalance
-          setShowInitialBalance(true)
+        if (showUserType) {
+          if (!walletHasBalance) {
+            setShowInitialBalance(true)
+          }
         }
-        
+
+
         setIsAuthenticated(true)
       })
       .catch(() => {
@@ -303,7 +354,7 @@ function App() {
 
       const updateInventory = (change) =>
         prevSummary.inventory.map((item) =>
-          String(item.id) === String(selectedStockId)
+          item.id === selectedStockId
             ? { ...item, stock: Math.max(0, item.stock + change) }
             : item
         )
@@ -327,26 +378,8 @@ function App() {
           break
         case 'Beli Bahan Baku / Stok':
           // Pembelian stok menambah stok (dan HPP diperkirakan), bukan langsung jadi expense operasional
-          // Jika item belum ada di inventory tapi frontend mengirimkan stockItemName, tambahkan item baru.
-          if (selectedStockId) {
-            const exists = (prevSummary.inventory || []).some((it) => String(it.id) === String(selectedStockId))
-            if (!exists && newTransaction.stockItemName) {
-              const newItem = {
-                id: selectedStockId,
-                name: newTransaction.stockItemName,
-                stock: Math.max(0, Number(stockQty) || 0),
-                reorderLevel: 0,
-              }
-              nextSummary.inventory = [newItem, ...(prevSummary.inventory || [])]
-            } else {
-              nextSummary.inventory = updateInventory(stockQty)
-            }
-          } else {
-            nextSummary.inventory = updateInventory(stockQty)
-          }
+          nextSummary.inventory = updateInventory(stockQty)
           nextSummary.estimatedHpp += amount
-          // Increment stock input counter (1 per transaction input)
-          nextSummary.stockCount = (prevSummary.stockCount || 0) + 1
           break
         case 'Piutang Pelanggan':
           // Jika sudah dilunasi, masuk sebagai pemasukan; jika belum, masuk piutang
@@ -458,30 +491,18 @@ function App() {
 
     setIsAuthenticated(true)
 
-    // Alur: Register atau Login -> UserType (jika belum) -> InitialBalance -> Dashboard
-    // Jika sudah ada user_type, langsung arahkan ke dashboard (dengan tetap menjaga kondisi UserType/InitialBalance yang memang perlu).
-    const userTypeFromData = userData.user_type || userData.role
-    const hasUserType = Boolean(userTypeFromData)
-
-    // Pastikan overlay state tidak menghalangi dashboard.
-    // (Tapi jika memang perlu UserType/InitialBalance, akan di-set lagi di bawah.)
-    setShowUserType(false)
-    setShowInitialBalance(false)
-
-    if (isRegister || !hasUserType) {
-
-      // Register baru atau login tanpa user_type -> pilih user type dulu
+    // Alur:
+    // - LOGIN: jangan pakai pilih user type & jangan minta saldo awal, langsung dashboard (atau InitialBalance kalau memang belum ada wallet balance via useEffect token)
+    // - REGISTER BARU: pakai flow pilih user type -> initial balance -> dashboard
+    if (isRegister) {
       setShowUserType(true)
       setShowInitialBalance(false)
+    } else {
+      setShowUserType(false)
+      setShowInitialBalance(false)
       navigateTo('dashboard')
-      return
     }
-
-    // Jika user punya user_type, arahkan ke dashboard.
-    // Need check InitialBalance akan diputuskan oleh useEffect setelah wallet info dipanggil.
-    navigateTo('dashboard')
   }
-
 
 
   const handleUserTypeNext = async (selectedUserType) => {
@@ -536,73 +557,16 @@ function App() {
 
     setShowInitialBalance(false)
     
-    // Re-fetch wallet info agar updated, lalu simpan transaksi Saldo Awal ke backend
+    // Re-fetch wallet info agar updated
     try {
       const walletData = await fetchWalletInfo()
       if (walletData) {
         setWalletInfo(walletData)
       }
-
-      const walletId = walletData?.id ?? walletInfo?.id ?? null
-      const hasInitialTransaction = (walletData?.last_transactions || []).some(
-        (t) => t.category === 'Initial' && Number(t.amount) === Number(balance)
-      )
-
-      // Jika wallet baru dibuat, backend sudah membuat transaksi Initial.
-      // Hanya buat transaksi baru bila belum ada initial transaction yang sesuai.
-      if (walletId && !hasInitialTransaction) {
-        try {
-          const res = await authFetch('/api/transactions', {
-            method: 'POST',
-            body: JSON.stringify({
-              wallet_id: walletId,
-              title: 'Saldo Awal',
-              category: 'Saldo Awal',
-              note: data.note || 'Saldo Awal',
-              type: 'income',
-              amount: Number(balance) || 0,
-              date: data.date || new Date().toISOString().slice(0, 10),
-            }),
-          })
-
-          const json = await res.json().catch(() => ({}))
-          if (res.ok && json.success) {
-            // gunakan transaksi dari backend
-            addTransaction(json.data)
-          } else {
-            // fallback: simpan lokal jika API gagal
-            addTransaction({
-              type: 'income',
-              amount: Number(balance) || 0,
-              date: data.date || new Date().toISOString(),
-              category: 'Saldo Awal',
-              note: data.note || 'Saldo Awal',
-            })
-          }
-        } catch (e) {
-          console.error('Error posting initial transaction:', e)
-          addTransaction({
-            type: 'income',
-            amount: Number(balance) || 0,
-            date: data.date || new Date().toISOString(),
-            category: 'Saldo Awal',
-            note: data.note || 'Saldo Awal',
-          })
-        }
-      } else {
-        // Tidak ada wallet id, tetap tambahkan lokal agar UI konsisten
-        addTransaction({
-          type: 'income',
-          amount: Number(balance) || 0,
-          date: data.date || new Date().toISOString(),
-          category: 'Saldo Awal',
-          note: data.note || 'Saldo Awal',
-        })
-      }
     } catch (e) {
       console.error('Error fetching wallet after initial balance save:', e)
     }
-
+    
     navigateTo('dashboard')
   }
 
@@ -689,7 +653,7 @@ function App() {
       case 'reports':
         return <ReportsPage transactions={transactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
       case 'budget':
-        return <BudgetPage transactions={transactions} budgets={budgets} setBudgets={setBudgets} userType={userProfile?.usertype} />
+        return <BudgetPage transactions={transactions} budgets={budgets} setBudgets={setBudgets} />
       case 'add-debt':
         return <AddDebtPage onAddDebt={addDebt} onNavigate={setCurrentPage} />
       case 'add-savings':

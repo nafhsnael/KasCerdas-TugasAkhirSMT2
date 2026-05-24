@@ -16,7 +16,7 @@ function UserTypePage({ onNext }) {
     },
     {
       id: 'masyarakat_umum',
-      label: 'Masyarakat Lain',
+      label: 'Masyarakat umum',
       description: 'Untuk pencatatan keuangan rumah tangga dan pengeluaran umum sehari-hari',
     },
   ]

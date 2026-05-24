@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\MonitoringController;
 use App\Http\Controllers\Api\Admin\MaintenanceController;
+use App\Http\Controllers\Api\Admin\SystemConfigController;
 
 // Public auth routes
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -63,12 +64,27 @@ Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
         Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
         // Monitoring
-        Route::get('/monitoring', [MonitoringController::class, 'index']);
-        Route::get('/monitoring/logs', [MonitoringController::class, 'logs']);
+        Route::prefix('monitoring')->group(function () {
+            Route::get('/', [MonitoringController::class, 'index']);
+            Route::get('/logs', [MonitoringController::class, 'logs']);
+            Route::get('/transactions', [MonitoringController::class, 'transactions']);
+            Route::get('/dashboard', [MonitoringController::class, 'dashboard']);
+        });
 
         // Maintenance Control
-        Route::get('/maintenance', [MaintenanceController::class, 'index']);
-        Route::post('/maintenance', [MaintenanceController::class, 'store']);
-        Route::delete('/maintenance', [MaintenanceController::class, 'destroy']);
+        Route::prefix('maintenance')->group(function () {
+            Route::get('/', [MaintenanceController::class, 'index']);
+            Route::post('/', [MaintenanceController::class, 'store']);
+            Route::delete('/', [MaintenanceController::class, 'destroy']);
+        });
+
+        // System Configuration
+        Route::prefix('config')->group(function () {
+            Route::get('/', [SystemConfigController::class, 'index']);
+            Route::get('/{key}', [SystemConfigController::class, 'show']);
+            Route::put('/{key}', [SystemConfigController::class, 'update']);
+            Route::delete('/{key}', [SystemConfigController::class, 'destroy']);
+            Route::post('/batch-update', [SystemConfigController::class, 'batchUpdate']);
+        });
     });
 });

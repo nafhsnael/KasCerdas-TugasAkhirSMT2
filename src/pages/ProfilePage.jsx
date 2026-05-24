@@ -146,13 +146,6 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Dompet</label>
-          <div className="mt-1 block w-full rounded-md border border-slate-300 bg-slate-100 px-3 py-2 shadow-sm">
-            <p className="text-slate-900 font-medium">{userProfile?.dompet || '-'}</p>
-          </div>
-        </div>
-
-        <div>
           <label className="block text-sm font-medium text-slate-700">Jenis Profil</label>
           <div className="mt-1 block w-full rounded-md border border-slate-300 bg-slate-100 px-3 py-2 shadow-sm">
             <p className="text-slate-900 font-medium">
@@ -175,14 +168,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
           >
             Simpan Perubahan
           </button>
-          <button
-            type="button"
-            onClick={() => onNavigate && onNavigate('transactions')}
-            className="flex-1 rounded-2xl bg-slate-200 py-3 font-semibold text-slate-700 transition hover:bg-slate-300"
-          >
-            Kembali
-          </button>
-        </div>
+                </div>
       </form>
     </div>
   )

@@ -1,9 +1,10 @@
-# TODO
-- [ ] Update `src/pages/BudgetPage.jsx`:
-  - [x] Pastikan form reset field operasional/manual saat tambah budget baru atau pindah kategori
-- [ ] Pastikan kategori untuk masyarakat_umum:
-    - [x] Saat pilih `Kebutuhan Lain`, simpan menjadi `Kebutuhan Lain - <operationalDetail>`
-    - [x] Selain `Kebutuhan Lain`, simpan kategori tanpa suffix
-- [x] Pastikan perhitungan usage (`getActualUsage`) tetap cocok dengan format kategori
-- [ ] Test manual flow tambah budget masyarakat umum (Kebutuhan Lain -> tambah lagi kategori lain)
+# TODO - Sinkronisasi Logout/Login Antar-Tab
+
+- [x] Update `src/App.jsx` untuk mendengarkan perubahan `localStorage.token` lewat event `storage`.
+
+- [x] Saat token terhapus/berubah, sinkronkan state: `token`, `isAuthenticated`, `showLanding`, dan redirect ke halaman yang sesuai (`/login` atau `/`).
+
+- [x] Pastikan cleanup listener berjalan.
+
+- [ ] Jalankan aplikasi dan test skenario antar-tab (login/logout di tab berbeda).
 
