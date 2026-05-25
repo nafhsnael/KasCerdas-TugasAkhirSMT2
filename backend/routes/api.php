@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\ProfilController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\BudgetController;
+use App\Http\Controllers\Api\DebtController;
+use App\Http\Controllers\Api\SavingController;
 use App\Http\Controllers\Api\DiagnosticsController;
 
 use App\Http\Controllers\Api\Admin\UserManagementController;
@@ -41,13 +43,26 @@ Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
 
     Route::get('/budgets', [BudgetController::class, 'index']);
     Route::post('/budgets', [BudgetController::class, 'store']);
+    Route::get('/budgets/{budget}', [BudgetController::class, 'show']);
+    Route::put('/budgets/{budget}', [BudgetController::class, 'update']);
+    Route::delete('/budgets/{budget}', [BudgetController::class, 'destroy']);
 
-    // DEBUG ENDPOINTS (Remove in production!)
-    Route::prefix('debug')->group(function () {
-        Route::get('/user-data', [DiagnosticsController::class, 'checkUserData']);
-        Route::get('/all-users', [DiagnosticsController::class, 'checkAllUsers']);
-        Route::get('/transaction-issues', [DiagnosticsController::class, 'checkTransactionIssues']);
-    });
+    // Debts Management
+    Route::get('/debts', [DebtController::class, 'index']);
+    Route::post('/debts', [DebtController::class, 'store']);
+    Route::get('/debts/{debt}', [DebtController::class, 'show']);
+    Route::put('/debts/{debt}', [DebtController::class, 'update']);
+    Route::delete('/debts/{debt}', [DebtController::class, 'destroy']);
+
+    // Savings Management
+    Route::get('/savings', [SavingController::class, 'index']);
+    Route::post('/savings', [SavingController::class, 'store']);
+    Route::get('/savings/{saving}', [SavingController::class, 'show']);
+    Route::put('/savings/{saving}', [SavingController::class, 'update']);
+    Route::delete('/savings/{saving}', [SavingController::class, 'destroy']);
+    Route::post('/savings/{saving}/deposit', [SavingController::class, 'deposit']);
+    Route::post('/savings/{saving}/withdraw', [SavingController::class, 'withdraw']);
+
 
     // Admin routes (Requires admin role)
     Route::middleware('is_admin')->prefix('admin')->group(function () {

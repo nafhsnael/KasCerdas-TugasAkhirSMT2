@@ -20,6 +20,9 @@ import AddDebtPage from './pages/AddDebtPage'
 import AddSavingsPage from './pages/AddSavingsPage'
 import ProfilePage from './pages/ProfilePage'
 
+// Import Admin App kamu agar bisa dipanggil
+import AdminApp from '../admin/App'
+
 
 const routeToPage = {
   '': 'dashboard',
@@ -35,6 +38,8 @@ const routeToPage = {
 
 const pathToPage = (path) => {
   const trimmed = path.replace(/^\/+|\/+$/g, '')
+  // Jika alamat diawali dengan 'admin', biarkan Router Admin yang menangani
+  if (trimmed.startsWith('admin')) return 'admin_route'
   return routeToPage[trimmed] || 'dashboard'
 }
 
@@ -197,7 +202,7 @@ function App() {
           user: authUser.username || prev.user,
           email: authUser.email || prev.email,
           usertype: authUser.user_type || authUser.role || prev.usertype,
-          dompet: walletData?.name || prev.dompet,
+          dompet: walletData?.name || (authUser.role === 'admin' ? 'Admin Wallet' : prev.dompet),
         }))
         setWalletInfo(walletData)
         
@@ -225,6 +230,9 @@ function App() {
   }, [token])
 
   useEffect(() => {
+    // JANGAN REDIRECT jika user sedang mengakses halaman admin
+    if (window.location.pathname.startsWith('/admin')) return;
+
     if (!isAuthenticated && currentPage !== 'login' && currentPage !== 'register') {
       if (typeof window !== 'undefined') {
         window.history.replaceState(null, '', '/login')
@@ -595,6 +603,13 @@ function App() {
   }
 
   const pageComponent = useMemo(() => {
+    const isAdminPath = window.location.pathname.startsWith('/admin')
+
+    // JIKA AKSES ADMIN: Serahkan sepenuhnya ke AdminApp (Router Admin)
+    if (isAdminPath) {
+      return <AdminApp />
+    }
+
     if (isAuthenticated && showUserType) {
       return <UserTypePage onNext={handleUserTypeNext} />
     }

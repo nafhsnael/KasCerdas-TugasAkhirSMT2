@@ -71,5 +71,74 @@ class BudgetController extends Controller
             'data' => $budget,
         ], 201);
     }
+
+    /**
+     * Get single budget detail
+     */
+    public function show(Request $request, Budget $budget)
+    {
+        // Authorization check
+        if ($budget->user_id !== $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak diizinkan mengakses budget ini',
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail budget berhasil diambil',
+            'data' => $budget,
+        ]);
+    }
+
+    /**
+     * Update budget
+     */
+    public function update(Request $request, Budget $budget)
+    {
+        // Authorization check
+        if ($budget->user_id !== $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak diizinkan mengubah budget ini',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'limit' => ['nullable', 'numeric', 'min:0'],
+            'category' => ['nullable', 'string', 'max:100'],
+            'usage' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $budget->update(array_filter($validated));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Budget berhasil diperbarui',
+            'data' => $budget->fresh(),
+        ]);
+    }
+
+    /**
+     * Delete budget
+     */
+    public function destroy(Request $request, Budget $budget)
+    {
+        // Authorization check
+        if ($budget->user_id !== $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak diizinkan menghapus budget ini',
+            ], 403);
+        }
+
+        $budget->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Budget berhasil dihapus',
+        ]);
+    }
 }
 

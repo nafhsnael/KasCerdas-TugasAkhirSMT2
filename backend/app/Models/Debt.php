@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Debt extends Model
+{
+    protected $fillable = [
+        'user_id',
+        'wallet_id',
+        'creditor_name',
+        'amount',
+        'due_date',
+        'status',
+        'note',
+        'paid_amount',
+    ];
+
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'due_date' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
+     * Get the user that owns the debt
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the wallet associated with the debt
+     */
+    public function wallet(): BelongsTo
+    {
+        return $this->belongsTo(Wallet::class);
+    }
+
+    /**
+     * Calculate remaining amount to be paid
+     */
+    public function getRemainingAmountAttribute(): float
+    {
+        return (float) ($this->amount - $this->paid_amount);
+    }
+
+    /**
+     * Check if debt is overdue
+     */
+    public function getIsOverdueAttribute(): bool
+    {
+        return $this->status !== 'paid' && $this->due_date < now()->toDateString();
+    }
+
+    /**
+     * Get days until due date (negative if overdue)
+     */
+    public function getDaysUntilDueAttribute(): int
+    {
+        $today = now()->toDateString();
+        $daysUntil = (int) now()->parse($this->due_date)->diffInDays(now(), false);
+        return $daysUntil;
+    }
+}
