@@ -348,14 +348,34 @@ function App() {
       const selectedStockId = newTransaction.stockItemId
       const estimatedHpp = Math.round(amount * 0.42)
 
-      const updateInventory = (change) =>
-        prevSummary.inventory.map((item) =>
-          item.id === selectedStockId
-            ? { ...item, stock: Math.max(0, item.stock + change) }
+      const updateInventory = (change, itemToAddIfMissing = null) => {
+        const inventory = Array.isArray(prevSummary.inventory) ? prevSummary.inventory : []
+
+        const found = inventory.some((item) => String(item.id) === String(selectedStockId))
+
+        // Jika belum ada item stok-nya, tambahkan sesuai input transaksi
+        if (!found && itemToAddIfMissing) {
+          return [
+            ...inventory,
+            {
+              id: selectedStockId,
+              name: itemToAddIfMissing.name,
+              stock: Math.max(0, Number(itemToAddIfMissing.stock ?? stockQty) + (change ?? 0)),
+              reorderLevel: Number(itemToAddIfMissing.reorderLevel ?? 10),
+            },
+          ]
+        }
+
+        // Jika sudah ada, update kuantitas
+        return inventory.map((item) =>
+          String(item.id) === String(selectedStockId)
+            ? { ...item, stock: Math.max(0, Number(item.stock ?? 0) + (change ?? 0)) }
             : item
         )
+      }
 
       let nextSummary = { ...prevSummary }
+
 
       switch (newTransaction.businessCategory) {
         case 'Penjualan':
@@ -376,10 +396,15 @@ function App() {
           // Pembelian stok menambah stok (dan HPP diperkirakan)
           // Inventory harus update berdasarkan selectedStockId + stockQty.
           if (selectedStockId) {
-            nextSummary.inventory = updateInventory(stockQty)
+            nextSummary.inventory = updateInventory(stockQty, {
+              name: newTransaction.stockItemName || selectedStockId,
+              stock: stockQty,
+              reorderLevel: 10,
+            })
           }
           nextSummary.estimatedHpp += amount
           break
+
 
         case 'Piutang Pelanggan':
 
@@ -394,10 +419,15 @@ function App() {
             nextSummary.estimatedHpp += estimatedHpp
           }
           break
+
         case 'Hutang Supplier':
           // Saat membuat hutang, itu masuk payables + menambah stok + HPP
           nextSummary.payables += amount
-          nextSummary.inventory = updateInventory(stockQty)
+          nextSummary.inventory = updateInventory(stockQty, {
+            name: newTransaction.stockItemName || selectedStockId,
+            stock: stockQty,
+            reorderLevel: 10,
+          })
           nextSummary.estimatedHpp += amount
           // Saat hutang dilunasi, barulah jadi pengeluaran operasional (kas keluar)
           if (newTransaction.isSettled) {
@@ -405,6 +435,7 @@ function App() {
             nextSummary.operationalExpense += amount
           }
           break
+
         default:
           break
       }

@@ -82,11 +82,7 @@ function DashboardUMKMPage({
               Kelola arus kas usaha, pantau stok barang, track piutang dan utang, serta lihat laporan laba rugi real-time.
             </p>
           </div>
-          <div className="rounded-[28px] border border-white/20 bg-white/10 p-4 text-right">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-100/80">Dompet Usaha</p>
-            <p className="mt-2 text-3xl font-semibold">Rp {businessIncome.toLocaleString('id-ID')}</p>
 
-          </div>
         </div>
       </section>
 
@@ -169,47 +165,7 @@ function DashboardUMKMPage({
             <p className="mt-2 text-sm text-slate-600">Pendapatan dikurangi HPP dan biaya operasional</p>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Stok Barang</p>
-            <p className="mt-2 text-sm text-slate-600">Recap stok berdasarkan transaksi pembelian.</p>
 
-            <div className="mt-4 space-y-3">
-              {(() => {
-                // SUM Kuantitas dari semua transaksi kategori "Beli Bahan Baku / Stok"
-                const stockTotal = transactions
-                  .filter((t) => (t.businessCategory || t.category) === 'Beli Bahan Baku / Stok')
-                  .reduce((sum, t) => sum + (Number(t.stockQty) || 0), 0)
-
-                if (!stockTotal) {
-                  return (
-                    <p className="text-sm text-slate-500">0</p>
-                  )
-                }
-
-                // Tetap tampilkan list recap per item (desain tetap), dengan stock berasal dari inventoryItems.
-                return inventoryItems
-                  .slice()
-                  .sort((a, b) => String(a.name).localeCompare(String(b.name)))
-                  .map((item, idx) => (
-                    <div key={item.name} className="rounded-2xl bg-white p-4 shadow-sm">
-                      <div className="flex items-baseline justify-between gap-4">
-                        <div className="flex items-baseline gap-3">
-                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
-                            {idx + 1}
-                          </span>
-                          <p className="font-semibold text-slate-900">{item.name}</p>
-                        </div>
-                        <p className="text-lg font-semibold text-slate-900">{item.stock} unit</p>
-                      </div>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {item.stock <= item.reorderLevel ? 'Mulai menipis' : 'Stok aman'}
-                      </p>
-                    </div>
-                  ))
-              })()}
-            </div>
-
-          </div>
 
 
           <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
@@ -226,7 +182,20 @@ function DashboardUMKMPage({
             </div>
           </div>
 
-
+    <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">stok bahan baku / barang</p>
+            <div className="mt-3 space-y-3">
+              <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <p className="text-sm text-slate-500">item stok</p>
+                <p className="mt-2 text-xl font-semibold text-slate-900"></p>
+              </div>
+              <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <p className="text-sm text-slate-500">kuantitas</p>
+                <p className="mt-2 text-xl font-semibold text-slate-900"></p>
+              </div>
+            </div>
+          </div>
+            
         </div>
       </section>
 

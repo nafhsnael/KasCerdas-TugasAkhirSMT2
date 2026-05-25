@@ -409,10 +409,15 @@ function TransactionsUMKMPage({
                     <div className="mt-2 grid grid-cols-1 gap-2">
                       {(umkmSummary?.inventory || [])
                         .filter((it) => {
+                          const label = String(it.name || it.stockItemName || it.id)
+
+                          // Hilangkan bubble/item stok yang muncul tiba-tiba (mis. "gula")
+                          if (String(label).trim().toLowerCase() === 'gula') return false
+
                           const q = (form.stockItemSearch || '').trim().toLowerCase()
                           if (!q) return true
-                          const label = String(it.name || it.stockItemName || it.id).toLowerCase()
-                          return label.includes(q)
+
+                          return String(label).toLowerCase().includes(q)
                         })
                         .map((it) => {
                           const active = String(it.id) === String(form.stockItemId)
@@ -438,20 +443,11 @@ function TransactionsUMKMPage({
                               <div className="flex items-start justify-between gap-3">
                                 <div className="text-sm font-semibold">{it.name || it.stockItemName || it.id}</div>
                                 <div className="text-right">
-                                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">Kuantitas</label>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    value={form.stockQty}
-                                    onChange={(e) => handleChange('stockQty', e.target.value)}
-                                    className="mt-1 w-24 rounded-3xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-                                  />
+                                  {it.qty != null && (
+                                    <div className="mt-1 text-xs text-slate-500">Stok: {it.qty}</div>
+                                  )}
                                 </div>
                               </div>
-
-                              {it.qty != null && (
-                                <div className="mt-1 text-xs text-white/90">Stok: {it.qty}</div>
-                              )}
                             </button>
                           )
                         })}
