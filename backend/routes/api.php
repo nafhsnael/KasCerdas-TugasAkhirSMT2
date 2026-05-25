@@ -78,12 +78,14 @@ Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
         Route::put('/categories/{id}', [CategoryController::class, 'update']);
         Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
-        // Monitoring
+        // System Monitoring
         Route::prefix('monitoring')->group(function () {
             Route::get('/', [MonitoringController::class, 'index']);
             Route::get('/logs', [MonitoringController::class, 'logs']);
             Route::get('/transactions', [MonitoringController::class, 'transactions']);
             Route::get('/dashboard', [MonitoringController::class, 'dashboard']);
+            Route::get('/database/tables', [MonitoringController::class, 'getTables']);
+            Route::get('/database/tables/{table}', [MonitoringController::class, 'getTableData']);
         });
 
         // Maintenance Control

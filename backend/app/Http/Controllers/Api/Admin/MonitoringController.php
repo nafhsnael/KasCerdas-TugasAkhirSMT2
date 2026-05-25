@@ -253,4 +253,70 @@ class MonitoringController extends Controller
             ]
         ]);
     }
+
+    /**
+     * GET /api/admin/monitoring/database/tables
+     * Get all tables in the database with their row counts.
+     */
+    public function getTables()
+    {
+        $tables = [];
+        $driver = DB::getDriverName();
+
+        if ($driver === 'sqlite') {
+            $tableNames = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+            foreach ($tableNames as $table) {
+                $name = $table->name;
+                $count = DB::table($name)->count();
+                $tables[] = [
+                    'name' => $name,
+                    'rows' => $count,
+                ];
+            }
+        } else {
+            // Support for MySQL/PostgreSQL if needed later
+            $tableNames = DB::select('SHOW TABLES');
+            $key = "Tables_in_" . DB::getDatabaseName();
+            foreach ($tableNames as $table) {
+                $name = $table->$key;
+                $count = DB::table($name)->count();
+                $tables[] = [
+                    'name' => $name,
+                    'rows' => $count,
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $tables
+        ]);
+    }
+
+    /**
+     * GET /api/admin/monitoring/database/tables/{table}
+     * Get data from a specific table with pagination.
+     */
+    public function getTableData(Request $request, $table)
+    {
+        // Simple security check: prevent access to system tables or common sensitive patterns
+        if (in_array($table, ['migrations', 'personal_access_tokens', 'password_reset_tokens'])) {
+            return response()->json(['success' => false, 'message' => 'Akses ke tabel sistem dilarang'], 403);
+        }
+
+        try {
+            $perPage = $request->input('per_page', 10);
+            $data = DB::table($table)->latest()->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data tabel: ' . $e.getMessage()
+            ], 500);
+        }
+    }
 }
