@@ -182,17 +182,32 @@ function DashboardUMKMPage({
             </div>
           </div>
 
-    <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">stok bahan baku / barang</p>
             <div className="mt-3 space-y-3">
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
-                <p className="text-sm text-slate-500">item stok</p>
-                <p className="mt-2 text-xl font-semibold text-slate-900"></p>
-              </div>
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
-                <p className="text-sm text-slate-500">kuantitas</p>
-                <p className="mt-2 text-xl font-semibold text-slate-900"></p>
-              </div>
+              {inventoryItems.length > 0 ? (
+                inventoryItems.map((item) => (
+                  <div key={item.id ?? item.name} className="rounded-2xl bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="font-semibold text-slate-900">{item.name}</p>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          Number(item.stock) <= Number(item.reorderLevel)
+                            ? 'bg-rose-100 text-rose-700'
+                            : 'bg-emerald-100 text-emerald-700'
+                        }`}
+                      >
+                        {Number(item.stock) <= Number(item.reorderLevel) ? 'Menipis' : 'Aman'}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-500">Kuantitas: {item.stock} unit</p>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl bg-white p-4 shadow-sm">
+                  <p className="text-sm text-slate-500">Belum ada item stok.</p>
+                </div>
+              )}
             </div>
           </div>
             

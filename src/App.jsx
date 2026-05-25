@@ -297,9 +297,29 @@ function App() {
     setUmkmTransactions((prev) => [transaction, ...prev])
     syncBudgetWithTransaction(transaction)
 
-    // Update e-wallet balance berdasarkan kategori transaksi
+    // Jika kategori piutang/hutang (UMKM), masukkan ke daftar debts agar tampil di Rekap Hutang (ReportsPage)
     const amount = Number(newTransaction.amount) || 0
+    const isDebtCategory = newTransaction.businessCategory === 'Hutang Supplier' || newTransaction.businessCategory === 'Piutang Pelanggan'
+    if (isDebtCategory) {
+      setDebts((prev) => [
+        ...prev,
+        {
+          id: `d${Date.now()}`,
+          // gunakan businessCategory sebagai pemetaan creditor untuk tampilan laporan
+          creditor: newTransaction.businessCategory,
+          note: newTransaction.note || '',
+          amount,
+          status: newTransaction.isSettled ? 'Lunas' : 'Aktif',
+          dueDate: newTransaction.date || new Date().toISOString(),
+          // simpan sedikit metadata agar bisa debugging/ekstensi
+          category: newTransaction.businessCategory,
+        },
+      ])
+    }
+
+    // Update e-wallet balance berdasarkan kategori transaksi
     setUmkmEWalletBalance((prevBalance) => {
+      const amount = Number(newTransaction.amount) || 0
       let newBalance = prevBalance
 
       switch (newTransaction.businessCategory) {

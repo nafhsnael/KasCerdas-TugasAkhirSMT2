@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
-const defaultCategories = ['Makan', 'Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
+const defaultCategories = ['Makan', 'Hutang','Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
 
 
 function TransactionsPage({
@@ -27,7 +27,7 @@ function TransactionsPage({
   })
 
   const mahasiswaIncomeCategories = ['Uang Saku/Kiriman', 'Beasiswa', 'Penghasilan Kerja Paruh Waktu']
-  const mahasiswaExpenseCategories = ['UKT', 'Buku/Alat Tulis', 'Makan', 'Kos', 'Transportasi']
+  const mahasiswaExpenseCategories = ['UKT', 'Buku/Alat Tulis', 'Makan','Hutang', 'Kos', 'Transportasi']
 
   const inferredTypeFromCategory = (category) => {
     if (mahasiswaIncomeCategories.includes(category)) return 'income'

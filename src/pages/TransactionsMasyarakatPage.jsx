@@ -2,10 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
-const incomeCategories = ['Penghasilan Kerja', 'Uang Saku']
-const expenseCategories = ['Makan', 'Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
+import { transactionAPI } from '../utils/api'
+
+
+const incomeCategories = ['Penghasilan Kerja', 'Uang Saku', 'Tabungan']
+const expenseCategories = ['Makan', 'Hutang','Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
 
 function TransactionsPage({ transactions, filters, setFilters, onAddTransaction }) {
+  const [deletingId, setDeletingId] = useState(null)
+  const [successMessage, setSuccessMessage] = useState('')
+
   const [form, setForm] = useState({
     title: '',
     amount: '',
@@ -103,6 +109,41 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
     setSelectedInvoice(null)
   }
 
+const deleteTransaction = async (transaction) => {
+    if (!transaction?.id) {
+      alert('Transaksi ini tidak bisa dihapus (data belum tersinkron ke server)')
+      return
+    }
+
+    const ok = window.confirm('Hapus transaksi ini?')
+    if (!ok) return
+
+    try {
+      setDeletingId(transaction.id)
+      
+      // Jika ID diawali dengan 't', ini adalah ID lokal sementara yang belum tersimpan di backend.
+      // Kita tidak perlu memanggil API delete di backend.
+      if (!String(transaction.id).startsWith('t')) {
+        await transactionAPI.delete(transaction.id)
+      }
+
+      // Hapus dari state lokal (UI)
+      // Catatan: state ini hanya berisi data transaksi yang dipakai halaman.
+      // Di implementasi saat ini transaksi dibuat lokal dengan id t{...},
+      // sehingga delete hanya benar-benar tersinkron jika transaksi punya id dari backend.
+      // Tetap kita filter untuk respons instan.
+      // eslint-disable-next-line no-unused-vars
+      // (update transaksi hanya dilakukan oleh parent, tapi parent saat ini menyimpan transaksi lokal)
+      // Oleh karena itu, kembalikan perubahan ke UI lewat refresh sederhana: reload halaman.
+      window.location.reload()
+    } catch (e) {
+      alert(e?.message || 'Gagal menghapus transaksi')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+
   const generateInvoiceNumber = (existingTransactions, date) => {
     const year = date?.slice(0, 4) || new Date().getFullYear().toString()
     const invoiceNumbers = existingTransactions
@@ -136,7 +177,8 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
       receipt: form.receipt,
     }
     onAddTransaction(newTransaction)
-    alert('Transaksi baru berhasil ditambahkan!')
+    setSuccessMessage('Transaksi baru berhasil ditambahkan!')
+    setTimeout(() => setSuccessMessage(''), 3000)
     setForm({ title: '', amount: '', category: 'Makan', date: '', note: '', type: 'expense', receipt: null })
   }
 
@@ -243,6 +285,14 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
             </div>
           )}
           <div className="lg:col-span-2">
+            {successMessage && (
+              <div className="mb-4 rounded-3xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 text-sm font-medium flex items-center gap-2 transition-all duration-300">
+                <svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{successMessage}</span>
+              </div>
+            )}
             <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
               Simpan Transaksi
             </button>
@@ -269,8 +319,8 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             >
               <option value="all">Semua</option>
-              <option value="Pemasukan">Pemasukan</option>
-              <option value="Pengeluaran Operasional">Pengeluaran</option>
+              <option value="income">Pemasukan</option>
+              <option value="expense">Pengeluaran</option>
             </select>
           </div>
 
@@ -312,7 +362,13 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
         <div className="space-y-4">
           {visibleTransactions.length > 0 ? (
             visibleTransactions.map((trx) => (
-              <TransactionCard key={trx.id} transaction={trx} onViewInvoice={handleViewInvoice} />
+<TransactionCard
+                key={trx.id}
+                transaction={trx}
+                onViewInvoice={handleViewInvoice}
+                onDelete={trx?.id ? deleteTransaction : undefined}
+                isDeleting={deletingId === trx?.id}
+              />
             ))
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">

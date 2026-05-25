@@ -3,14 +3,19 @@ import { useEffect, useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
-const categories = [
+import { transactionAPI } from '../utils/api'
+
+
+  const categories = [
   'Penjualan',
   'Pemasukan',
+  'Tabungan',
   'Pengeluaran Operasional',
   'Beli Bahan Baku / Stok',
   'Piutang Pelanggan',
   'Hutang Supplier',
 ]
+
 
 function TransactionsUMKMPage({
   transactions,
@@ -20,6 +25,35 @@ function TransactionsUMKMPage({
   umkmSummary,
   defaultCategory,
 }) {
+  const [deletingId, setDeletingId] = useState(null)
+  const [successMessage, setSuccessMessage] = useState('')
+
+  const deleteTransaction = async (transaction) => {
+    if (!transaction?.id) {
+      alert('Transaksi ini tidak bisa dihapus (data belum tersinkron ke server)')
+      return
+    }
+
+    const ok = window.confirm('Hapus transaksi ini?')
+    if (!ok) return
+
+    try {
+      setDeletingId(transaction.id)
+      
+      // Jika ID diawali dengan 't', ini adalah ID lokal sementara yang belum tersimpan di backend.
+      // Kita tidak perlu memanggil API delete di backend.
+      if (!String(transaction.id).startsWith('t')) {
+        await transactionAPI.delete(transaction.id)
+      }
+      
+      window.location.reload()
+    } catch (e) {
+      alert(e?.message || 'Gagal menghapus transaksi')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
 
   useEffect(() => {
     // Sinkronisasi filter ketika datang dari quick action / defaultCategory
@@ -95,7 +129,7 @@ function TransactionsUMKMPage({
         // Normalisasi agar label filter cocok dengan data transaksi.
         // Berdasarkan perilaku form: kategori UMKM disimpan ke businessCategory.
         if (filters.type === 'Pemasukan') {
-          return category === 'Pemasukan' || category === 'Penjualan'
+          return category === 'Pemasukan'
         }
 
         if (filters.type === 'Penjualan') {
@@ -142,6 +176,7 @@ function TransactionsUMKMPage({
 
   const handleChange = (field, value) => {
     if (field === 'category') {
+      // kategori yang butuh linkage stok/hubungan lainnya hanya untuk bisnis tertentu
       const isLinkedCategory = value === 'Penjualan' || value === 'Beli Bahan Baku / Stok' || value === 'Piutang Pelanggan' || value === 'Hutang Supplier'
       const isCreditType = value === 'Piutang Pelanggan' || value === 'Hutang Supplier'
 
@@ -304,7 +339,8 @@ function TransactionsUMKMPage({
     }
 
     onAddUmkmTransaction(newTransaction)
-    alert('Transaksi UMKM berhasil ditambahkan!')
+    setSuccessMessage('Transaksi UMKM berhasil ditambahkan!')
+    setTimeout(() => setSuccessMessage(''), 3000)
 
     setForm({
       title: '',
@@ -406,52 +442,8 @@ function TransactionsUMKMPage({
                       className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
                     />
 
-                    <div className="mt-2 grid grid-cols-1 gap-2">
-                      {(umkmSummary?.inventory || [])
-                        .filter((it) => {
-                          const label = String(it.name || it.stockItemName || it.id)
-
-                          // Hilangkan bubble/item stok yang muncul tiba-tiba (mis. "gula")
-                          if (String(label).trim().toLowerCase() === 'gula') return false
-
-                          const q = (form.stockItemSearch || '').trim().toLowerCase()
-                          if (!q) return true
-
-                          return String(label).toLowerCase().includes(q)
-                        })
-                        .map((it) => {
-                          const active = String(it.id) === String(form.stockItemId)
-
-                          return (
-                            <button
-                              key={it.id}
-                              type="button"
-                              onClick={() => {
-                                setForm((prev) => ({
-                                  ...prev,
-                                  linkedStock: true,
-                                  stockItemId: it.id,
-                                }))
-                              }}
-                              className={
-                                `rounded-2xl border px-3 py-2 text-left transition ` +
-                                (active
-                                  ? 'border-[#38ADA9] bg-[#38ADA9] text-white'
-                                  : 'border-slate-200 bg-white text-slate-900 hover:border-slate-300')
-                              }
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="text-sm font-semibold">{it.name || it.stockItemName || it.id}</div>
-                                <div className="text-right">
-                                  {it.qty != null && (
-                                    <div className="mt-1 text-xs text-slate-500">Stok: {it.qty}</div>
-                                  )}
-                                </div>
-                              </div>
-                            </button>
-                          )
-                        })}
-                    </div>
+                    {/* Hapus daftar hasil stok (autocomplete/bubble) agar user hanya input nama item stok + kuantitas */}
+                    {/* (selectedStockId tetap dipetakan dari teks input saat submit) */}
 
                   </div>
                 </div>
@@ -548,6 +540,14 @@ function TransactionsUMKMPage({
 
 
           <div className="lg:col-span-2">
+            {successMessage && (
+              <div className="mb-4 rounded-3xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 text-sm font-medium flex items-center gap-2 transition-all duration-300">
+                <svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{successMessage}</span>
+              </div>
+            )}
             <button type="submit" className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
               Simpan Transaksi
             </button>
@@ -577,6 +577,7 @@ function TransactionsUMKMPage({
               <option value="all">Semua</option>
               <option value="Penjualan">Penjualan</option>
               <option value="Pemasukan">Pemasukan</option>
+              <option value="Tabungan">Tabungan</option>
               <option value="Pengeluaran Operasional">Pengeluaran Operasional</option>
               <option value="Beli Bahan Baku / Stok">Beli Bahan Baku / Stok</option>
               <option value="Piutang Pelanggan">Piutang Pelanggan</option>
@@ -621,6 +622,8 @@ function TransactionsUMKMPage({
                   setSelectedInvoice(trx)
                   setIsInvoiceModalOpen(true)
                 }}
+                onDelete={transaction?.id ? deleteTransaction : undefined}
+                isDeleting={deletingId === transaction?.id}
               />
             ))
           ) : (

@@ -2,15 +2,20 @@ import { useEffect, useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
 
+import { transactionAPI } from '../utils/api'
+
+
 const categories = [
   // Pemasukan
   'Beasiswa',
+  'Tabungan',
   'Uang Saku',
   'Penghasilan Kerja Paruh Waktu',
   // Pengeluaran
   'Kos',
   'UKT',
   'Makan',
+  'Hutang',
   'Transportasi',
   'Kebutuhan Kuliah',
   'Kebutuhan Lainnya',
@@ -23,6 +28,35 @@ function TransactionsMahasiswaPage({
   onAddTransaction,
   defaultCategory,
 }) {
+  const [deletingId, setDeletingId] = useState(null)
+  const [successMessage, setSuccessMessage] = useState('')
+
+  const deleteTransaction = async (transaction) => {
+    if (!transaction?.id) {
+      alert('Transaksi ini tidak bisa dihapus (data belum tersinkron ke server)')
+      return
+    }
+
+    const ok = window.confirm('Hapus transaksi ini?')
+    if (!ok) return
+
+    try {
+      setDeletingId(transaction.id)
+      
+      // Jika ID diawali dengan 't', ini adalah ID lokal sementara yang belum tersimpan di backend.
+      // Kita tidak perlu memanggil API delete di backend.
+      if (!String(transaction.id).startsWith('t')) {
+        await transactionAPI.delete(transaction.id)
+      }
+      
+      window.location.reload()
+    } catch (e) {
+      alert(e?.message || 'Gagal menghapus transaksi')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   useEffect(() => {
     if (defaultCategory && filters?.type !== defaultCategory) {
       setFilters((prev) => ({ ...prev, type: defaultCategory }))
@@ -35,8 +69,8 @@ function TransactionsMahasiswaPage({
     }
   }, [filters?.type])
 
-  const incomeCategories = ['Beasiswa', 'Uang Saku', 'Penghasilan Kerja Paruh Waktu']
-  const expenseCategories = ['Kos', 'UKT', 'Makan', 'Transportasi', 'Kebutuhan Kuliah', 'Kebutuhan Lainnya']
+  const incomeCategories = ['Beasiswa', 'Tabungan', 'Uang Saku', 'Penghasilan Kerja Paruh Waktu']
+  const expenseCategories = ['Kos', 'UKT', 'Makan', 'Hutang', 'Transportasi', 'Kebutuhan Kuliah', 'Kebutuhan Lainnya']
 
   const [form, setForm] = useState({
     title: '',
@@ -143,7 +177,8 @@ function TransactionsMahasiswaPage({
     }
 
     onAddTransaction(newTransaction)
-    alert('Transaksi mahasiswa berhasil ditambahkan!')
+    setSuccessMessage('Transaksi mahasiswa berhasil ditambahkan!')
+    setTimeout(() => setSuccessMessage(''), 3000)
     setForm({
       title: '',
       amount: '',
@@ -266,6 +301,14 @@ function TransactionsMahasiswaPage({
           )}
 
           <div className="lg:col-span-2">
+            {successMessage && (
+              <div className="mb-4 rounded-3xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 text-sm font-medium flex items-center gap-2 transition-all duration-300">
+                <svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{successMessage}</span>
+              </div>
+            )}
             <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
               Simpan Transaksi
             </button>
@@ -331,13 +374,15 @@ function TransactionsMahasiswaPage({
         <div className="space-y-4">
           {visibleTransactions.length > 0 ? (
             visibleTransactions.map((transaction) => (
-              <TransactionCard
+<TransactionCard
                 key={transaction.id}
                 transaction={transaction}
                 onViewInvoice={(trx) => {
                   setSelectedInvoice(trx)
                   setIsInvoiceModalOpen(true)
                 }}
+                onDelete={transaction?.id ? deleteTransaction : undefined}
+                isDeleting={deletingId === transaction?.id}
               />
             ))
           ) : (
