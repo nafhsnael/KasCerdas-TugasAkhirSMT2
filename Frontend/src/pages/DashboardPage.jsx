@@ -162,13 +162,13 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
           <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {smartCashPerDay.toLocaleString('id-ID')}</h2>
-          <p className="mt-3 text-sm text-slate-500">Pemasukan per hari</p>
+          <p className="mt-3 text-sm text-slate-500">Pemasukan per bulan</p>
         </div>
 
         <div className="rounded-[32px] bg-[#F6B93B] p-6 shadow-sm border border-[#e6a53f] text-white">
           <p className="text-sm uppercase tracking-[0.24em] text-white/90">Saldo Pengeluaran</p>
           <h2 className="mt-4 text-4xl font-semibold">Rp {smartReductionPerDay.toLocaleString('id-ID')}</h2>
-          <p className="mt-3 text-sm text-white/90">Pengeluaran per hari</p>
+          <p className="mt-3 text-sm text-white/90">Pengeluaran per bulan</p>
         </div>
       </section>
 
@@ -331,28 +331,6 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
           ))}
         </div>
       </section>
-
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi Terakhir</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-900">Transaksi terbaru</h2>
-          </div>
-          <span className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-            {transactions.length} transaksi
-          </span>
-        </div>
-        <div className="space-y-4">
-          {recentTransactions.length > 0 ? (
-            recentTransactions.map((transaction) => (
-              <TransactionCard key={transaction.id} transaction={transaction} />
-            ))
-          ) : (
-            <p className="text-sm text-slate-500">Tidak ada transaksi terbaru saat ini.</p>
-          )}
-        </div>
-      </section>
-
 
     </div>
   )

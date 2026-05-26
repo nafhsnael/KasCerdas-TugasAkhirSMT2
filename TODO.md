@@ -1,16 +1,12 @@
-## TODO - Pisahkan ExpenseComposition/MonthlyCashflowTable/PeriodDevelopment Card per Role
+# TODO
 
-- [ ] Update 9 komponen role-spesifik (UMKM/Mahasiswa/Masyarakat) agar berisi implementasi asli, bukan wrapper
-  - [x] Frontend/src/components/umkm/UmkmExpenseCompositionCard.jsx
-  - [x] Frontend/src/components/umkm/UmkmMonthlyCashflowTableCard.jsx
-  - [x] Frontend/src/components/umkm/UmkmPeriodDevelopmentCard.jsx
-  - [x] Frontend/src/components/mahasiswa/MahasiswaExpenseCompositionCard.jsx
-  - [x] Frontend/src/components/mahasiswa/MahasiswaMonthlyCashflowTableCard.jsx
-  - [x] Frontend/src/components/mahasiswa/MahasiswaPeriodDevelopmentCard.jsx
-  - [x] Frontend/src/components/masyarakat/MasyarakatExpenseCompositionCard.jsx
-  - [x] Frontend/src/components/masyarakat/MasyarakatMonthlyCashflowTableCard.jsx
-  - [x] Frontend/src/components/masyarakat/MasyarakatPeriodDevelopmentCard.jsx
+## 1) Pastikan transaksi masyarakat langsung masuk riwayat seperti mahasiswa
+- [x] Analisis `addTransaction` untuk usertype `masyarakat` di `Frontend/src/App.jsx`
+- [x] Samakan perilaku dengan `addTransaction` mahasiswa: lakukan optimistic update + replace saat API sukses + rollback saat gagal
+- [x] Pastikan riwayat memfilter berdasar `metadata.is_masyarakat` dan `category` sesuai dropdown (Makan/Hutang/Transport/dst)
 
-- [ ] (Opsional, belum dilakukan) Update AnalysisPage agar pakai versi role-spesifik
-- [ ] Jalankan build/lint frontend untuk memastikan tidak ada error
+
+## 2) Testing
+- [ ] Jalankan build/dev Frontend dan cek tidak ada error lint/runtime
+- [ ] Verifikasi manual: simpan transaksi masyarakat → langsung tampil di Riwayat Transaksi Masyarakat tanpa reload
 

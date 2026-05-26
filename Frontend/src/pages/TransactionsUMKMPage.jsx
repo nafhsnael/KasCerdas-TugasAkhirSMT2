@@ -339,6 +339,10 @@ function TransactionsUMKMPage({
     }
 
     onAddUmkmTransaction(newTransaction)
+    
+    // Instantly switch the category filter to the saved transaction's category so it is shown immediately
+    setFilters({ type: form.category })
+
     setSuccessMessage('Transaksi UMKM berhasil ditambahkan!')
     setTimeout(() => setSuccessMessage(''), 3000)
 

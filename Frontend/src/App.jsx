@@ -101,6 +101,24 @@ function App() {
   const [transactions, setTransactions] = useState([])
   const [budgets, setBudgets] = useState([])
 
+  const mahasiswaTransactions = useMemo(() => {
+    return transactions.filter((t) => {
+      if (t.metadata?.is_mahasiswa !== undefined) return t.metadata.is_mahasiswa
+      if (t.metadata?.is_masyarakat !== undefined) return !t.metadata.is_masyarakat
+      const masyarakatUniqueCategories = ['Penghasilan Kerja', 'Belanja', 'Tagihan', 'Transport']
+      return !masyarakatUniqueCategories.includes(t.category) && !t.metadata?.is_umkm && !t.is_umkm
+    })
+  }, [transactions])
+
+  const masyarakatTransactions = useMemo(() => {
+    return transactions.filter((t) => {
+      if (t.metadata?.is_masyarakat !== undefined) return t.metadata.is_masyarakat
+      if (t.metadata?.is_mahasiswa !== undefined) return !t.metadata.is_mahasiswa
+      const mahasiswaUniqueCategories = ['Beasiswa', 'UKT', 'Kos', 'Penghasilan Kerja Paruh Waktu', 'Kebutuhan Kuliah']
+      return !mahasiswaUniqueCategories.includes(t.category) && !t.metadata?.is_umkm && !t.is_umkm
+    })
+  }, [transactions])
+
   const handleUmkmQuickAction = (businessCategory) => {
     // Quick action di Dashboard -> otomatis pilih kategori bisnis di halaman Transaksi UMKM
     setSelectedUmkmCategory(businessCategory)
@@ -327,23 +345,195 @@ function App() {
   }
 
   const addTransaction = async (newTransaction) => {
+    // Debug bisa diaktifkan bila perlu
+    // console.log('addTransaction', { usertype: userProfile?.usertype, newTransaction })
+    const tempId = 't-' + Date.now()
+    const isMahasiswa = userProfile?.usertype === 'mahasiswa'
+    const isMasyarakat = userProfile?.usertype === 'masyarakat'
+
+    // Optimistic update (biar riwayat langsung terisi seperti UMKM)
+    const tempTransaction = {
+      id: tempId,
+      ...newTransaction,
+      // Pastikan type/category/date field yang dipakai UI tetap konsisten
+      type: newTransaction.type || (newTransaction.category && ['Penghasilan Kerja', 'Uang Saku', 'Tabungan'].includes(newTransaction.category) ? 'income' : 'expense'),
+      metadata: {
+        ...newTransaction.metadata,
+        is_mahasiswa: isMahasiswa,
+        is_masyarakat: isMasyarakat,
+      },
+      wallet_id: walletInfo?.id || newTransaction.wallet_id,
+      // Konsisten dengan TransactionCard
+      wallet: walletInfo?.name || newTransaction.wallet || null,
+      bank: newTransaction.bank || null,
+    }
+
+
+    setTransactions((prev) => [tempTransaction, ...prev])
+    syncBudgetWithTransaction(tempTransaction)
+
     try {
-      const res = await transactionAPI.create(newTransaction)
-      const transaction = res.data
-      setTransactions((prev) => [transaction, ...prev])
+      const payload = {
+        ...newTransaction,
+        wallet_id: walletInfo?.id || newTransaction.wallet_id,
+        metadata: {
+          ...newTransaction.metadata,
+          is_mahasiswa: isMahasiswa,
+          is_masyarakat: isMasyarakat,
+        }
+      }
+
+      const res = await transactionAPI.create(payload)
+      const transaction = {
+        ...res.data,
+        metadata: {
+          is_mahasiswa: isMahasiswa,
+          is_masyarakat: isMasyarakat,
+        }
+      }
+
+      // Replace temp transaction with real transaction
+      // Jangan ubah type secara tidak sengaja agar item tetap masuk ke riwayat sesuai filter.
+      setTransactions((prev) =>
+        prev.map((t) => {
+          if (t.id !== tempId) return t
+          return {
+            ...t,
+            ...transaction,
+            type: transaction.type || tempTransaction.type,
+            metadata: {
+              ...(tempTransaction.metadata || {}),
+              ...(transaction.metadata || {}),
+            },
+          }
+        })
+      )
       syncBudgetWithTransaction(transaction)
-      
+
+
       // Update wallet info after transaction
       const walletData = await fetchWalletInfo()
       if (walletData) setWalletInfo(walletData)
     } catch (e) {
+      // Rollback optimistic updates
+      setTransactions((prev) => prev.filter((t) => t.id !== tempId))
       alert('Gagal menyimpan transaksi ke server: ' + (e.message || 'Error tidak diketahui'))
     }
   }
 
+
   const addUmkmTransaction = async (newTransaction) => {
+    const tempId = 't-' + Date.now()
+
+    // Pastikan wallet_id tidak kosong agar backend tidak error `The wallet id field is required.`
+    // (walletInfo.id hanya ada jika wallet sudah ter-load saat user login)
+    const safeWalletId = walletInfo?.id || newTransaction.wallet_id
+
+    const tempTransaction = {
+      id: tempId,
+      ...newTransaction,
+      wallet_id: safeWalletId,
+      isUmkm: true,
+      businessCategory: newTransaction.businessCategory,
+      invoice: 'INV-TEMP' // Temporary invoice placeholder
+    }
+
+
+    // 1. Optimistic Updates - Instantly append to state
+    setUmkmTransactions((prev) => [tempTransaction, ...prev])
+    setTransactions((prev) => [tempTransaction, ...prev])
+    syncBudgetWithTransaction(tempTransaction)
+
+    const amount = Number(newTransaction.amount) || 0
+    const isDebtCategory = newTransaction.businessCategory === 'Hutang Supplier' || newTransaction.businessCategory === 'Piutang Pelanggan'
+
+    // Optimistically update wallet info & e-wallet balance
+    if (newTransaction.type === 'income') {
+      setUmkmEWalletBalance((prev) => prev + amount)
+      setWalletInfo((prev) => prev ? { ...prev, balance: Number(prev.balance) + amount } : prev)
+    } else {
+      setUmkmEWalletBalance((prev) => Math.max(0, prev - amount))
+      setWalletInfo((prev) => prev ? { ...prev, balance: Math.max(0, Number(prev.balance) - amount) } : prev)
+    }
+
+    // Optimistically update UMKM summary metrics
+    setUmkmSummary((prevSummary) => {
+      const stockQty = Number(newTransaction.stockQty) || 1
+      const selectedStockId = newTransaction.stockItemId
+      const estimatedHpp = Math.round(amount * 0.42)
+
+      const updateInventory = (change, itemToAddIfMissing = null) => {
+        const inventory = Array.isArray(prevSummary.inventory) ? prevSummary.inventory : []
+        const found = inventory.some((item) => String(item.id) === String(selectedStockId))
+        if (!found && itemToAddIfMissing) {
+          return [
+            ...inventory,
+            {
+              id: selectedStockId,
+              name: itemToAddIfMissing.name,
+              stock: Math.max(0, Number(itemToAddIfMissing.stock ?? stockQty) + (change ?? 0)),
+              reorderLevel: Number(itemToAddIfMissing.reorderLevel ?? 10),
+            },
+          ]
+        }
+        return inventory.map((item) =>
+          String(item.id) === String(selectedStockId)
+            ? { ...item, stock: Math.max(0, Number(item.stock ?? 0) + (change ?? 0)) }
+            : item
+        )
+      }
+
+      let nextSummary = { ...prevSummary }
+
+      switch (newTransaction.businessCategory) {
+        case 'Penjualan':
+          nextSummary.income += amount
+          nextSummary.estimatedHpp += estimatedHpp
+          if (newTransaction.linkedStock) nextSummary.inventory = updateInventory(-stockQty)
+          break
+        case 'Pemasukan':
+          nextSummary.income += amount
+          break
+        case 'Pengeluaran Operasional':
+          nextSummary.operationalExpense += amount
+          break
+        case 'Beli Bahan Baku / Stok':
+          if (selectedStockId) {
+            nextSummary.inventory = updateInventory(stockQty, {
+              name: newTransaction.stockItemName || selectedStockId,
+              stock: stockQty,
+              reorderLevel: 10,
+            })
+          }
+          nextSummary.estimatedHpp += amount
+          break
+        case 'Piutang Pelanggan':
+          if (newTransaction.isSettled) nextSummary.income += amount
+          else nextSummary.receivables += amount
+          if (newTransaction.linkedStock) {
+            nextSummary.inventory = updateInventory(-stockQty)
+            nextSummary.estimatedHpp += estimatedHpp
+          }
+          break
+        case 'Hutang Supplier':
+          nextSummary.payables += amount
+          nextSummary.inventory = updateInventory(stockQty, {
+            name: newTransaction.stockItemName || selectedStockId,
+            stock: stockQty,
+            reorderLevel: 10,
+          })
+          nextSummary.estimatedHpp += amount
+          if (newTransaction.isSettled) {
+            nextSummary.payables = Math.max(0, nextSummary.payables - amount)
+            nextSummary.operationalExpense += amount
+          }
+          break
+      }
+      return nextSummary
+    })
+
+    // 2. Perform API call in background/asynchronously to persist to DB
     try {
-      // Tambahkan flag UMKM ke metadata
       const payload = {
         ...newTransaction,
         metadata: {
@@ -360,18 +550,14 @@ function App() {
       const transaction = {
         ...res.data,
         isUmkm: true,
-        businessCategory: newTransaction.businessCategory // untuk kompatibilitas UI lama
+        businessCategory: newTransaction.businessCategory
       }
 
-      // UMKM hanya masuk ke `umkmTransactions`, supaya tidak muncul di riwayat transaksi Mahasiswa/Masyarakat.
-      setUmkmTransactions((prev) => [transaction, ...prev])
-      setTransactions((prev) => [transaction, ...prev]) // Juga masukkan ke transaksi umum
-      syncBudgetWithTransaction(transaction)
+      // Replace the optimistic temp transaction with the real transaction from backend
+      setUmkmTransactions((prev) => prev.map((t) => t.id === tempId ? transaction : t))
+      setTransactions((prev) => prev.map((t) => t.id === tempId ? transaction : t))
 
-      // Jika kategori piutang/hutang (UMKM), masukkan ke daftar debts agar tampil di Rekap Hutang (ReportsPage)
-      const amount = Number(newTransaction.amount) || 0
-      const isDebtCategory = newTransaction.businessCategory === 'Hutang Supplier' || newTransaction.businessCategory === 'Piutang Pelanggan'
-      
+      // Persist debt category in DB if applicable
       if (isDebtCategory) {
         try {
           await debtAPI.create({
@@ -383,7 +569,6 @@ function App() {
             status: newTransaction.isSettled ? 'paid' : 'active'
           })
           
-          // Refresh debts list
           const debtsRes = await debtAPI.list()
           setDebts(debtsRes.data)
         } catch (e) {
@@ -391,91 +576,26 @@ function App() {
         }
       }
 
-      // Update wallet info & e-wallet balance
+      // Sync wallet balance to ensure it is exact with server
       const walletData = await fetchWalletInfo()
       if (walletData) {
         setWalletInfo(walletData)
         setUmkmEWalletBalance(Number(walletData.balance))
       }
-
-      // Update umkm summary (local calculation for now, but ideally from backend)
-      setUmkmSummary((prevSummary) => {
-        const amount = Number(newTransaction.amount) || 0
-        const stockQty = Number(newTransaction.stockQty) || 1
-        const selectedStockId = newTransaction.stockItemId
-        const estimatedHpp = Math.round(amount * 0.42)
-
-        const updateInventory = (change, itemToAddIfMissing = null) => {
-          const inventory = Array.isArray(prevSummary.inventory) ? prevSummary.inventory : []
-          const found = inventory.some((item) => String(item.id) === String(selectedStockId))
-          if (!found && itemToAddIfMissing) {
-            return [
-              ...inventory,
-              {
-                id: selectedStockId,
-                name: itemToAddIfMissing.name,
-                stock: Math.max(0, Number(itemToAddIfMissing.stock ?? stockQty) + (change ?? 0)),
-                reorderLevel: Number(itemToAddIfMissing.reorderLevel ?? 10),
-              },
-            ]
-          }
-          return inventory.map((item) =>
-            String(item.id) === String(selectedStockId)
-              ? { ...item, stock: Math.max(0, Number(item.stock ?? 0) + (change ?? 0)) }
-              : item
-          )
-        }
-
-        let nextSummary = { ...prevSummary }
-
-        switch (newTransaction.businessCategory) {
-          case 'Penjualan':
-            nextSummary.income += amount
-            nextSummary.estimatedHpp += estimatedHpp
-            if (newTransaction.linkedStock) nextSummary.inventory = updateInventory(-stockQty)
-            break
-          case 'Pemasukan':
-            nextSummary.income += amount
-            break
-          case 'Pengeluaran Operasional':
-            nextSummary.operationalExpense += amount
-            break
-          case 'Beli Bahan Baku / Stok':
-            if (selectedStockId) {
-              nextSummary.inventory = updateInventory(stockQty, {
-                name: newTransaction.stockItemName || selectedStockId,
-                stock: stockQty,
-                reorderLevel: 10,
-              })
-            }
-            nextSummary.estimatedHpp += amount
-            break
-          case 'Piutang Pelanggan':
-            if (newTransaction.isSettled) nextSummary.income += amount
-            else nextSummary.receivables += amount
-            if (newTransaction.linkedStock) {
-              nextSummary.inventory = updateInventory(-stockQty)
-              nextSummary.estimatedHpp += estimatedHpp
-            }
-            break
-          case 'Hutang Supplier':
-            nextSummary.payables += amount
-            nextSummary.inventory = updateInventory(stockQty, {
-              name: newTransaction.stockItemName || selectedStockId,
-              stock: stockQty,
-              reorderLevel: 10,
-            })
-            nextSummary.estimatedHpp += amount
-            if (newTransaction.isSettled) {
-              nextSummary.payables = Math.max(0, nextSummary.payables - amount)
-              nextSummary.operationalExpense += amount
-            }
-            break
-        }
-        return nextSummary
-      })
     } catch (e) {
-      alert('Gagal menyimpan transaksi UMKM: ' + (e.message || 'Error tidak diketahui'))
+      // Rollback optimistic updates if backend fails
+      setUmkmTransactions((prev) => prev.filter((t) => t.id !== tempId))
+      setTransactions((prev) => prev.filter((t) => t.id !== tempId))
+
+      if (newTransaction.type === 'income') {
+        setUmkmEWalletBalance((prev) => Math.max(0, prev - amount))
+        setWalletInfo((prev) => prev ? { ...prev, balance: Math.max(0, Number(prev.balance) - amount) } : prev)
+      } else {
+        setUmkmEWalletBalance((prev) => prev + amount)
+        setWalletInfo((prev) => prev ? { ...prev, balance: Number(prev.balance) + amount } : prev)
+      }
+
+      alert('Gagal menyimpan transaksi UMKM ke server: ' + (e.message || 'Error tidak diketahui'))
     }
   }
 
@@ -561,7 +681,7 @@ function App() {
       }
 
       const json = await res.json()
-      return json.data
+      return json.data?.wallet || json.data
     } catch (e) {
       // Jika error, return null agar InitialBalance bisa di-tampilkan
       return null
@@ -757,15 +877,15 @@ function App() {
           )
         }
         if (userProfile?.usertype === 'mahasiswa') {
-          return <TransactionsMahasiswaPage transactions={transactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
+          return <TransactionsMahasiswaPage transactions={mahasiswaTransactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
         }
-        return <TransactionsMasyarakatPage transactions={transactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
+        return <TransactionsMasyarakatPage transactions={masyarakatTransactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
       case 'analysis':
-        return <AnalysisPage transactions={transactions} />
+        return <AnalysisPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} />
       case 'reports':
-        return <ReportsPage transactions={transactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
+        return <ReportsPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
       case 'budget':
-        return <BudgetPage transactions={transactions} budgets={budgets} setBudgets={setBudgets} userType={userProfile?.usertype || userType} />
+        return <BudgetPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} budgets={budgets} setBudgets={setBudgets} userType={userProfile?.usertype || userType} />
       case 'add-debt':
         return <AddDebtPage onAddDebt={addDebt} onNavigate={setCurrentPage} />
       case 'add-savings':
@@ -783,7 +903,7 @@ function App() {
                 smartCashPerDay: initialBalance,
                 smartReductionPerDay: 0,
               }}
-              transactions={transactions}
+              transactions={mahasiswaTransactions}
               budgets={budgets}
               walletInfo={walletInfo}
               userProfile={userProfile}
@@ -801,7 +921,7 @@ function App() {
                 smartCashPerDay: initialBalance,
                 smartReductionPerDay: 0,
               }}
-              transactions={transactions}
+              transactions={masyarakatTransactions}
               budgets={budgets}
               walletInfo={walletInfo}
               userProfile={userProfile}

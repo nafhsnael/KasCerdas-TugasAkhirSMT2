@@ -48,8 +48,19 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
               </div>
               <div className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-xs text-slate-600">Tanggal</p>
-                <p className="text-sm font-semibold text-slate-900">{transaction.date}</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  {(() => {
+                    const d = transaction.date
+                    if (!d) return '-'
+
+                    // Backend bisa mengirim format ISO date-time: 2026-05-26T00:00:00.000000Z
+                    // UI cukup menampilkan tanggal: 2026-05-26
+                    if (typeof d === 'string' && d.includes('T')) return d.slice(0, 10)
+                    return d
+                  })()}
+                </p>
               </div>
+
 
               <div className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-xs text-slate-600">Jumlah</p>

@@ -40,9 +40,9 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
   const visibleTransactions = useMemo(() => {
     let filtered = transactions
     
-    // Filter berdasarkan tipe transaksi
+    // Filter berdasarkan kategori transaksi
     if (filters.type !== 'all') {
-      filtered = filtered.filter((item) => item.type === filters.type)
+      filtered = filtered.filter((item) => item.category === filters.type)
     }
     
     // Filter berdasarkan bulan
@@ -177,6 +177,10 @@ const deleteTransaction = async (transaction) => {
       receipt: form.receipt,
     }
     onAddTransaction(newTransaction)
+    
+    // Instantly set category filter to match the newly added transaction category
+    setFilters({ type: form.category })
+
     setSuccessMessage('Transaksi baru berhasil ditambahkan!')
     setTimeout(() => setSuccessMessage(''), 3000)
     setForm({ title: '', amount: '', category: 'Makan', date: '', note: '', type: 'expense', receipt: null })
@@ -319,8 +323,15 @@ const deleteTransaction = async (transaction) => {
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
             >
               <option value="all">Semua</option>
-              <option value="income">Pemasukan</option>
-              <option value="expense">Pengeluaran</option>
+              <option value="Makan">Makan</option>
+              <option value="Hutang">Hutang</option>
+              <option value="Transport">Transport</option>
+              <option value="Belanja">Belanja</option>
+              <option value="Tagihan">Tagihan</option>
+              <option value="Kebutuhan Lainnya">Kebutuhan Lainnya</option>
+              <option value="Penghasilan Kerja">Penghasilan Kerja</option>
+              <option value="Uang Saku">Uang Saku</option>
+              <option value="Tabungan">Tabungan</option>
             </select>
           </div>
 
