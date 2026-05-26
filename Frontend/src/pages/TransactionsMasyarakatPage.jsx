@@ -11,6 +11,8 @@ const expenseCategories = ['Makan', 'Hutang','Transport', 'Belanja', 'Tagihan', 
 function TransactionsPage({ transactions, filters, setFilters, onAddTransaction }) {
   const [deletingId, setDeletingId] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [fileInputKey, setFileInputKey] = useState(0)
 
   const [form, setForm] = useState({
     title: '',
@@ -20,6 +22,7 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
     note: '',
     type: 'expense',
     receipt: null,
+    isSettled: false,
   })
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -83,20 +86,31 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
 
   const handleReceiptChange = (e) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        setForm((prev) => ({
-          ...prev,
-          receipt: {
-            name: file.name,
-            type: file.type,
-            url: event.target.result,
-          },
-        }))
-      }
-      reader.readAsDataURL(file)
+
+    if (!file) {
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
     }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
+    const maxSize = 5 * 1024 * 1024 // 5MB, sama dengan validasi backend Laravel
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Format file harus JPG, JPEG, PNG, atau PDF')
+      e.target.value = ''
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
+    }
+
+    if (file.size > maxSize) {
+      alert('Ukuran file maksimal 5MB')
+      e.target.value = ''
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
+    }
+
+    // Simpan File asli, bukan object/base64, supaya Laravel menerima sebagai file upload.
+    setForm((prev) => ({ ...prev, receipt: file }))
   }
 
   const handleViewInvoice = (transaction) => {
@@ -160,30 +174,62 @@ const deleteTransaction = async (transaction) => {
     return `INV-${year}-${String(nextNumber).padStart(4, '0')}`
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
+
+    if (isSaving) return
+
     if (!form.title || !form.amount || !form.date) {
       alert('Mohon isi semua field yang wajib (Judul, Jumlah, Tanggal)')
       return
     }
+
     const newTransaction = {
       title: form.title,
-      amount: parseInt(form.amount),
+      amount: parseInt(form.amount, 10),
       category: form.category,
       date: form.date,
       note: form.note,
       type: form.type,
-      invoice: generateInvoiceNumber(transactions, form.date),
+      invoice: generateInvoiceNumber(transactions || [], form.date),
       receipt: form.receipt,
+      isSettled: form.isSettled,
+      metadata: {
+        is_masyarakat: true,
+        is_mahasiswa: false,
+      },
     }
-    onAddTransaction(newTransaction)
-    
-    // Instantly set category filter to match the newly added transaction category
-    setFilters({ type: form.category })
 
-    setSuccessMessage('Transaksi baru berhasil ditambahkan!')
-    setTimeout(() => setSuccessMessage(''), 3000)
-    setForm({ title: '', amount: '', category: 'Makan', date: '', note: '', type: 'expense', receipt: null })
+    try {
+      setIsSaving(true)
+
+      // Tunggu sampai App.jsx menambahkan transaksi ke state dan menyimpan ke backend.
+      await onAddTransaction(newTransaction)
+
+      // Setelah berhasil, filter diarahkan ke kategori transaksi baru supaya langsung terlihat di riwayat.
+      setFilters({ type: form.category })
+      setSearchQuery('')
+      setSelectedMonth('')
+
+      setSuccessMessage('Transaksi baru berhasil ditambahkan!')
+      setTimeout(() => setSuccessMessage(''), 3000)
+
+      setForm({
+        title: '',
+        amount: '',
+        category: 'Makan',
+        date: '',
+        note: '',
+        type: 'expense',
+        receipt: null,
+        isSettled: false,
+      })
+      setFileInputKey((prev) => prev + 1)
+    } catch (e) {
+      // Alert error sudah ditampilkan dari App.jsx agar tidak dobel.
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -273,13 +319,28 @@ const deleteTransaction = async (transaction) => {
               placeholder="Contoh: Makan siang di kantor"
               onChange={(e) => handleChange('note', e.target.value)}
             />
+            {form.category === 'Hutang' && (
+              <div className="mt-3 flex items-center gap-3">
+                <input
+                  id="isSettled"
+                  type="checkbox"
+                  checked={form.isSettled}
+                  onChange={(e) => handleChange('isSettled', e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
+                />
+                <label htmlFor="isSettled" className="text-sm text-slate-700">
+                  Tandai Sudah dibayar / dilunasi
+                </label>
+              </div>
+            )}
           </div>
           {form.type === 'expense' && (
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Upload Bukti Nota</label>
               <input
+                key={fileInputKey}
                 type="file"
-                accept="image/*,application/pdf"
+                accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                 onChange={handleReceiptChange}
                 className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-2 text-slate-700"
               />
@@ -297,8 +358,12 @@ const deleteTransaction = async (transaction) => {
                 <span>{successMessage}</span>
               </div>
             )}
-            <button className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
-              Simpan Transaksi
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="w-full rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSaving ? 'Menyimpan...' : 'Simpan Transaksi'}
             </button>
           </div>
         </form>

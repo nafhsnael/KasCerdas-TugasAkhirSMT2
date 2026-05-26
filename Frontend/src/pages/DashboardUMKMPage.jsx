@@ -186,8 +186,8 @@ function DashboardUMKMPage({
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">stok bahan baku / barang</p>
             <div className="mt-3 space-y-3">
               {inventoryItems.length > 0 ? (
-                inventoryItems.map((item) => (
-                  <div key={item.id ?? item.name} className="rounded-2xl bg-white p-4 shadow-sm">
+                inventoryItems.map((item, index) => (
+                  <div key={item.id ?? item.transactionId ?? `${item.name}-${index}`} className="rounded-2xl bg-white p-4 shadow-sm">
                     <div className="flex items-center justify-between gap-4">
                       <p className="font-semibold text-slate-900">{item.name}</p>
                       <span
@@ -201,6 +201,9 @@ function DashboardUMKMPage({
                       </span>
                     </div>
                     <p className="mt-2 text-sm text-slate-500">Kuantitas: {item.stock} unit</p>
+                    {item.invoice && (
+                      <p className="mt-1 text-xs text-slate-400">{item.invoice}</p>
+                    )}
                   </div>
                 ))
               ) : (

@@ -82,20 +82,31 @@ function TransactionsPage({
 
   const handleReceiptChange = (e) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        setForm((prev) => ({
-          ...prev,
-          receipt: {
-            name: file.name,
-            type: file.type,
-            url: event.target.result,
-          },
-        }))
-      }
-      reader.readAsDataURL(file)
+
+    if (!file) {
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
     }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
+    const maxSize = 5 * 1024 * 1024 // 5MB, sama dengan validasi backend Laravel
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Format file harus JPG, JPEG, PNG, atau PDF')
+      e.target.value = ''
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
+    }
+
+    if (file.size > maxSize) {
+      alert('Ukuran file maksimal 5MB')
+      e.target.value = ''
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
+    }
+
+    // Simpan File asli, bukan object/base64, supaya Laravel menerima sebagai file upload.
+    setForm((prev) => ({ ...prev, receipt: file }))
   }
 
   const handleViewInvoice = (transaction) => {
@@ -215,7 +226,7 @@ function TransactionsPage({
               <label className="mb-2 block text-sm font-medium text-slate-700">Upload Bukti Nota</label>
               <input
                 type="file"
-                accept="image/*,application/pdf"
+                accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                 onChange={handleReceiptChange}
                 className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-2 text-slate-700"
               />

@@ -80,6 +80,7 @@ function TransactionsMahasiswaPage({
     note: '',
     type: 'expense',
     receipt: null,
+    isSettled: false,
   })
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -125,20 +126,31 @@ function TransactionsMahasiswaPage({
 
   const handleReceiptChange = (e) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        setForm((prev) => ({
-          ...prev,
-          receipt: {
-            name: file.name,
-            type: file.type,
-            url: event.target.result,
-          },
-        }))
-      }
-      reader.readAsDataURL(file)
+
+    if (!file) {
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
     }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
+    const maxSize = 5 * 1024 * 1024 // 5MB, sama dengan validasi backend Laravel
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Format file harus JPG, JPEG, PNG, atau PDF')
+      e.target.value = ''
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
+    }
+
+    if (file.size > maxSize) {
+      alert('Ukuran file maksimal 5MB')
+      e.target.value = ''
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
+    }
+
+    // Simpan File asli, bukan object/base64, supaya Laravel menerima sebagai file upload.
+    setForm((prev) => ({ ...prev, receipt: file }))
   }
 
   const generateInvoiceNumber = (existingTransactions, date) => {
@@ -174,6 +186,7 @@ function TransactionsMahasiswaPage({
       invoice: generateInvoiceNumber(transactions || [], form.date),
       receipt: form.receipt,
       wallet: 'Mahasiswa',
+      isSettled: form.isSettled,
     }
 
     onAddTransaction(newTransaction)
@@ -187,6 +200,7 @@ function TransactionsMahasiswaPage({
       note: '',
       type: 'expense',
       receipt: null,
+      isSettled: false,
     })
   }
 
@@ -283,6 +297,20 @@ function TransactionsMahasiswaPage({
               placeholder="Contoh: Makan siang di kantin kampus"
               onChange={(e) => handleChange('note', e.target.value)}
             />
+            {form.category === 'Hutang' && (
+              <div className="mt-3 flex items-center gap-3">
+                <input
+                  id="isSettled"
+                  type="checkbox"
+                  checked={form.isSettled}
+                  onChange={(e) => handleChange('isSettled', e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
+                />
+                <label htmlFor="isSettled" className="text-sm text-slate-700">
+                  Tandai Sudah dibayar / dilunasi
+                </label>
+              </div>
+            )}
           </div>
 
           {form.category !== 'Uang Saku' && form.category !== 'Beasiswa' && form.category !== 'Penghasilan Kerja Paruh Waktu' && (
@@ -290,7 +318,7 @@ function TransactionsMahasiswaPage({
               <label className="mb-2 block text-sm font-medium text-slate-700">Upload Bukti Nota</label>
               <input
                 type="file"
-                accept="image/*,application/pdf"
+                accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                 onChange={handleReceiptChange}
                 className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-2 text-slate-700"
               />

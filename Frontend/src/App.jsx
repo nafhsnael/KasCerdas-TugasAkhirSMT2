@@ -97,25 +97,50 @@ function App() {
     }
   }
   const [filters, setFilters] = useState({ type: 'all' })
-  const [selectedUmkmCategory, setSelectedUmkmCategory] = useState('Penjualan')
+  const [selectedUmkmCategory, setSelectedUmkmCategory] = useState('all')
   const [transactions, setTransactions] = useState([])
   const [budgets, setBudgets] = useState([])
 
+  const parseMetadata = (metadata) => {
+    if (!metadata) return {}
+    if (typeof metadata === 'string') {
+      try {
+        const parsed = JSON.parse(metadata)
+        return parsed && typeof parsed === 'object' ? parsed : {}
+      } catch (e) {
+        return {}
+      }
+    }
+    return typeof metadata === 'object' ? metadata : {}
+  }
+
+  const hasMetaValue = (value) => value !== undefined && value !== null
+
+  const metaToBool = (value) => {
+    return value === true || value === 1 || value === '1' || value === 'true'
+  }
+
   const mahasiswaTransactions = useMemo(() => {
     return transactions.filter((t) => {
-      if (t.metadata?.is_mahasiswa !== undefined) return t.metadata.is_mahasiswa
-      if (t.metadata?.is_masyarakat !== undefined) return !t.metadata.is_masyarakat
+      const metadata = parseMetadata(t.metadata)
+
+      if (hasMetaValue(metadata.is_mahasiswa)) return metaToBool(metadata.is_mahasiswa)
+      if (hasMetaValue(metadata.is_masyarakat)) return !metaToBool(metadata.is_masyarakat)
+
       const masyarakatUniqueCategories = ['Penghasilan Kerja', 'Belanja', 'Tagihan', 'Transport']
-      return !masyarakatUniqueCategories.includes(t.category) && !t.metadata?.is_umkm && !t.is_umkm
+      return !masyarakatUniqueCategories.includes(t.category) && !metadata.is_umkm && !t.is_umkm
     })
   }, [transactions])
 
   const masyarakatTransactions = useMemo(() => {
     return transactions.filter((t) => {
-      if (t.metadata?.is_masyarakat !== undefined) return t.metadata.is_masyarakat
-      if (t.metadata?.is_mahasiswa !== undefined) return !t.metadata.is_mahasiswa
+      const metadata = parseMetadata(t.metadata)
+
+      if (hasMetaValue(metadata.is_masyarakat)) return metaToBool(metadata.is_masyarakat)
+      if (hasMetaValue(metadata.is_mahasiswa)) return !metaToBool(metadata.is_mahasiswa)
+
       const mahasiswaUniqueCategories = ['Beasiswa', 'UKT', 'Kos', 'Penghasilan Kerja Paruh Waktu', 'Kebutuhan Kuliah']
-      return !mahasiswaUniqueCategories.includes(t.category) && !t.metadata?.is_umkm && !t.is_umkm
+      return !mahasiswaUniqueCategories.includes(t.category) && !metadata.is_umkm && !t.is_umkm
     })
   }, [transactions])
 
@@ -149,6 +174,176 @@ function App() {
     dompet: null,
     profileImage: '',
   })
+
+  const buildStorageUrl = (path) => {
+    if (!path) return null
+
+    const value = String(path).trim()
+    if (!value) return null
+    if (/^(https?:|blob:|data:)/i.test(value)) return value
+
+    const cleanPath = value.replace(/^\/+/, '')
+    const storagePath = cleanPath.startsWith('storage/') ? cleanPath : `storage/${cleanPath}`
+
+    const envBackendUrl = import.meta.env?.VITE_BACKEND_URL || ''
+    const envApiUrl = import.meta.env?.VITE_API_URL || ''
+    const apiOrigin = envApiUrl ? envApiUrl.replace(/\/api\/?$/, '') : ''
+    const isViteLocal = typeof window !== 'undefined' && /^517\d$/.test(window.location.port)
+    const backendOrigin = envBackendUrl || apiOrigin || (isViteLocal ? 'http://localhost:8000' : '')
+
+    return backendOrigin ? `${backendOrigin}/${storagePath}` : `/${storagePath}`
+  }
+
+  const receiptToPreview = (receipt) => {
+    if (!receipt) return null
+
+    if (typeof File !== 'undefined' && receipt instanceof File) {
+      return {
+        name: receipt.name,
+        type: receipt.type,
+        url: URL.createObjectURL(receipt),
+      }
+    }
+
+    if (typeof receipt === 'object') {
+      return {
+        ...receipt,
+        url: buildStorageUrl(receipt.url || receipt.preview || receipt.path || receipt.receipt_url),
+      }
+    }
+
+    return receipt
+  }
+
+  const normalizeTransaction = (transaction) => {
+    if (!transaction) return transaction
+
+    const receiptPath = transaction.receipt_url || transaction.receiptUrl
+    const fileName = receiptPath ? String(receiptPath).split('/').pop() : ''
+    const lowerName = fileName.toLowerCase()
+    const metadata = parseMetadata(transaction.metadata)
+
+    const businessCategory = transaction.businessCategory || metadata.businessCategory || metadata.business_category || transaction.category
+    const stockItemName = transaction.stockItemName || metadata.stockItemName || metadata.stock_item_name || ''
+    const stockItemId = transaction.stockItemId || metadata.stockItemId || metadata.stock_item_id || ''
+    const stockQty = transaction.stockQty ?? metadata.stockQty ?? metadata.stock_qty ?? ''
+
+    return {
+      ...transaction,
+      metadata,
+      businessCategory,
+      isUmkm: transaction.isUmkm || metaToBool(metadata.is_umkm),
+      stockItemId,
+      stockItemName,
+      stockQty,
+      linkedStock: transaction.linkedStock ?? metaToBool(metadata.linkedStock ?? metadata.linked_stock),
+      isSettled: transaction.isSettled ?? metaToBool(metadata.isSettled ?? metadata.is_settled),
+      date: typeof transaction.date === 'string' && transaction.date.includes('T')
+        ? transaction.date.slice(0, 10)
+        : transaction.date,
+      receipt: transaction.receipt || (receiptPath ? {
+        name: fileName || 'Bukti Nota',
+        type: lowerName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+        url: buildStorageUrl(receiptPath),
+      } : null),
+    }
+  }
+
+  const getUmkmCategory = (transaction) => {
+    const metadata = parseMetadata(transaction?.metadata)
+    return transaction?.businessCategory || metadata.businessCategory || metadata.business_category || transaction?.category || ''
+  }
+
+  const getStockItemName = (transaction) => {
+    const metadata = parseMetadata(transaction?.metadata)
+    return (
+      transaction?.stockItemName ||
+      metadata.stockItemName ||
+      metadata.stock_item_name ||
+      transaction?.stockItemId ||
+      metadata.stockItemId ||
+      metadata.stock_item_id ||
+      ''
+    )
+  }
+
+  const getStockQty = (transaction) => {
+    const metadata = parseMetadata(transaction?.metadata)
+    return Number(transaction?.stockQty ?? metadata.stockQty ?? metadata.stock_qty ?? 0) || 0
+  }
+
+  const buildUmkmSummaryFromTransactions = (items = []) => {
+    const nextSummary = {
+      income: 0,
+      operationalExpense: 0,
+      estimatedHpp: 0,
+      payables: 0,
+      receivables: 0,
+      inventory: [],
+    }
+
+    const addInventoryEntry = (transaction, quantityFallback = 1) => {
+      const cleanName = String(getStockItemName(transaction) || transaction?.title || '').trim()
+      const quantity = Number(getStockQty(transaction) || quantityFallback) || 0
+      if (!cleanName || quantity <= 0) return
+
+      nextSummary.inventory.push({
+        id: `stok-${transaction?.id || nextSummary.inventory.length}-${nextSummary.inventory.length}`,
+        transactionId: transaction?.id,
+        invoice: transaction?.invoice,
+        date: transaction?.date,
+        name: cleanName,
+        stock: quantity,
+        reorderLevel: 10,
+      })
+    }
+
+    items.forEach((transaction) => {
+      const category = getUmkmCategory(transaction)
+      const amount = Number(transaction?.amount) || 0
+      const metadata = parseMetadata(transaction?.metadata)
+      const linkedStock = transaction?.linkedStock ?? metaToBool(metadata.linkedStock ?? metadata.linked_stock)
+      const isSettled = transaction?.isSettled ?? metaToBool(metadata.isSettled ?? metadata.is_settled)
+      const estimatedHpp = Math.round(amount * 0.42)
+
+      switch (category) {
+        case 'Penjualan':
+          nextSummary.income += amount
+          nextSummary.estimatedHpp += estimatedHpp
+          break
+        case 'Pemasukan':
+          nextSummary.income += amount
+          break
+        case 'Pengeluaran Operasional':
+          nextSummary.operationalExpense += amount
+          break
+        case 'Beli Bahan Baku / Stok':
+          // Setiap transaksi stok ditampilkan sebagai baris sendiri.
+          // Jadi walaupun nama produknya sama, kuantitasnya tidak digabung.
+          addInventoryEntry(transaction)
+          nextSummary.estimatedHpp += amount
+          break
+        case 'Piutang Pelanggan':
+          if (isSettled) nextSummary.income += amount
+          else nextSummary.receivables += amount
+          if (linkedStock) nextSummary.estimatedHpp += estimatedHpp
+          break
+        case 'Hutang Supplier':
+          nextSummary.payables += amount
+          addInventoryEntry(transaction)
+          nextSummary.estimatedHpp += amount
+          if (isSettled) {
+            nextSummary.payables = Math.max(0, nextSummary.payables - amount)
+            nextSummary.operationalExpense += amount
+          }
+          break
+        default:
+          break
+      }
+    })
+
+    return nextSummary
+  }
 
 
   const navigateTo = (page, replace = false) => {
@@ -233,7 +428,7 @@ function App() {
       }))
 
       return {
-        transactions: transactionsRes.data || [],
+        transactions: (transactionsRes.data || []).map(normalizeTransaction),
         debts: normalizedDebts,
         savings: normalizedSavings,
         budgets: budgetsRes.data || []
@@ -266,8 +461,15 @@ function App() {
         setWalletInfo(walletData)
         
         if (allData) {
-          setTransactions(allData.transactions)
-          setUmkmTransactions(allData.transactions.filter(t => t.metadata?.is_umkm || t.is_umkm))
+          const allTransactions = allData.transactions || []
+          const resolvedUserType = String(authUser.user_type || authUser.role || userProfile?.usertype || '').toLowerCase()
+          const umkmItems = resolvedUserType === 'umkm'
+            ? allTransactions
+            : allTransactions.filter((t) => metaToBool(parseMetadata(t.metadata).is_umkm) || t.isUmkm || t.is_umkm)
+
+          setTransactions(allTransactions)
+          setUmkmTransactions(umkmItems)
+          setUmkmSummary(buildUmkmSummaryFromTransactions(umkmItems))
           setDebts(allData.debts)
           setSavings(allData.savings)
           setBudgets(allData.budgets)
@@ -348,20 +550,33 @@ function App() {
     // Debug bisa diaktifkan bila perlu
     // console.log('addTransaction', { usertype: userProfile?.usertype, newTransaction })
     const tempId = 't-' + Date.now()
-    const isMahasiswa = userProfile?.usertype === 'mahasiswa'
-    const isMasyarakat = userProfile?.usertype === 'masyarakat'
+    const profileType = String(userProfile?.usertype || userType || '').toLowerCase()
+    const incomingMetadata = parseMetadata(newTransaction.metadata)
+
+    const isMahasiswa = hasMetaValue(incomingMetadata.is_mahasiswa)
+      ? metaToBool(incomingMetadata.is_mahasiswa)
+      : profileType === 'mahasiswa'
+
+    // Kalau userType belum tersimpan/masih null, halaman transaksi default-nya adalah Masyarakat.
+    // Jadi transaksi baru harus tetap diberi tanda is_masyarakat: true agar langsung muncul di riwayat.
+    const isMasyarakat = hasMetaValue(incomingMetadata.is_masyarakat)
+      ? metaToBool(incomingMetadata.is_masyarakat)
+      : (!isMahasiswa && profileType !== 'umkm')
+
+    const transactionMetadata = {
+      ...incomingMetadata,
+      is_mahasiswa: isMahasiswa,
+      is_masyarakat: isMasyarakat,
+    }
 
     // Optimistic update (biar riwayat langsung terisi seperti UMKM)
     const tempTransaction = {
       id: tempId,
       ...newTransaction,
+      receipt: receiptToPreview(newTransaction.receipt),
       // Pastikan type/category/date field yang dipakai UI tetap konsisten
       type: newTransaction.type || (newTransaction.category && ['Penghasilan Kerja', 'Uang Saku', 'Tabungan'].includes(newTransaction.category) ? 'income' : 'expense'),
-      metadata: {
-        ...newTransaction.metadata,
-        is_mahasiswa: isMahasiswa,
-        is_masyarakat: isMasyarakat,
-      },
+      metadata: transactionMetadata,
       wallet_id: walletInfo?.id || newTransaction.wallet_id,
       // Konsisten dengan TransactionCard
       wallet: walletInfo?.name || newTransaction.wallet || null,
@@ -376,20 +591,20 @@ function App() {
       const payload = {
         ...newTransaction,
         wallet_id: walletInfo?.id || newTransaction.wallet_id,
-        metadata: {
-          ...newTransaction.metadata,
-          is_mahasiswa: isMahasiswa,
-          is_masyarakat: isMasyarakat,
-        }
+        metadata: transactionMetadata
       }
 
       const res = await transactionAPI.create(payload)
+      const savedTransaction = normalizeTransaction(res.data)
       const transaction = {
-        ...res.data,
+        ...savedTransaction,
+        type: savedTransaction.type || tempTransaction.type,
         metadata: {
+          ...transactionMetadata,
+          ...parseMetadata(savedTransaction.metadata),
           is_mahasiswa: isMahasiswa,
           is_masyarakat: isMasyarakat,
-        }
+        },
       }
 
       // Replace temp transaction with real transaction
@@ -400,6 +615,13 @@ function App() {
           return {
             ...t,
             ...transaction,
+            receipt: transaction.receipt
+              ? {
+                ...transaction.receipt,
+                fallbackUrl: tempTransaction.receipt?.url || tempTransaction.receipt?.preview || tempTransaction.receipt?.fallbackUrl,
+                localUrl: tempTransaction.receipt?.url || tempTransaction.receipt?.preview || tempTransaction.receipt?.localUrl,
+              }
+              : tempTransaction.receipt,
             type: transaction.type || tempTransaction.type,
             metadata: {
               ...(tempTransaction.metadata || {}),
@@ -418,6 +640,7 @@ function App() {
       // Rollback optimistic updates
       setTransactions((prev) => prev.filter((t) => t.id !== tempId))
       alert('Gagal menyimpan transaksi ke server: ' + (e.message || 'Error tidak diketahui'))
+      throw e
     }
   }
 
@@ -428,13 +651,29 @@ function App() {
     // Pastikan wallet_id tidak kosong agar backend tidak error `The wallet id field is required.`
     // (walletInfo.id hanya ada jika wallet sudah ter-load saat user login)
     const safeWalletId = walletInfo?.id || newTransaction.wallet_id
+    const transactionMetadata = {
+      ...parseMetadata(newTransaction.metadata),
+      is_umkm: true,
+      businessCategory: newTransaction.businessCategory,
+      stockItemId: newTransaction.stockItemId || '',
+      stockItemName: newTransaction.stockItemName || '',
+      stockQty: newTransaction.stockQty || '',
+      linkedStock: newTransaction.linkedStock,
+      isCredit: newTransaction.isCredit,
+      isSettled: newTransaction.isSettled,
+    }
 
     const tempTransaction = {
       id: tempId,
       ...newTransaction,
+      metadata: transactionMetadata,
+      receipt: receiptToPreview(newTransaction.receipt),
       wallet_id: safeWalletId,
       isUmkm: true,
       businessCategory: newTransaction.businessCategory,
+      stockItemId: newTransaction.stockItemId || transactionMetadata.stockItemId,
+      stockItemName: newTransaction.stockItemName || transactionMetadata.stockItemName,
+      stockQty: newTransaction.stockQty || transactionMetadata.stockQty,
       invoice: 'INV-TEMP' // Temporary invoice placeholder
     }
 
@@ -456,40 +695,36 @@ function App() {
       setWalletInfo((prev) => prev ? { ...prev, balance: Math.max(0, Number(prev.balance) - amount) } : prev)
     }
 
-    // Optimistically update UMKM summary metrics
+    // Optimistically update UMKM summary metrics.
+    // Khusus stok: setiap pembelian disimpan sebagai baris sendiri, bukan digabung berdasarkan nama produk.
     setUmkmSummary((prevSummary) => {
       const stockQty = Number(newTransaction.stockQty) || 1
-      const selectedStockId = newTransaction.stockItemId
+      const selectedStockName = String(newTransaction.stockItemName || newTransaction.stockItemId || '').trim()
       const estimatedHpp = Math.round(amount * 0.42)
 
-      const updateInventory = (change, itemToAddIfMissing = null) => {
-        const inventory = Array.isArray(prevSummary.inventory) ? prevSummary.inventory : []
-        const found = inventory.some((item) => String(item.id) === String(selectedStockId))
-        if (!found && itemToAddIfMissing) {
-          return [
-            ...inventory,
-            {
-              id: selectedStockId,
-              name: itemToAddIfMissing.name,
-              stock: Math.max(0, Number(itemToAddIfMissing.stock ?? stockQty) + (change ?? 0)),
-              reorderLevel: Number(itemToAddIfMissing.reorderLevel ?? 10),
-            },
-          ]
-        }
-        return inventory.map((item) =>
-          String(item.id) === String(selectedStockId)
-            ? { ...item, stock: Math.max(0, Number(item.stock ?? 0) + (change ?? 0)) }
-            : item
-        )
+      const addInventoryRow = () => {
+        if (!selectedStockName) return Array.isArray(prevSummary.inventory) ? prevSummary.inventory : []
+
+        return [
+          {
+            id: `stok-${tempId}`,
+            transactionId: tempId,
+            invoice: tempTransaction.invoice,
+            date: tempTransaction.date,
+            name: selectedStockName,
+            stock: stockQty,
+            reorderLevel: 10,
+          },
+          ...(Array.isArray(prevSummary.inventory) ? prevSummary.inventory : []),
+        ]
       }
 
-      let nextSummary = { ...prevSummary }
+      const nextSummary = { ...prevSummary }
 
       switch (newTransaction.businessCategory) {
         case 'Penjualan':
           nextSummary.income += amount
           nextSummary.estimatedHpp += estimatedHpp
-          if (newTransaction.linkedStock) nextSummary.inventory = updateInventory(-stockQty)
           break
         case 'Pemasukan':
           nextSummary.income += amount
@@ -498,37 +733,27 @@ function App() {
           nextSummary.operationalExpense += amount
           break
         case 'Beli Bahan Baku / Stok':
-          if (selectedStockId) {
-            nextSummary.inventory = updateInventory(stockQty, {
-              name: newTransaction.stockItemName || selectedStockId,
-              stock: stockQty,
-              reorderLevel: 10,
-            })
-          }
+          nextSummary.inventory = addInventoryRow()
           nextSummary.estimatedHpp += amount
           break
         case 'Piutang Pelanggan':
           if (newTransaction.isSettled) nextSummary.income += amount
           else nextSummary.receivables += amount
-          if (newTransaction.linkedStock) {
-            nextSummary.inventory = updateInventory(-stockQty)
-            nextSummary.estimatedHpp += estimatedHpp
-          }
+          if (newTransaction.linkedStock) nextSummary.estimatedHpp += estimatedHpp
           break
         case 'Hutang Supplier':
           nextSummary.payables += amount
-          nextSummary.inventory = updateInventory(stockQty, {
-            name: newTransaction.stockItemName || selectedStockId,
-            stock: stockQty,
-            reorderLevel: 10,
-          })
+          nextSummary.inventory = addInventoryRow()
           nextSummary.estimatedHpp += amount
           if (newTransaction.isSettled) {
             nextSummary.payables = Math.max(0, nextSummary.payables - amount)
             nextSummary.operationalExpense += amount
           }
           break
+        default:
+          break
       }
+
       return nextSummary
     })
 
@@ -536,25 +761,41 @@ function App() {
     try {
       const payload = {
         ...newTransaction,
-        metadata: {
-          ...newTransaction.metadata,
-          is_umkm: true,
-          businessCategory: newTransaction.businessCategory,
-          stockItemId: newTransaction.stockItemId,
-          stockQty: newTransaction.stockQty,
-          linkedStock: newTransaction.linkedStock
-        }
+        wallet_id: safeWalletId,
+        metadata: transactionMetadata,
       }
       
       const res = await transactionAPI.create(payload)
+      const savedTransaction = normalizeTransaction(res.data)
       const transaction = {
-        ...res.data,
+        ...savedTransaction,
+        type: savedTransaction.type || tempTransaction.type,
         isUmkm: true,
-        businessCategory: newTransaction.businessCategory
+        businessCategory: savedTransaction.businessCategory || newTransaction.businessCategory,
+        stockItemId: savedTransaction.stockItemId || newTransaction.stockItemId,
+        stockItemName: savedTransaction.stockItemName || newTransaction.stockItemName,
+        stockQty: savedTransaction.stockQty || newTransaction.stockQty,
+        // Pakai receipt dari backend, tapi simpan blob lokal sebagai fallback.
+        // Jadi gambar nota tetap langsung tampil walaupun link /storage belum bisa diakses browser.
+        receipt: savedTransaction.receipt
+          ? {
+            ...savedTransaction.receipt,
+            fallbackUrl: tempTransaction.receipt?.url || tempTransaction.receipt?.preview || tempTransaction.receipt?.fallbackUrl,
+            localUrl: tempTransaction.receipt?.url || tempTransaction.receipt?.preview || tempTransaction.receipt?.localUrl,
+          }
+          : tempTransaction.receipt,
+        metadata: {
+          ...transactionMetadata,
+          ...parseMetadata(savedTransaction.metadata),
+        },
       }
 
       // Replace the optimistic temp transaction with the real transaction from backend
-      setUmkmTransactions((prev) => prev.map((t) => t.id === tempId ? transaction : t))
+      setUmkmTransactions((prev) => {
+        const next = prev.map((t) => t.id === tempId ? transaction : t)
+        setUmkmSummary(buildUmkmSummaryFromTransactions(next))
+        return next
+      })
       setTransactions((prev) => prev.map((t) => t.id === tempId ? transaction : t))
 
       // Persist debt category in DB if applicable
@@ -982,7 +1223,7 @@ function App() {
           </div>
         )
     }
-  }, [currentPage, isAuthenticated, showUserType, showLanding, showInitialBalance, initialBalance, filters, selectedUmkmCategory, transactions, debts, savings, userProfile, walletInfo])
+  }, [currentPage, isAuthenticated, showUserType, showLanding, showInitialBalance, initialBalance, filters, selectedUmkmCategory, transactions, umkmTransactions, debts, savings, budgets, userProfile, walletInfo, umkmSummary, umkmEWalletBalance])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">

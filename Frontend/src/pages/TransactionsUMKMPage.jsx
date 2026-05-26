@@ -27,6 +27,7 @@ function TransactionsUMKMPage({
 }) {
   const [deletingId, setDeletingId] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
+  const [fileInputKey, setFileInputKey] = useState(0)
 
   const deleteTransaction = async (transaction) => {
     if (!transaction?.id) {
@@ -73,27 +74,9 @@ function TransactionsUMKMPage({
   }, [filters?.type])
 
 
-  const defaultStockItemId = umkmSummary?.inventory?.[0]?.id ?? ''
-
-  // Jika inventory baru ter-load dan form belum punya selected stock, isi otomatis.
-  useEffect(() => {
-    if (form.category !== 'Beli Bahan Baku / Stok') return
-    if (!umkmSummary?.inventory?.length) return
-
-    setForm((prev) => {
-      // Kalau stockItemId sudah ada, jangan override.
-      if (prev.stockItemId) return prev
-
-      const nextId = umkmSummary.inventory[0]?.id ?? ''
-      return {
-        ...prev,
-        stockItemId: nextId,
-        stockItemSearch: '',
-        linkedStock: Boolean(nextId),
-      }
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [umkmSummary?.inventory])
+  // Untuk pembelian stok, item harus mengikuti teks yang user tulis.
+  // Jangan otomatis memilih stok pertama, supaya input "Sabun" tidak masuk ke stok "minyak".
+  const defaultStockItemId = ''
 
   const [form, setForm] = useState({
 
@@ -185,6 +168,8 @@ function TransactionsUMKMPage({
         category: value,
         linkedStock: isLinkedCategory,
         isSettled: isCreditType,
+        stockItemId: value === 'Beli Bahan Baku / Stok' ? '' : prev.stockItemId,
+        stockItemSearch: value === 'Beli Bahan Baku / Stok' ? '' : prev.stockItemSearch,
       }))
     }
 
@@ -195,20 +180,31 @@ function TransactionsUMKMPage({
 
   const handleReceiptChange = (e) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        setForm((prev) => ({
-          ...prev,
-          receipt: {
-            name: file.name,
-            type: file.type,
-            url: event.target.result,
-          },
-        }))
-      }
-      reader.readAsDataURL(file)
+
+    if (!file) {
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
     }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
+    const maxSize = 5 * 1024 * 1024 // 5MB, sama dengan validasi backend Laravel
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Format file harus JPG, JPEG, PNG, atau PDF')
+      e.target.value = ''
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
+    }
+
+    if (file.size > maxSize) {
+      alert('Ukuran file maksimal 5MB')
+      e.target.value = ''
+      setForm((prev) => ({ ...prev, receipt: null }))
+      return
+    }
+
+    // Simpan File asli, bukan object/base64, supaya Laravel menerima sebagai file upload.
+    setForm((prev) => ({ ...prev, receipt: file }))
   }
 
   const generateInvoiceNumber = (existingTransactions, date) => {
@@ -241,69 +237,21 @@ function TransactionsUMKMPage({
     const amount = parseInt(form.amount, 10)
     const stockQty = parseInt(form.stockQty, 10) || 1
 
-    // If category is stock purchase, ensure we have a selected stock item.
-    // Try to auto-match the typed search to a single inventory item before rejecting.
     let selectedStockId = form.stockItemId
+    let selectedStockName = ''
+
     if (form.category === 'Beli Bahan Baku / Stok') {
-      const qRaw = (form.stockItemSearch || '').trim()
-      const q = qRaw.toLowerCase()
+      selectedStockName = (form.stockItemSearch || '').trim()
 
-      if (!selectedStockId && q) {
-        const inventory = umkmSummary?.inventory || []
-
-        // First try exact name match (case-insensitive)
-        const exact = inventory.find((it) => String(it.name || it.stockItemName || it.id).trim().toLowerCase() === q)
-        if (exact) {
-          selectedStockId = exact.id
-        } else {
-          // Fallback to contains match
-          const matches = inventory.filter((it) => {
-            const label = String(it.name || it.stockItemName || it.id).toLowerCase()
-            return label.includes(q)
-          })
-          if (matches.length === 1) {
-            selectedStockId = matches[0].id
-          } else if (matches.length > 1) {
-            // Prefer item whose name starts with query
-            const starts = matches.find((it) => String(it.name || it.stockItemName || it.id).toLowerCase().startsWith(q))
-            selectedStockId = (starts && starts.id) || matches[0].id
-          }
-        }
+      if (!selectedStockName) {
+        alert('Mohon isi item stok')
+        return
       }
 
-      // If user typed an id directly, accept it if it exists in inventory
-      if (!selectedStockId && form.stockItemSearch) {
-        const asId = form.stockItemSearch.trim()
-        const foundById = (umkmSummary?.inventory || []).find((it) => String(it.id) === asId)
-        if (foundById) selectedStockId = foundById.id
-      }
-
-      let createdStockName = null
-      if (!selectedStockId) {
-        if (form.stockItemSearch && form.stockItemSearch.trim()) {
-          // create a temporary new stock id and carry the name to backend handler
-          selectedStockId = `new-${Date.now()}`
-          createdStockName = form.stockItemSearch.trim()
-        } else {
-          alert('Mohon isi item stok')
-          return
-        }
-      }
-
-      // pastikan createdStockName terbaca saat membangun newTransaction di scope luar
-      // (buat variabel yang sama di scope luar)
-      // eslint-disable-next-line no-unused-vars
-    }
-
-    // createdStockName hanya relevan untuk kategori beli stok
-    // deklarasi di scope luar agar tidak menimbulkan ReferenceError
-    let createdStockName = null
-    if (form.category === 'Beli Bahan Baku / Stok') {
-      const qRaw = (form.stockItemSearch || '').trim()
-      // kalau selectedStockId dibuat menjadi new-*, ambil nama dari input
-      if (qRaw && (!form.stockItemId || String(form.stockItemId).startsWith('new-'))) {
-        createdStockName = qRaw
-      }
+      // Jangan gabungkan dengan stok lama walaupun nama produknya sama.
+      // Setiap transaksi pembelian stok harus punya ID stok transaksi sendiri.
+      const slug = selectedStockName.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')
+      selectedStockId = `${slug || 'stok'}-${Date.now()}`
     }
 
     const newTransaction = {
@@ -328,7 +276,7 @@ function TransactionsUMKMPage({
       linkedStock: form.linkedStock,
 
       stockItemId: selectedStockId,
-      stockItemName: createdStockName,
+      stockItemName: selectedStockName,
       stockQty,
       isCredit: isCreditCategory,
       isSettled: form.isSettled,
@@ -340,8 +288,8 @@ function TransactionsUMKMPage({
 
     onAddUmkmTransaction(newTransaction)
     
-    // Instantly switch the category filter to the saved transaction's category so it is shown immediately
-    setFilters({ type: form.category })
+    // Setelah simpan, riwayat tetap tampil semua, bukan hanya kategori transaksi terbaru.
+    setFilters({ type: 'all' })
 
     setSuccessMessage('Transaksi UMKM berhasil ditambahkan!')
     setTimeout(() => setSuccessMessage(''), 3000)
@@ -359,6 +307,7 @@ function TransactionsUMKMPage({
       isSettled: false,
       receipt: null,
     })
+    setFileInputKey((prev) => prev + 1)
 
 
   }
@@ -519,7 +468,7 @@ function TransactionsUMKMPage({
                     className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
                   />
                   <label htmlFor="isSettled" className="text-sm text-slate-700">
-                    TandaiSudah dibayar / dilunasi
+                    Tandai Sudah dibayar / dilunasi
                   </label>
                 </div>
               )}
@@ -531,8 +480,9 @@ function TransactionsUMKMPage({
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Upload Bukti Nota</label>
               <input
+                key={fileInputKey}
                 type="file"
-                accept="image/*,application/pdf"
+                accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                 onChange={handleReceiptChange}
                 className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-2 text-slate-700"
               />

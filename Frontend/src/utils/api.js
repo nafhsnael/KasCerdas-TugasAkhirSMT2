@@ -13,10 +13,16 @@ const API_BASE_URL =
  */
 async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('token')
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
   
   const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
+    ...(options.headers || {}),
+  }
+
+  // Kalau body berupa FormData/file upload, JANGAN set Content-Type manual.
+  // Browser akan otomatis membuat multipart/form-data lengkap dengan boundary.
+  if (!isFormData && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json'
   }
   
   if (token) {
@@ -30,13 +36,42 @@ async function apiFetch(endpoint, options = {}) {
     headers,
   })
   
-  const data = await response.json()
+  const data = await response.json().catch(() => ({}))
   
   if (!response.ok) {
-    throw new Error(data.message || 'API request failed')
+    const firstError = data.errors ? Object.values(data.errors).flat()[0] : null
+    throw new Error(firstError || data.message || 'API request failed')
   }
   
   return data
+}
+
+function hasReceiptFile(payload = {}) {
+  return typeof File !== 'undefined' && payload.receipt instanceof File
+}
+
+function transactionToFormData(payload = {}) {
+  const formData = new FormData()
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return
+
+    if (key === 'receipt') {
+      if (typeof File !== 'undefined' && value instanceof File) {
+        formData.append('receipt', value)
+      }
+      return
+    }
+
+    if (typeof value === 'object') {
+      formData.append(key, JSON.stringify(value))
+      return
+    }
+
+    formData.append(key, value)
+  })
+
+  return formData
 }
 
 // ============ AUTHENTICATION ============
@@ -108,17 +143,26 @@ export const transactionAPI = {
   get: (id) =>
     apiFetch(`/transactions/${id}`, { method: 'GET' }),
   
-  create: (payload) =>
-    apiFetch('/transactions', {
+  create: (payload) => {
+    const body = hasReceiptFile(payload) ? transactionToFormData(payload) : JSON.stringify(payload)
+
+    return apiFetch('/transactions', {
       method: 'POST',
-      body: JSON.stringify(payload),
-    }),
+      body,
+    })
+  },
   
-  update: (id, payload) =>
-    apiFetch(`/transactions/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }),
+  update: (id, payload) => {
+    const withFile = hasReceiptFile(payload)
+    const body = withFile
+      ? transactionToFormData({ ...payload, _method: 'PUT' })
+      : JSON.stringify(payload)
+
+    return apiFetch(`/transactions/${id}`, {
+      method: withFile ? 'POST' : 'PUT',
+      body,
+    })
+  },
   
   delete: (id) =>
     apiFetch(`/transactions/${id}`, { method: 'DELETE' }),

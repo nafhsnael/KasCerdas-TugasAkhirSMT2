@@ -8,21 +8,24 @@ function TransactionCard({ transaction, onViewInvoice, onDelete, isDeleting }) {
 
         </div>
         <div className="flex items-center gap-3">
-          <span
-            className={`rounded-2xl px-3 py-1 text-sm font-semibold ${transaction.type === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}
-          >
-            {transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
-          </span>
           {onDelete && (
             <button
               type="button"
               onClick={() => onDelete(transaction)}
               disabled={isDeleting}
-              className="rounded-2xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="text-slate-400 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+              title={isDeleting ? 'Menghapus...' : 'Hapus transaksi'}
             >
-              {isDeleting ? 'Menghapus...' : 'Hapus'}
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z" />
+              </svg>
             </button>
           )}
+          <span
+            className={`rounded-2xl px-3 py-1 text-sm font-semibold ${transaction.type === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}
+          >
+            {transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
+          </span>
         </div>
       </div>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
