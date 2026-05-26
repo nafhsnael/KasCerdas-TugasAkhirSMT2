@@ -47,7 +47,7 @@ function UmkmMonthlyCashflowTableCard({ transactions, periodLabel, compact = fal
       <div className="mb-4">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Arus Kas Bulanan & Rata-rata</p>
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500 font-semibold">Arus Kas Bulanan</p>
             <h3 className={`mt-2 font-semibold text-slate-900 ${compact ? 'text-lg' : 'text-xl'}`}>{periodLabel || 'Periode Terpilih'}</h3>
           </div>
         </div>
@@ -60,28 +60,32 @@ function UmkmMonthlyCashflowTableCard({ transactions, periodLabel, compact = fal
             label: 'Rata-rata pemasukan usaha',
             value: formatRp(stats.incomeAvg),
             valueClass: 'text-emerald-700',
+            leadingIcon: '↟',
           },
           {
             label: 'Rata-rata pengeluaran usaha',
             value: formatRp(stats.expenseAvg),
             valueClass: 'text-rose-600',
+            leadingIcon: '↡',
           },
           {
             label: 'Rata-rata arus kas bersih',
             value: formatRp(stats.netCashFlow),
             valueClass: isNegative ? 'text-rose-600' : 'text-[#2563EB]',
-            trailingIcon: isNegative ? '⚠️' : '✅',
+            trailingIcon: '↸',
           },
           {
             label: 'Arus kas tertinggi',
             value: formatRp(stats.highestNet),
             valueClass: stats.highestNet < 0 ? 'text-rose-600' : 'text-emerald-700',
+            leadingIcon: '↝',
           },
           {
             label: 'Arus kas terendah',
             value: formatRp(stats.lowestNet),
             valueClass: 'text-rose-600',
-          },
+            leadingIcon: '↯',
+          }
         ].map((row, idx) => (
           <div
             key={row.label}

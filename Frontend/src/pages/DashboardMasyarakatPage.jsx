@@ -59,7 +59,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
               <h2 className="mt-4 text-4xl font-semibold text-slate-900">
                 Rp {saldoPemasukanBulanIni.toLocaleString('id-ID')}
               </h2>
-              <p className="mt-3 text-sm text-slate-500">Pemasukan total bulan ini</p>
+<p className="mt-3 text-sm text-slate-500">Total pemasukan per bulan</p>
             </div>
             <div className="rounded-3xl bg-slate-50 p-4 text-slate-900">
               <span className="text-2xl">💚</span>
@@ -72,7 +72,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
           <h2 className="mt-4 text-4xl font-semibold text-slate-900">
             Rp {saldoPengeluaranBulanIni.toLocaleString('id-ID')}
           </h2>
-          <p className="mt-3 text-sm text-slate-500">Pengeluaran total bulan ini</p>
+<p className="mt-3 text-sm text-slate-500">total pengeluaran per bulan</p>
         </div>
 
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">

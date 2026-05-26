@@ -28,11 +28,29 @@ function TransactionsPage({ transactions, filters, setFilters, onAddTransaction 
 
   useEffect(() => {
     const handler = (e) => {
-      const category = e?.detail
-      if (typeof category === 'string' && category.trim()) {
-        setSearchQuery(category)
+      const detail = e?.detail
+      // Support legacy: detail is a string (category only)
+      if (typeof detail === 'string' && detail.trim()) {
+        setSearchQuery(detail)
+        return
+      }
+
+      if (detail && typeof detail === 'object') {
+        const { category, type } = detail
+
+        if (typeof category === 'string' && category.trim()) {
+          const safeType = type === 'income' ? 'income' : 'expense'
+          setForm((prev) => ({
+            ...prev,
+            type: safeType,
+            category,
+          }))
+          setSearchQuery(category)
+          setSelectedMonth('')
+        }
       }
     }
+
     window.addEventListener('quickActionCategory', handler)
     return () => window.removeEventListener('quickActionCategory', handler)
   }, [])
@@ -232,12 +250,25 @@ const deleteTransaction = async (transaction) => {
     }
   }
 
+  const quickActionEmoji = (() => {
+    const map = {
+      Makan: '🍜',
+      Transport: '🚌',
+      Hiburan: '🎉',
+      Belanja: '🛍️',
+      Tagihan: '📄',
+    }
+    return map[form.category] || ''
+  })()
+
   return (
     <div className="space-y-8">
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Transaksi Masyarakat</p>
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">
+              Transaksi Masyarakat {quickActionEmoji ? <span className="ml-2">{quickActionEmoji}</span> : null}
+            </p>
             <h2 className="text-xl font-semibold text-slate-900">Kelola pengeluaran dan pemasukan</h2>
               <p className="mt-2 text-sm text-slate-500">
             Rekam pemasukan dari uang saku dan penghasilan kerja, kebutuhan sehari-hari, dan lainnya.

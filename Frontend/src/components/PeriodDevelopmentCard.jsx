@@ -15,30 +15,53 @@ function safePctChange(current, previous) {
   return ((cur - prev) / prev) * 100
 }
 
-function PeriodDevelopmentCard({ transactions, periodLabel }) {
+function PeriodDevelopmentCard({
+  transactions,
+  periodLabel,
+  currentStart,
+  currentEnd,
+  previousStart,
+  previousEnd,
+}) {
+  const safeDateInRange = (tx, start, end) => {
+    if (!start || !end) return false
+    const d = new Date(tx?.date)
+    if (Number.isNaN(d.getTime())) return false
+    return d >= start && d <= end
+  }
+
   const currentPeriod = useMemo(() => {
+    const tx = Array.isArray(transactions) ? transactions : []
+
+    // Jika range disediakan, pakai range tersebut.
+    if (currentStart && currentEnd && previousStart && previousEnd) {
+      const currentTx = tx.filter((t) => safeDateInRange(t, currentStart, currentEnd))
+      const previousTx = tx.filter((t) => safeDateInRange(t, previousStart, previousEnd))
+      return { currentTx, previousTx }
+    }
+
+    // Fallback: perilaku lama (bulan ini vs bulan sebelumnya)
     const now = new Date()
     const currentMonth = now.getMonth()
     const currentYear = now.getFullYear()
 
-    const currentTx = (Array.isArray(transactions) ? transactions : []).filter((t) => {
+    const currentTx = tx.filter((t) => {
       const d = new Date(t?.date)
       return d.getMonth() === currentMonth && d.getFullYear() === currentYear
     })
 
-    // previous month range
     const prev = new Date(now)
     prev.setMonth(now.getMonth() - 1)
     const prevMonth = prev.getMonth()
     const prevYear = prev.getFullYear()
 
-    const previousTx = (Array.isArray(transactions) ? transactions : []).filter((t) => {
+    const previousTx = tx.filter((t) => {
       const d = new Date(t?.date)
       return d.getMonth() === prevMonth && d.getFullYear() === prevYear
     })
 
     return { currentTx, previousTx }
-  }, [transactions])
+  }, [transactions, currentStart, currentEnd, previousStart, previousEnd])
 
   const stats = useMemo(() => {
     const { currentTx, previousTx } = currentPeriod
@@ -51,7 +74,7 @@ function PeriodDevelopmentCard({ transactions, periodLabel }) {
     const expensePrev = previousTx.filter((t) => t?.type === 'expense').reduce((s, t) => s + (Number(t?.amount) || 0), 0)
     const netPrev = incomePrev - expensePrev
 
-    // Rasio tabungan: net cash / income (clamped)
+    // Rasio tabungan: net cash / income
     const savingsRatioCur = incomeCur > 0 ? netCur / incomeCur : 0
     const savingsRatioPrev = incomePrev > 0 ? netPrev / incomePrev : 0
 
@@ -76,14 +99,11 @@ function PeriodDevelopmentCard({ transactions, periodLabel }) {
     const netChangePct = safePctChange(stats.netCur, stats.netPrev)
     const savingsRatioChangePct = safePctChange(stats.savingsRatioCurPct, stats.savingsRatioPrevPct)
 
-    const netPositive = stats.netCur >= 0
-
     return {
       incomeChangePct,
       expenseChangePct,
       netChangePct,
       savingsRatioChangePct,
-      netPositive,
     }
   }, [stats])
 
@@ -101,8 +121,9 @@ function PeriodDevelopmentCard({ transactions, periodLabel }) {
   return (
     <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-5">
-        <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Perkembangan Periode</p>
-        <h3 className="mt-2 text-xl font-semibold text-slate-900">{periodLabel || 'Periode'}</h3>
+        <p className="text-sm uppercase tracking-[0.24em] text-slate-500 font-semibold">Perkembangan</p>
+        <h3 className="mt-2 text-xl font-semibold text-slate-900">{periodLabel}</h3>
+
         <p className="mt-2 text-sm text-slate-500">Perbandingan performa finansial dengan periode sebelumnya</p>
       </div>
 

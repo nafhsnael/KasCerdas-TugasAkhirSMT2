@@ -205,12 +205,12 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
 
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Pemasukan Bulan Ini</p>
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Pemasukan</p>
           <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {totalIncome.toLocaleString('id-ID')}</h2>
           <p className="mt-3 text-sm text-slate-500">Ringkasan pemasukan bulanan yang membantu menilai cashflow.</p>
         </div>
         <div className="rounded-[32px] bg-[#F6B93B] p-6 text-white shadow-sm border border-[#e6a53f]">
-          <p className="text-sm uppercase tracking-[0.24em] text-white/80">Pengeluaran Bulan Ini</p>
+          <p className="text-sm uppercase tracking-[0.24em] text-white/80">Pengeluaran</p>
           <h2 className="mt-4 text-4xl font-semibold">Rp {totalExpense.toLocaleString('id-ID')}</h2>
           <p className="mt-3 text-sm text-white/80">Total biaya sejauh ini</p>
         </div>

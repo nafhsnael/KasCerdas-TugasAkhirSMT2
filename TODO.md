@@ -1,12 +1,8 @@
 # TODO
 
-## 1) Pastikan transaksi masyarakat langsung masuk riwayat seperti mahasiswa
-- [x] Analisis `addTransaction` untuk usertype `masyarakat` di `Frontend/src/App.jsx`
-- [x] Samakan perilaku dengan `addTransaction` mahasiswa: lakukan optimistic update + replace saat API sukses + rollback saat gagal
-- [x] Pastikan riwayat memfilter berdasar `metadata.is_masyarakat` dan `category` sesuai dropdown (Makan/Hutang/Transport/dst)
+- [x] Update DashboardMasyarakatPage saldo descriptions
+- [x] Update App.jsx quick action (masyarakat) to dispatch event with {category, type}
+- [x] Update TransactionsMasyarakatPage quick action listener to preset form.type & form.category, and update emoji based on category
+- [x] Testing: click quick action from Dashboard Masyarakat -> land on Transactions Masyarakat with correct preset + emoji
 
-
-## 2) Testing
-- [ ] Jalankan build/dev Frontend dan cek tidak ada error lint/runtime
-- [ ] Verifikasi manual: simpan transaksi masyarakat → langsung tampil di Riwayat Transaksi Masyarakat tanpa reload
 

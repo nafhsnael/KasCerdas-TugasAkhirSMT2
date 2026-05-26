@@ -1172,7 +1172,7 @@ function App() {
                 navigateTo('transactions')
                 setTimeout(() => {
                   try {
-                    window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: category }))
+window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category, type: 'expense' } } ))
                   } catch (e) {}
                 }, 0)
               }}
