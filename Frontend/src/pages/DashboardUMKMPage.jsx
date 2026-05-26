@@ -122,7 +122,7 @@ function DashboardUMKMPage({
           <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-[#fef2f2] to-[#fee2e2] p-5">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
             <p className="mt-3 text-2xl font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</p>
-            <p className="mt-2 text-xs text-slate-600">Saldo dihitung per bulan.</p>
+            <p className="mt-2 text-xs text-slate-600">Total pengeluaran per bulan (bulan berjalan).</p>
           </div>
 
           {/* Financial Score Health */}

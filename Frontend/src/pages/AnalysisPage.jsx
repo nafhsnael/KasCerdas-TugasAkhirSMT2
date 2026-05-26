@@ -1,6 +1,8 @@
 import StatCard from '../components/StatCard'
 import BiggestExpenseCard from '../components/BiggestExpenseCard'
-
+import MonthlyCashflowTableCard from '../components/MonthlyCashflowTableCard'
+import ExpenseCompositionCard from '../components/ExpenseCompositionCard'
+import PeriodDevelopmentCard from '../components/PeriodDevelopmentCard'
 
 function AnalysisPage({ transactions }) {
   const now = new Date()
@@ -50,32 +52,25 @@ function AnalysisPage({ transactions }) {
         </div>
 
         <div className="mt-8 space-y-8">
-          <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-6">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Ringkasan Bulanan</p>
-              <h3 className="text-xl font-semibold text-slate-900">Pemasukan & Pengeluaran</h3>
+          <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="min-w-0">
+              <MonthlyCashflowTableCard transactions={transactions} periodLabel="Bulan Ini" compact />
+            </div>
+          </section>
+
+          <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 px-2">
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Komposisi Pengeluaran per Pos</p>
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-4 md:grid-cols-2">
-              <StatCard
-                label="Total pengeluaran bulan ini"
-                value={`Rp ${totalExpenseMonth.toLocaleString('id-ID')}`}
-                description="Jumlah pengeluaran pada bulan berjalan dari transaksi pengguna"
-              />
+            <div className="min-w-0">
+              <ExpenseCompositionCard transactions={transactions} periodLabel="Bulan Ini" compact />
+            </div>
+          </section>
 
-              <StatCard
-                label="Sisa saldo bulan ini"
-                value={`Rp ${balanceMonth.toLocaleString('id-ID')}`}
-                description="Selisih antara pemasukan dan pengeluaran bulan berjalan"
-              />
-
-              <StatCard
-                label="Total pemasukan bulan ini"
-                value={`Rp ${totalIncomeMonth.toLocaleString('id-ID')}`}
-                description="Jumlah pemasukan pada bulan berjalan dari transaksi pengguna"
-              />
-
-              <BiggestExpenseCard transactions={transactions} />
+          <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-6">
+              <PeriodDevelopmentCard transactions={transactions} periodLabel="Bulan Ini" />
             </div>
           </section>
         </div>
