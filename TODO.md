@@ -1,8 +1,4 @@
-# TODO
-
-- [x] Update DashboardMasyarakatPage saldo descriptions
-- [x] Update App.jsx quick action (masyarakat) to dispatch event with {category, type}
-- [x] Update TransactionsMasyarakatPage quick action listener to preset form.type & form.category, and update emoji based on category
-- [x] Testing: click quick action from Dashboard Masyarakat -> land on Transactions Masyarakat with correct preset + emoji
-
+- [x] Pindahkan blok "Budget Reminder" pada `Frontend/src/pages/DashboardMahasiswaPage.jsx` agar berada di atas "Financial Health Score".
+- [ ] Kembalikan "Aksi Cepat" (quick actions) pada `DashboardMahasiswaPage.jsx` (blok tombol kategori) seperti versi sebelumnya.
+- [ ] Pastikan tidak ada error build/JSX pada `DashboardMahasiswaPage.jsx`.
 
