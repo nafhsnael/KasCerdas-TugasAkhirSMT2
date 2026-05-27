@@ -174,7 +174,7 @@ class SavingController extends Controller
             'status' => ['nullable', 'in:active,completed,stopped'],
         ]);
 
-        $saving->update(array_filter($validated));
+        $saving->update(array_filter($validated, fn($value) => !is_null($value)));
 
         return response()->json([
             'success' => true,

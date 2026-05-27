@@ -26,6 +26,33 @@ import { transactionAPI, budgetAPI, debtAPI, savingAPI } from './utils/api'
 // Import Admin App kamu agar bisa dipanggil
 import AdminApp from '../admin/App'
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+
+const readInitialToken = () => {
+  if (typeof window === 'undefined') return null
+
+  const params = new URLSearchParams(window.location.search)
+  const isGoogleCallback = window.location.pathname === '/auth/google/callback'
+  const googleToken = isGoogleCallback ? params.get('token') : null
+
+  if (googleToken) {
+    window.localStorage.setItem('token', googleToken)
+    window.history.replaceState(null, '', '/')
+    return googleToken
+  }
+
+  return window.localStorage.getItem('token')
+}
+
+const buildApiUrl = (url) => {
+  if (/^https?:\/\//i.test(url)) return url
+
+  if (url.startsWith('/api')) {
+    return `${backendUrl}${url}`
+  }
+
+  return `${backendUrl}/api${url.startsWith('/') ? url : `/${url}`}`
+}
 
 const routeToPage = {
   '': 'dashboard',
@@ -66,10 +93,7 @@ function App() {
     if (typeof window === 'undefined') return 'dashboard'
     return pathToPage(window.location.pathname)
   })
-  const [token, setToken] = useState(() => {
-    if (typeof window === 'undefined') return null
-    return window.localStorage.getItem('token')
-  })
+  const [token, setToken] = useState(readInitialToken)
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(token))
   const [authLoading, setAuthLoading] = useState(Boolean(token))
 
@@ -407,7 +431,7 @@ function App() {
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
       
       const [transactionsRes, debtsRes, savingsRes, budgetsRes] = await Promise.all([
-        transactionAPI.list(),
+        transactionAPI.listAll(),
         debtAPI.list(),
         savingAPI.list(),
         budgetAPI.list(currentMonth)
@@ -440,63 +464,83 @@ function App() {
   }
 
   useEffect(() => {
-    if (!token) return
+  if (!token) return
 
-    // Mulai auto-auth dari token: pastikan tidak menampilkan landing
-    setShowLanding(false)
+  setShowLanding(false)
+  setAuthLoading(true)
 
-    setAuthLoading(true)
+  Promise.all([fetchCurrentUser(), fetchWalletInfo(), fetchAllData()])
+    .then(([authUser, walletData, allData]) => {
+      const isAdmin = authUser.role === 'admin'
 
+      // Kalau user login Google baru, biasanya user_type masih null.
+      // Jadi jangan pakai role "user" sebagai usertype.
+      const resolvedUserType = authUser.user_type || (isAdmin ? 'admin' : null)
 
-    Promise.all([fetchCurrentUser(), fetchWalletInfo(), fetchAllData()])
-      .then(([authUser, walletData, allData]) => {
-        setUserProfile(prev => ({
-          ...prev,
-          nama: authUser.name || prev.nama,
-          user: authUser.username || prev.user,
-          email: authUser.email || prev.email,
-          usertype: authUser.user_type || authUser.role || prev.usertype,
-          dompet: walletData?.name || (authUser.role === 'admin' ? 'Admin Wallet' : prev.dompet),
-        }))
-        setWalletInfo(walletData)
-        
-        if (allData) {
-          const allTransactions = allData.transactions || []
-          const resolvedUserType = String(authUser.user_type || authUser.role || userProfile?.usertype || '').toLowerCase()
-          const umkmItems = resolvedUserType === 'umkm'
-            ? allTransactions
-            : allTransactions.filter((t) => metaToBool(parseMetadata(t.metadata).is_umkm) || t.isUmkm || t.is_umkm)
+      setUserProfile((prev) => ({
+        ...prev,
+        nama: authUser.name || prev.nama,
+        user: authUser.username || prev.user,
+        email: authUser.email || prev.email,
+        usertype: resolvedUserType,
+        dompet: walletData?.name || (isAdmin ? 'Admin Wallet' : prev.dompet),
+        profileImage: authUser.avatar || prev.profileImage,
+      }))
 
-          setTransactions(allTransactions)
-          setUmkmTransactions(umkmItems)
-          setUmkmSummary(buildUmkmSummaryFromTransactions(umkmItems))
-          setDebts(allData.debts)
-          setSavings(allData.savings)
-          setBudgets(allData.budgets)
+      setWalletInfo(walletData)
+
+      if (walletData?.balance !== undefined && walletData?.balance !== null) {
+        const balance = Number(walletData.balance) || 0
+        setInitialBalance(balance)
+
+        if (resolvedUserType === 'umkm') {
+          setUmkmEWalletBalance(balance)
         }
+      }
 
-        // InitialBalance:
-        // - Saat USER BARU REGISTER: harus isi saldo awal.
-        // - Saat LOGIN biasa / auto-login: tidak diarahkan ke InitialBalance.
-        // Di sini kita biarkan InitialBalance hanya muncul jika usersedang onboarding (showUserType sudah true sebelumnya).
-        const walletHasBalance = walletData?.balance && Number(walletData.balance) > 0
-        if (showUserType) {
-          if (!walletHasBalance) {
-            setShowInitialBalance(true)
-          }
-        }
+      if (allData) {
+        const allTransactions = allData.transactions || []
+        const userTypeLower = String(resolvedUserType || '').toLowerCase()
 
+        const umkmItems = userTypeLower === 'umkm'
+          ? allTransactions
+          : allTransactions.filter((t) => {
+              const metadata = parseMetadata(t.metadata)
+              return metaToBool(metadata.is_umkm) || t.isUmkm || t.is_umkm
+            })
 
-        setIsAuthenticated(true)
-      })
-      .catch(() => {
-        handleLogout()
-      })
-      .finally(() => {
-        setAuthLoading(false)
-      })
+        setTransactions(allTransactions)
+        setUmkmTransactions(umkmItems)
+        setUmkmSummary(buildUmkmSummaryFromTransactions(umkmItems))
+        setDebts(allData.debts || [])
+        setSavings(allData.savings || [])
+        setBudgets(allData.budgets || [])
+      }
 
-  }, [token])
+      setIsAuthenticated(true)
+
+      // INI BAGIAN PALING PENTING:
+      // Kalau user belum punya user_type, tampilkan halaman pilih tipe pengguna.
+      // Ini cocok untuk Register Google / Login Google akun baru.
+      if (!authUser.user_type && !isAdmin) {
+        setShowUserType(true)
+        setShowInitialBalance(false)
+        setShowLanding(false)
+        return
+      }
+
+      // Kalau user sudah punya user_type, langsung dashboard.
+      setShowUserType(false)
+      setShowInitialBalance(false)
+      setShowLanding(false)
+    })
+    .catch(() => {
+      handleLogout()
+    })
+    .finally(() => {
+      setAuthLoading(false)
+    })
+}, [token])
 
   useEffect(() => {
     // JANGAN REDIRECT jika user sedang mengakses halaman admin
@@ -887,20 +931,21 @@ function App() {
   }
 
   const authFetch = async (url, options = {}) => {
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    }
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`
-    }
-
-    return fetch(url, {
-      ...options,
-      headers,
-    })
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(options.headers || {}),
   }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  return fetch(buildApiUrl(url), {
+    ...options,
+    headers,
+  })
+}
 
   const fetchCurrentUser = async () => {
     const res = await authFetch('/api/auth/me', { method: 'GET' })

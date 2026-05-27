@@ -59,6 +59,7 @@ class Saving extends Model
         if ($this->target_amount == 0) {
             return 0;
         }
+
         return (float) min(100, ($this->current_amount / $this->target_amount) * 100);
     }
 
@@ -67,8 +68,11 @@ class Saving extends Model
      */
     public function getDaysUntilTargetAttribute(): int
     {
-        $daysUntil = (int) now()->parse($this->target_date)->diffInDays(now(), false);
-        return $daysUntil;
+        if (!$this->target_date) {
+            return 0;
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->target_date, false);
     }
 
     /**
@@ -77,10 +81,13 @@ class Saving extends Model
     public function getMonthlyTargetAttribute(): float
     {
         $daysUntil = $this->days_until_target;
+
         if ($daysUntil <= 0) {
             return 0;
         }
+
         $monthsUntil = max(1, ceil($daysUntil / 30));
+
         return (float) ($this->remaining_amount / $monthsUntil);
     }
 
