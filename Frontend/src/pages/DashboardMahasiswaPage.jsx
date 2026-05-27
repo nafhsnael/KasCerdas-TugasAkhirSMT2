@@ -179,7 +179,10 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
     { label: 'Transportasi', category: 'Transportasi', icon: '🚌' },
     { label: 'Kebutuhan Kuliah', category: 'Kebutuhan Kuliah', icon: '✏️' },
     { label: 'Kebutuhan Lainnya', category: 'Kebutuhan Lainnya', icon: '🧩' },
+    // Tambahan kategori hutang untuk akses cepat
+    { label: 'Hutang', category: 'Hutang', icon: '💳' },
   ]
+
 
   return (
     <div className="space-y-8">
@@ -373,10 +376,12 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {quickActions.map((action) => (
-            <button
+              <button
               key={action.label}
               type="button"
-              onClick={() => onQuickAction?.(action.category)}
+              onClick={() => {
+                onQuickAction?.(action.category)
+              }}
               className="group flex items-center gap-3 rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-[#38ADA9] hover:bg-[#f5fffd]"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f6f3] text-2xl text-[#2e8b87]">

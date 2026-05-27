@@ -1,9 +1,11 @@
 import StatCard from '../components/StatCard'
+import BudgetCard from '../components/BudgetCard'
 
 function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletInfo, userProfile, onQuickAction }) {
   const recentTransactions = transactions.slice(0, 4)
   const totalPoints = 4250
   const carbonSaved = 125
+
   const quickActions = [
     { label: 'Makan', icon: '🍜' },
     { label: 'Transport', icon: '🚌' },
@@ -16,10 +18,15 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
   const currentMonth = now.getMonth()
   const currentYear = now.getFullYear()
 
-  const monthTransactions = transactions.filter((t) => {
+  const monthTransactions = (transactions || []).filter((t) => {
     const d = new Date(t.date)
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear
   })
+
+  // Debug singkat: pastikan budgets tersedia & tidak undefined
+  // eslint-disable-next-line no-console
+  console.log('[DashboardMasyarakatPage] budgets:', budgets)
+
 
   // saldo pemasukan/pengeluaran = dihitung per bulan
   const saldoPemasukanBulanIni = monthTransactions
@@ -72,7 +79,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
           <h2 className="mt-4 text-4xl font-semibold text-slate-900">
             Rp {saldoPengeluaranBulanIni.toLocaleString('id-ID')}
           </h2>
-<p className="mt-3 text-sm text-slate-500">total pengeluaran per bulan</p>
+<p className="mt-3 text-sm text-slate-500">Total pengeluaran per bulan</p>
         </div>
 
         <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
@@ -86,6 +93,96 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
           <p className="mt-3 text-sm text-slate-500">Progress Voucher Emas 4.250 / 5.000</p>
         </div>
       </section>
+
+      {/* Budget Reminder (persis seperti Dashboard Mahasiswa) */}
+      <section className="mt-1">
+        {(() => {
+          const totalBudget = (budgets || []).reduce((sum, b) => sum + (Number(b?.limit) || 0), 0)
+          const totalBudgetUsage = (budgets || []).reduce((sum, b) => sum + (Number(b?.usage) || 0), 0)
+          const budgetUsageRatioLocal = totalBudget > 0 ? totalBudgetUsage / totalBudget : 0
+
+          const budgetByCategory = (budgets || []).reduce((acc, b) => {
+            const category = b?.category || 'Kategori'
+            const limit = Number(b?.limit) || 0
+            if (!acc[category]) acc[category] = { limit: 0, usage: 0 }
+            acc[category].limit += limit
+            acc[category].usage += Number(b?.usage) || 0
+            return acc
+          }, {})
+
+          const topBudgetCategory = Object.entries(budgetByCategory)
+            .map(([category, v]) => ({
+              category,
+              ratio: v.limit > 0 ? v.usage / v.limit : 0,
+            }))
+            .sort((a, b) => b.ratio - a.ratio)[0]
+
+          const status =
+            totalBudget <= 0
+              ? { key: 'none', label: 'Belum ada budget', desc: 'Tambahkan budget agar ada pengingat otomatis.', color: 'slate' }
+              : budgetUsageRatioLocal <= 0.8
+                ? { key: 'safe', label: 'Pengeluaran masih aman', desc: 'Pengeluaran bulan ini masih terkendali.', color: 'emerald' }
+                : budgetUsageRatioLocal <= 1
+                  ? {
+                    key: 'near',
+                    label: 'Pengeluaran mendekati batas',
+                    desc: `Kategori '${topBudgetCategory?.category || '—'}' mulai mendekati batas budget.`,
+                    color: 'amber',
+                  }
+                  : {
+                    key: 'exceed',
+                    label: 'Budget terlampaui',
+                    desc: `Pengeluaran melebihi budget pada kategori '${topBudgetCategory?.category || '—'}'.`,
+                    color: 'rose',
+                  }
+
+          const badgeClass =
+            status.color === 'emerald'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : status.color === 'amber'
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : status.color === 'rose'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : 'bg-slate-50 text-slate-700 border-slate-200'
+
+          const icon =
+            status.key === 'safe' ? '✅' : status.key === 'near' ? '⚠️' : status.key === 'exceed' ? '⛔' : 'ℹ️'
+
+          const badgeText = totalBudget > 0 ? `${Math.round(budgetUsageRatioLocal * 100)}%` : '-'
+
+          return (
+            <div className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white border border-slate-200 text-[16px]">
+                    {icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] uppercase tracking-[0.24em] text-slate-500">Budget Reminder</p>
+                    <h3 className="mt-1 text-[15px] font-semibold text-slate-900 leading-tight">{status.label}</h3>
+                    <p className="mt-1 text-[11px] text-slate-600 leading-tight line-clamp-2 w-full">{status.desc}</p>
+                  </div>
+                </div>
+
+                <div className={`shrink-0 rounded-2xl border px-3 py-1 text-[12px] font-semibold ${badgeClass}`}>
+                  {badgeText}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
+        {budgets && budgets.length > 0 ? (
+          <div className="mt-4 space-y-4">
+            {budgets.map((b) => (
+              <BudgetCard key={b.id} category={b.category} usage={b.usage || 0} limit={b.limit || 0}>
+                <span className="text-xs font-semibold text-slate-600">{b.usage > b.limit ? '⚠️' : '✅'}</span>
+              </BudgetCard>
+            ))}
+          </div>
+        ) : null}
+      </section>
+
 
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between gap-4">
@@ -113,6 +210,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
           ))}
         </div>
       </section>
+
 
     </div>
   )
