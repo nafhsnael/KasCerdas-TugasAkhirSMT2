@@ -112,7 +112,56 @@ function App() {
       return true
     }
   })
+  const [showSplash, setShowSplash] = useState(() => {
+    try {
+      const t = window?.localStorage?.getItem('token')
+      return !t
+    } catch (e) {
+      return true
+    }
+  })
+  const [isSplashLeaving, setIsSplashLeaving] = useState(false)
+  const [pageVisible, setPageVisible] = useState(!showSplash)
   const [initialBalance, setInitialBalance] = useState(0)
+
+  useEffect(() => {
+    if (!showSplash) {
+      setPageVisible(true)
+      return
+    }
+
+    const leaveTimer = window.setTimeout(() => {
+      setIsSplashLeaving(true)
+      setPageVisible(true)
+    }, 1200)
+
+    const hideTimer = window.setTimeout(() => {
+      setShowSplash(false)
+      setIsSplashLeaving(false)
+    }, 1700)
+
+    return () => {
+      window.clearTimeout(leaveTimer)
+      window.clearTimeout(hideTimer)
+    }
+  }, [showSplash])
+
+  const SplashScreen = ({ leaving }) => (
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-r from-teal-600 via-[#38ADA9] to-teal-400 text-white transition-opacity duration-700 ${leaving ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`mx-auto text-center transition-transform duration-700 ${leaving ? 'scale-75 -translate-y-12' : 'scale-100 translate-y-0'}`}>
+        <div className={`mx-auto h-36 w-36 overflow-hidden rounded-full border-2 border-white/30 bg-white/30 p-4 flex items-center justify-center ${leaving ? 'logo-fly' : ''}`}>
+>
+          <img
+            src="/logo.png"
+            alt="KasCerdas"
+            className={`h-full w-full object-contain transition-all duration-700 ${leaving ? 'opacity-0 -translate-y-4 scale-75' : 'opacity-100 translate-y-0 scale-100'} animate-bounce`}
+          />
+        </div>
+        <p className="mt-6 text-3xl font-semibold text-white">KasCerdas</p>
+        <p className="mt-2 text-base text-white/80">Sedang membuka landing page...</p>
+      </div>
+    </div>
+  );
 
   const buildWalletSummary = ({ walletInfoOverride = null } = {}) => {
     const current = Number(walletInfoOverride?.balance ?? walletInfo?.balance ?? initialBalance ?? 0)
@@ -1277,6 +1326,10 @@ function App() {
         )
     }
   }, [currentPage, isAuthenticated, showUserType, showLanding, showInitialBalance, initialBalance, filters, selectedUmkmCategory, transactions, umkmTransactions, debts, savings, budgets, userProfile, walletInfo, umkmSummary, umkmEWalletBalance])
+
+  if (showSplash) {
+    return <SplashScreen />
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
