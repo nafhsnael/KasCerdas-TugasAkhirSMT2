@@ -51,16 +51,10 @@ function MahasiswaExpenseCompositionCard({ transactions, periodLabel, compact = 
   })()
 
   return (
-    <section
-      className={`rounded-[20px] border border-slate-200 bg-white shadow-sm ${compact ? 'p-4' : 'p-6'}`}
-    >
+    <section className={`rounded-[20px] border border-slate-200 bg-white shadow-sm ${compact ? 'p-4' : 'p-6'}`}>
       <div className={`mb-4 ${compact ? 'hidden' : ''}`}>
-        <p className="text-sm uppercase tracking-[0.24em] text-slate-500 font-semibold">
-          Komposisi Pengeluaran Studi & Harian
-        </p>
-        <h3 className={`mt-2 font-bold text-slate-900 ${compact ? 'text-lg' : 'text-xl'}`}>
-          Distribusi pengeluaran mahasiswa
-        </h3>
+        <p className="text-sm uppercase tracking-[0.24em] text-slate-500 font-semibold">Komposisi Pengeluaran Studi & Harian</p>
+        <h3 className={`mt-2 font-bold text-slate-900 ${compact ? 'text-lg' : 'text-xl'}`}>Distribusi pengeluaran mahasiswa</h3>
         <p className={`mt-2 text-sm text-slate-500 font-semibold ${compact ? 'hidden' : ''}`}>
           {periodLabel || 'Periode'} • Per kategori berdasarkan total pengeluaran periode tersebut
         </p>
@@ -148,5 +142,4 @@ function MahasiswaExpenseCompositionCard({ transactions, periodLabel, compact = 
 }
 
 export default MahasiswaExpenseCompositionCard
-
 

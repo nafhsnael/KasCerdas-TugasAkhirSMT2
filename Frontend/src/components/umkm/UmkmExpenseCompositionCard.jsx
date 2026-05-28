@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 
 const CATEGORY_COLOR = {
-  'Makanan & Minuman': 'bg-orange-500',
-  Transportasi: 'bg-blue-500',
-  Belanja: 'bg-purple-500',
-  Tagihan: 'bg-green-500',
-  Hiburan: 'bg-pink-500',
+  Penjualan: 'bg-emerald-500',
+  'Pengeluaran Operasional': 'bg-rose-500',
+  'Beli Bahan Baku / Stok': 'bg-purple-500',
+  'Piutang Pelanggan': 'bg-blue-500',
+  'Hutang Supplier': 'bg-orange-500',
+
 }
 
 function formatRp(value) {
@@ -16,15 +17,19 @@ function formatRp(value) {
 function UmkmExpenseCompositionCard({ transactions, periodLabel, compact = false }) {
   const rows = useMemo(() => {
     const tx = Array.isArray(transactions) ? transactions : []
+    // UMKM expense yang dipakai untuk komposisi: berdasarkan businessCategory
     const expenseTx = tx.filter((t) => t?.type === 'expense')
 
     const totalExpense = expenseTx.reduce((sum, t) => sum + (Number(t?.amount) || 0), 0)
 
+    // Map kategori UMKM (pos) sesuai kategori yang dipakai di transaksi/dashboard UMKM.
+    // Gunakan businessCategory kalau ada, fallback ke category.
     const byCategory = expenseTx.reduce((acc, t) => {
-      const category = t?.category || 'Lainnya'
+      const category = t?.businessCategory || t?.category || 'Lainnya'
       acc[category] = (acc[category] || 0) + (Number(t?.amount) || 0)
       return acc
     }, {})
+
 
     const sorted = Object.entries(byCategory)
       .map(([category, nominal]) => {
@@ -36,19 +41,16 @@ function UmkmExpenseCompositionCard({ transactions, periodLabel, compact = false
     return { totalExpense, sorted }
   }, [transactions])
 
-  const desiredOrder = ['Makanan & Minuman', 'Transportasi', 'Belanja', 'Tagihan', 'Hiburan']
+  // Tampilkan kategori sesuai yang ada pada transaksi.
+  // (Tidak pakai daftar fixed agar otomatis mengikuti kategori pada transaksi UMKM / aksi cepat dashboard UMKM.)
+  const desiredOrder = null
+
 
   const orderedRows = (() => {
-    const map = new Map(rows.sorted.map((r) => [r.category, r]))
-    const final = []
-    for (const c of desiredOrder) {
-      if (map.has(c)) final.push(map.get(c))
-    }
-    for (const r of rows.sorted) {
-      if (!desiredOrder.includes(r.category)) final.push(r)
-    }
-    return final.slice(0, 8)
+    // otomatis mengikuti kategori yang ada di transaksi
+    return rows.sorted.slice(0, 8)
   })()
+
 
   return (
     <section
@@ -115,8 +117,9 @@ function UmkmExpenseCompositionCard({ transactions, periodLabel, compact = false
           </div>
         ) : (
           <div className="space-y-4">
-            {['Makanan & Minuman', 'Transportasi', 'Belanja', 'Tagihan', 'Hiburan'].map((cat) => {
+            {['Penjualan', 'Pengeluaran Operasional', 'Beli Bahan Baku / Stok', 'Piutang Pelanggan', 'Hutang Supplier'].map((cat) => {
               const color = CATEGORY_COLOR[cat] || 'bg-slate-400'
+
               return (
                 <div key={cat} className="rounded-[20px] bg-white border border-slate-200 px-5 py-4">
                   <div className="flex items-start justify-between gap-4">
@@ -148,5 +151,4 @@ function UmkmExpenseCompositionCard({ transactions, periodLabel, compact = false
 }
 
 export default UmkmExpenseCompositionCard
-
 
