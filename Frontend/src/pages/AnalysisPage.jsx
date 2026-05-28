@@ -174,13 +174,14 @@ function AnalysisPage({ transactions }) {
                     </span>
                     <div className="min-w-0">
                       <select
+                        aria-label="Pilih Periode"
                         className="w-full bg-transparent text-[15px] font-semibold text-slate-800 outline-none appearance-none"
                         value={selectedPeriod}
                         onChange={(e) => setSelectedPeriod(e.target.value)}
                       >
                         {PERIOD_OPTIONS.map((opt) => (
                           <option key={opt.key} value={opt.key}>
-                            {opt.label}
+                            {opt.key === 'bulan_ini' ? 'Pilih periode (bulan ini)' : opt.label}
                           </option>
                         ))}
                       </select>

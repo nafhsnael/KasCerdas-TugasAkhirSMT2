@@ -7,6 +7,8 @@ import UserTypePage from './pages/UserTypePage'
 import InitialBalancePage from './pages/InitialBalancePage'
 import LandingPage from './pages/LandingPage'
 import AnalysisPage from './pages/AnalysisPage'
+
+
 import TransactionsUMKMPage from './pages/TransactionsUMKMPage'
 import TransactionsMahasiswaPage from './pages/TransactionsMahasiswaPage'
 import TransactionsMasyarakatPage from './pages/TransactionsMasyarakatPage'
