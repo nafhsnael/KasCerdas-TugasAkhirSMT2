@@ -66,7 +66,7 @@ function DashboardUMKMPage({
       { label: 'Beli Bahan Baku / Stok', icon: '📦', category: 'Beli Bahan Baku / Stok' },
       { label: 'Piutang Pelanggan', icon: '📋', category: 'Piutang Pelanggan' },
       { label: 'Hutang Supplier', icon: '💳', category: 'Hutang Supplier' },
-      { label: 'Tabungan', icon: '💰', category: 'Tabungan' },
+      { label: 'Tabungan', icon: '🏦', category: 'Tabungan' },
     ],
     []
   )

@@ -69,6 +69,29 @@ function TransactionsMahasiswaPage({
     }
   }, [filters?.type])
 
+  useEffect(() => {
+    const handler = (e) => {
+      const detail = e?.detail
+      if (typeof detail === 'string' && detail.trim()) {
+        setSearchQuery(detail)
+        return
+      }
+
+      if (!detail || typeof detail !== 'object') return
+
+      const { category, type } = detail
+      if (!category || typeof category !== 'string') return
+
+      const safeType = type === 'income' ? 'income' : 'expense'
+      setForm((prev) => ({ ...prev, type: safeType, category }))
+      setSearchQuery(category)
+      setSelectedMonth('')
+    }
+
+    window.addEventListener('quickActionCategory', handler)
+    return () => window.removeEventListener('quickActionCategory', handler)
+  }, [])
+
   const incomeCategories = ['Beasiswa', 'Tabungan', 'Uang Saku', 'Penghasilan Kerja Paruh Waktu']
   const expenseCategories = ['Kos', 'UKT', 'Makan', 'Hutang', 'Transportasi', 'Kebutuhan Kuliah', 'Kebutuhan Lainnya']
 

@@ -117,7 +117,26 @@ function AnalysisMasyarakatPage({ transactions }) {
 
   const filteredTransactions = useMemo(() => {
     const tx = Array.isArray(transactions) ? transactions : []
-    return tx.filter((t) => isTxInRange(t, currentStart, currentEnd))
+
+    return tx.filter((t) => {
+      const inRange = isTxInRange(t, currentStart, currentEnd)
+      const type = (t?.type || '').toLowerCase()
+
+      const kategoriPengeluaran = [
+        'Makan',
+        'Hutang',
+        'Transport',
+        'Belanja',
+        'Tagihan',
+        'Kebutuhan Lainnya',
+      ]
+
+      return (
+        inRange &&
+        (type === 'expense' || type === 'pengeluaran') &&
+        kategoriPengeluaran.includes(t.category)
+      )
+    })
   }, [transactions, currentStart, currentEnd])
 
   return (
@@ -168,16 +187,35 @@ function AnalysisMasyarakatPage({ transactions }) {
         <div className="mt-8 space-y-8">
           <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
             <div className="min-w-0">
-              <MasyarakatMonthlyCashflowTableCard transactions={filteredTransactions} periodLabel={label} compact />
+              <MasyarakatMonthlyCashflowTableCard
+                transactions={filteredTransactions}
+                periodLabel={label}
+                compact
+              />
             </div>
           </section>
 
           <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-4 px-2">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Komposisi Pengeluaran per Pos</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">
+                Komposisi Pengeluaran per Pos
+              </p>
             </div>
+
             <div className="min-w-0">
-              <MasyarakatExpenseCompositionCard transactions={filteredTransactions} periodLabel={label} compact />
+              <MasyarakatExpenseCompositionCard
+                transactions={filteredTransactions}
+                periodLabel={label}
+                compact
+                categories={[
+                  'Makan',
+                  'Hutang',
+                  'Transport',
+                  'Belanja',
+                  'Tagihan',
+                  'Kebutuhan Lainnya',
+                ]}
+              />
             </div>
           </section>
 
@@ -200,5 +238,3 @@ function AnalysisMasyarakatPage({ transactions }) {
 }
 
 export default AnalysisMasyarakatPage
-
-

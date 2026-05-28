@@ -7,8 +7,9 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
   const currentYear = now.getFullYear()
 
   const mahasiswaPemasukanCategories = [
-    'Uang Saku/Kiriman',
     'Beasiswa',
+    'Tabungan',
+    'Uang Saku',
     'Penghasilan Kerja Paruh Waktu',
     'Saldo Awal',
     'Initial',
@@ -173,6 +174,12 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
 
   // Aksi Cepat harus berada DI BAWAH Financial Health Score
   const quickActions = [
+    // Pemasukan cepat
+    { label: 'Beasiswa', category: 'Beasiswa', icon: '🎓' },
+    { label: 'Tabungan', category: 'Tabungan', icon: '🏦' },
+    { label: 'Uang Saku', category: 'Uang Saku', icon: '🪙' },
+    { label: 'Penghasilan Kerja Paruh Waktu', category: 'Penghasilan Kerja Paruh Waktu', icon: '💼' },
+    // Pengeluaran cepat
     { label: 'Kos', category: 'Kos', icon: '🏠' },
     { label: 'UKT', category: 'UKT', icon: '📚' },
     { label: 'Makan', category: 'Makan', icon: '🍜' },

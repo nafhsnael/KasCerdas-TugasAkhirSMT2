@@ -7,6 +7,9 @@ import UserTypePage from './pages/UserTypePage'
 import InitialBalancePage from './pages/InitialBalancePage'
 import LandingPage from './pages/LandingPage'
 import AnalysisPage from './pages/AnalysisPage'
+import AnalysisMasyarakatPage from './pages/AnalysisMasyarakatPage'
+import AnalysisMahasiswaPage from './pages/AnalysisMahasiswaPage'
+import AnalysisUMKMPage from './pages/AnalysisUMKMPage'
 
 
 import TransactionsUMKMPage from './pages/TransactionsUMKMPage'
@@ -150,7 +153,6 @@ function App() {
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-r from-teal-600 via-[#38ADA9] to-teal-400 text-white transition-opacity duration-700 ${leaving ? 'opacity-0' : 'opacity-100'}`}>
       <div className={`mx-auto text-center transition-transform duration-700 ${leaving ? 'scale-75 -translate-y-12' : 'scale-100 translate-y-0'}`}>
         <div className={`mx-auto h-36 w-36 overflow-hidden rounded-full border-2 border-white/30 bg-white/30 p-4 flex items-center justify-center ${leaving ? 'logo-fly' : ''}`}>
->
           <img
             src="/logo.png"
             alt="KasCerdas"
@@ -1223,6 +1225,15 @@ function App() {
         }
         return <TransactionsMasyarakatPage transactions={masyarakatTransactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
       case 'analysis':
+        if (['masyarakat', 'masyarakat_umum'].includes(userProfile?.usertype)) {
+          return <AnalysisMasyarakatPage transactions={masyarakatTransactions} />
+        }
+        if (userProfile?.usertype === 'mahasiswa') {
+          return <AnalysisMahasiswaPage transactions={mahasiswaTransactions} />
+        }
+        if (userProfile?.usertype === 'umkm') {
+          return <AnalysisUMKMPage transactions={umkmTransactions} />
+        }
         return <AnalysisPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} />
       case 'reports':
         return <ReportsPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
@@ -1252,6 +1263,15 @@ function App() {
               onQuickAction={(category) => {
                 setFilters({ type: category })
                 navigateTo('transactions')
+                setTimeout(() => {
+                  try {
+                    const incomeCategories = ['Beasiswa', 'Tabungan', 'Uang Saku', 'Penghasilan Kerja Paruh Waktu']
+                    const isIncome = incomeCategories.includes(category)
+                    window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category, type: isIncome ? 'income' : 'expense' } }))
+                  } catch (e) {
+                    // ignore
+                  }
+                }, 0)
               }}
             />
           ) : ['masyarakat', 'masyarakat_umum'].includes(userProfile?.usertype) ? (
@@ -1274,7 +1294,9 @@ function App() {
                 navigateTo('transactions')
                 setTimeout(() => {
                   try {
-                    window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category, type: 'expense' } }))
+                    const incomeCategories = ['Penghasilan Kerja', 'Uang Saku', 'Tabungan']
+                    const isIncome = incomeCategories.includes(category)
+                    window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category, type: isIncome ? 'income' : 'expense' } }))
                   } catch (e) {}
                 }, 0)
               }}

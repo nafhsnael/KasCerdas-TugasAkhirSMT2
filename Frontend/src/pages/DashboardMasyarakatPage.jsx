@@ -3,6 +3,9 @@ import BudgetCard from '../components/BudgetCard'
 function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletInfo, userProfile, onQuickAction }) {
   // Kategori ini disamakan dengan kategori di TransactionsMasyarakatPage.jsx
   const quickActions = [
+    { label: 'Penghasilan Kerja', category: 'Penghasilan Kerja', icon: '💼' },
+    { label: 'Uang Saku', category: 'Uang Saku', icon: '🪙' },
+    { label: 'Tabungan', category: 'Tabungan', icon: '🏦' },
     { label: 'Makan', category: 'Makan', icon: '🍜' },
     { label: 'Hutang', category: 'Hutang', icon: '💳' },
     { label: 'Transport', category: 'Transport', icon: '🚌' },
@@ -238,12 +241,12 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
           </div>
         </div>
 
-        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
-          <h2 className="mt-4 text-4xl font-semibold text-slate-900">
+        <div className="rounded-[32px] bg-[#F6B93B] p-6 text-white shadow-sm border border-[#e6a53f]">
+          <p className="text-sm uppercase tracking-[0.24em] text-white/80">Saldo Pengeluaran</p>
+          <h2 className="mt-4 text-4xl font-semibold text-white/80">
             Rp {saldoPengeluaranBulanIni.toLocaleString('id-ID')}
           </h2>
-          <p className="mt-3 text-sm text-slate-500">Total pengeluaran per bulan</p>
+          <p className="mt-3 text-sm text-white/80">Total pengeluaran per bulan</p>
         </div>
       </section>
 

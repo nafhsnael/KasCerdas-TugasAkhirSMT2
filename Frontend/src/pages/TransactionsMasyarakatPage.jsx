@@ -268,7 +268,7 @@ const deleteTransaction = async (transaction) => {
         <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">
-              Transaksi Masyarakat {quickActionEmoji ? <span className="ml-2">{quickActionEmoji}</span> : null}
+              Transaksi Masyarakat
             </p>
             <h2 className="text-xl font-semibold text-slate-900">Kelola pengeluaran dan pemasukan</h2>
               <p className="mt-2 text-sm text-slate-500">
@@ -389,6 +389,7 @@ const deleteTransaction = async (transaction) => {
                 </svg>
                 <span>{successMessage}</span>
               </div>
+              
             )}
             <button
               type="submit"

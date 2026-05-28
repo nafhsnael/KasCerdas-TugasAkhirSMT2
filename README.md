@@ -165,9 +165,9 @@ http://localhost:5173
 | Nama                          | NIM             |
 | ----------------------------- | --------------- |
 | Nafhisa Nailah Husnah         | 253140707111072 |
-| Serli Maharani Putri Yustina  | 253140707111084 |
+| Serli Maharani Putri Yustina  | 253140707111085 |
 | Firyal Zalfaa Aulia           | 253140707111070 |
-| Kasiva Imtiyas Zaidah Iftinan | 253140707111085 |
+| Kasiva Imtiyas Zaidah Iftinan | 253140707111084 |
 
 ---
 

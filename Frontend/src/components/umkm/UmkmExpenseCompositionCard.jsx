@@ -1,12 +1,10 @@
 import { useMemo } from 'react'
 
 const CATEGORY_COLOR = {
-  Penjualan: 'bg-emerald-500',
   'Pengeluaran Operasional': 'bg-rose-500',
   'Beli Bahan Baku / Stok': 'bg-purple-500',
   'Piutang Pelanggan': 'bg-blue-500',
-  'Hutang Supplier': 'bg-orange-500',
-
+  'Hutang Supplier': 'bg-green-500',
 }
 
 function formatRp(value) {
@@ -14,29 +12,54 @@ function formatRp(value) {
   return `Rp ${num.toLocaleString('id-ID')}`
 }
 
-function UmkmExpenseCompositionCard({ transactions, periodLabel, compact = false }) {
+function UmkmExpenseCompositionCard({ transactions, periodLabel, compact = false, categories }) {
+  const effectiveCategories = Array.isArray(categories) && categories.length
+    ? categories
+    : ['Pengeluaran Operasional', 'Beli Bahan Baku / Stok', 'Piutang Pelanggan', 'Hutang Supplier']
+
   const rows = useMemo(() => {
     const tx = Array.isArray(transactions) ? transactions : []
-    // UMKM expense yang dipakai untuk komposisi: berdasarkan businessCategory
-    const expenseTx = tx.filter((t) => t?.type === 'expense')
 
-    const totalExpense = expenseTx.reduce((sum, t) => sum + (Number(t?.amount) || 0), 0)
+    const normalizeCategory = (rawText) => {
+      const raw = (rawText || '').toLowerCase()
 
-    // Map kategori UMKM (pos) sesuai kategori yang dipakai di transaksi/dashboard UMKM.
-    // Gunakan businessCategory kalau ada, fallback ke category.
-    const byCategory = expenseTx.reduce((acc, t) => {
-      const category = t?.businessCategory || t?.category || 'Lainnya'
+      if (raw.includes('pengeluaran') || raw.includes('operasional')) {
+        return 'Pengeluaran Operasional'
+      }
+      if (raw.includes('beli') || raw.includes('bahan') || raw.includes('baku') || raw.includes('stok')) {
+        return 'Beli Bahan Baku / Stok'
+      }
+      if (raw.includes('piutang') || raw.includes('pelanggan')) {
+        return 'Piutang Pelanggan'
+      }
+      if (raw.includes('hutang') || raw.includes('supplier')) {
+        return 'Hutang Supplier'
+      }
+
+      return 'Lainnya'
+    }
+
+    const categoryTx = tx.filter((t) => {
+      const category = normalizeCategory(t?.businessCategory || t?.category || '')
+      return effectiveCategories.includes(category)
+    })
+
+    const totalExpense = categoryTx.reduce((sum, t) => sum + (Number(t?.amount) || 0), 0)
+
+    const byCategory = categoryTx.reduce((acc, t) => {
+      const category = normalizeCategory(t?.businessCategory || t?.category || '')
       acc[category] = (acc[category] || 0) + (Number(t?.amount) || 0)
       return acc
     }, {})
 
 
-    const sorted = Object.entries(byCategory)
-      .map(([category, nominal]) => {
-        const percentage = totalExpense > 0 ? (nominal / totalExpense) * 100 : 0
-        return { category, nominal, percentage }
-      })
-      .sort((a, b) => b.nominal - a.nominal)
+    const mapped = effectiveCategories.map((category) => {
+      const nominal = Number(byCategory[category] || 0)
+      const percentage = totalExpense > 0 ? (nominal / totalExpense) * 100 : 0
+      return { category, nominal, percentage }
+    })
+
+    const sorted = mapped
 
     return { totalExpense, sorted }
   }, [transactions])
@@ -69,23 +92,23 @@ function UmkmExpenseCompositionCard({ transactions, periodLabel, compact = false
       </div>
 
       <div className="rounded-[20px] bg-slate-50/40 p-4">
-        {orderedRows.length > 0 ? (
-          <div className="space-y-4">
-            {orderedRows.map((r) => {
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {orderedRows.length > 0 ? (
+            orderedRows.map((r) => {
               const pct = Math.max(0, Math.min(100, r.percentage || 0))
               const color = CATEGORY_COLOR[r.category] || 'bg-slate-400'
               const labelColor = (() => {
                 switch (color) {
                   case 'bg-orange-500':
                     return 'text-orange-600'
+                  case 'bg-rose-500':
+                    return 'text-rose-600'
                   case 'bg-blue-500':
                     return 'text-blue-600'
                   case 'bg-purple-500':
                     return 'text-purple-600'
                   case 'bg-green-500':
                     return 'text-green-600'
-                  case 'bg-pink-500':
-                    return 'text-pink-600'
                   default:
                     return 'text-slate-600'
                 }
@@ -113,11 +136,9 @@ function UmkmExpenseCompositionCard({ transactions, periodLabel, compact = false
                   </div>
                 </div>
               )
-            })}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {['Penjualan', 'Pengeluaran Operasional', 'Beli Bahan Baku / Stok', 'Piutang Pelanggan', 'Hutang Supplier'].map((cat) => {
+            })
+          ) : (
+            ['Pengeluaran Operasional', 'Beli Bahan Baku / Stok', 'Piutang Pelanggan', 'Hutang Supplier'].map((cat) => {
               const color = CATEGORY_COLOR[cat] || 'bg-slate-400'
 
               return (
@@ -142,9 +163,9 @@ function UmkmExpenseCompositionCard({ transactions, periodLabel, compact = false
                   </div>
                 </div>
               )
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
       </div>
     </section>
   )
