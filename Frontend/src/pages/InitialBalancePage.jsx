@@ -6,6 +6,8 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
   const [note, setNote] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (!balance || !date) {
@@ -19,10 +21,11 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
     try {
       // Simpan ke backend
       const token = window.localStorage.getItem('token')
-      const res = await fetch('/api/wallets', {
+      const res = await fetch(`${backendUrl}/api/wallets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -38,8 +41,13 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
         return
       }
       
-      // Jika berhasil, call onSave
-      onSave({ balance: parsedBalance, date, note })
+      // Jika berhasil, kirim saldo + data wallet ke App supaya dashboard langsung sinkron
+      onSave({
+        balance: Number(json?.data?.balance ?? parsedBalance),
+        wallet: json?.data || null,
+        date,
+        note,
+      })
       alert('Saldo awal berhasil disimpan!')
     } catch (e) {
       console.error('Error saving wallet:', e)

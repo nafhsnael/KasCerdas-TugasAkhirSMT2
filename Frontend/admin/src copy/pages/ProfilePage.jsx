@@ -44,22 +44,39 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
     }
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     if (!profile.nama || !profile.email || !profile.user) {
       alert('Mohon isi field Nama, Email, dan Username')
       return
     }
-    setUserProfile((prev) => ({
-      ...prev,
-      nama: profile.nama,
-      email: profile.email,
-      user: profile.user,
-      phone: profile.phone,
-      address: profile.address,
-      profileImage: profileImage,
-    }))
-    alert('Profil berhasil diperbarui!')
+
+    try {
+      const response = await fetch('/api/update-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...profile,
+          profileImage: profileImage,
+        }),
+      })
+
+      if (response.ok) {
+        setUserProfile((prev) => ({
+          ...prev,
+          ...profile,
+          profileImage: profileImage,
+        }))
+        alert('Profil berhasil diperbarui!')
+      } else {
+        alert('Gagal memperbarui profil.')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Terjadi kesalahan saat menyimpan.')
+    }
   }
 
   return (

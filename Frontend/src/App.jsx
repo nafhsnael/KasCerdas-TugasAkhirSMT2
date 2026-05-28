@@ -1051,8 +1051,12 @@ function App() {
   }
 
   const handleSaveInitialBalance = async (data) => {
-    const balance = data.balance
+    const balance = Number(data?.wallet?.balance ?? data?.balance ?? 0)
     setInitialBalance(balance)
+
+    if (data?.wallet) {
+      setWalletInfo(data.wallet)
+    }
 
     // UMKM: saldo awal harus masuk ke e-wallet UMKM + ringkasan pemasukan (agar Dompet Usaha ikut terisi)
     if (userProfile?.usertype === 'umkm') {
@@ -1075,6 +1079,7 @@ function App() {
       const walletData = await fetchWalletInfo()
       if (walletData) {
         setWalletInfo(walletData)
+        setInitialBalance(Number(walletData.balance) || balance)
       }
     } catch (e) {
       console.error('Error fetching wallet after initial balance save:', e)
@@ -1200,13 +1205,13 @@ function App() {
                 navigateTo('transactions')
               }}
             />
-          ) : userProfile?.usertype === 'masyarakat' ? (
+          ) : ['masyarakat', 'masyarakat_umum'].includes(userProfile?.usertype) ? (
             <DashboardMasyarakatPage
               walletSummary={{
-                current: initialBalance,
+                current: Number(walletInfo?.balance ?? initialBalance ?? 0),
                 income: initialBalance,
                 expense: 0,
-                smartCashPerDay: initialBalance,
+                smartCashPerDay: Number(walletInfo?.balance ?? initialBalance ?? 0),
                 smartReductionPerDay: 0,
               }}
               transactions={masyarakatTransactions}
@@ -1214,12 +1219,13 @@ function App() {
               walletInfo={walletInfo}
               userProfile={userProfile}
               onQuickAction={(category) => {
-                setFilters({ type: 'expense' })
-                // Navigasi ke Transactions Masyarakat, lalu preset kategori melalui search agar sesuai label quick action.
+                // Filter harus memakai nama kategori, bukan string 'expense'.
+                // Kategori ini sudah disamakan dengan TransactionsMasyarakatPage.jsx.
+                setFilters({ type: category })
                 navigateTo('transactions')
                 setTimeout(() => {
                   try {
-window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category, type: 'expense' } } ))
+                    window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category, type: 'expense' } }))
                   } catch (e) {}
                 }, 0)
               }}

@@ -6,7 +6,7 @@ import { transactionAPI } from '../utils/api'
 
 
 const incomeCategories = ['Penghasilan Kerja', 'Uang Saku', 'Tabungan']
-const expenseCategories = ['Makan', 'Hutang','Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
+const expenseCategories = ['Makan', 'Hutang', 'Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
 
 function TransactionsPage({ transactions, filters, setFilters, onAddTransaction }) {
   const [deletingId, setDeletingId] = useState(null)
@@ -253,10 +253,11 @@ const deleteTransaction = async (transaction) => {
   const quickActionEmoji = (() => {
     const map = {
       Makan: '🍜',
+      Hutang: '💳',
       Transport: '🚌',
-      Hiburan: '🎉',
       Belanja: '🛍️',
       Tagihan: '📄',
+      'Kebutuhan Lainnya': '🧩',
     }
     return map[form.category] || ''
   })()

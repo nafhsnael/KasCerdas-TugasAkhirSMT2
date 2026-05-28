@@ -9,6 +9,7 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
   })
   const [editingId, setEditingId] = useState(null)
   const [showForm, setShowForm] = useState(false)
+  const isMasyarakatUser = userType === 'masyarakat_umum' || userType === 'masyarakat'
 
   // debug (temporer)
   const debugLog = (...args) => console.log('[BudgetPage]', ...args)
@@ -45,7 +46,7 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
     let categoryName = budget.category
     let categoryDetail = ''
     
-    if (userType === 'masyarakat_umum') {
+    if (isMasyarakatUser) {
       const [mainCategory, ...rest] = budget.category.split(' - ')
       categoryName = mainCategory
       categoryDetail = rest.join(' - ')
@@ -77,20 +78,16 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
     const isKategoriTanpaDetail = [
       'Beli Bahan Baku / Stok',
       'Utang Supplier',
+      'Hutang Supplier',
       'Makan',
+      'Hutang',
       'Transport',
-      'Hiburan',
       'Belanja',
+      'Tagihan',
       'Transportasi',
       'Kebutuhan Kuliah',
-    ].includes(selectedOperationalCategory)
-
-    // Untuk "Kebutuhan Lain" di Masyarakat Lain, detail harus diisi
-    if (selectedOperationalCategory === 'Kebutuhan Lain' && !formData.operationalDetail.trim()) {
-      setMessage('Silakan jelaskan kebutuhan Anda')
-      setTimeout(() => setMessage(''), 3000)
-      return
-    }
+    ].includes(selectedOperationalCategory) ||
+      (isMasyarakatUser && selectedOperationalCategory === 'Kebutuhan Lainnya')
 
     // Untuk "Kebutuhan Lainnya" di Mahasiswa, detail harus diisi
     if (userType === 'mahasiswa' && selectedOperationalCategory === 'Kebutuhan Lainnya' && !formData.operationalDetail.trim()) {
@@ -116,16 +113,11 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
       return
     }
 
-    // Simpan format kategori agar konsisten untuk perhitungan usage
-    // - masyarakat_umum: Kebutuhan Lain harus include detail ("Kebutuhan Lain - <detail>")
-    // - mahasiswa: Kebutuhan Lainnya harus include detail ("Kebutuhan Lainnya - <detail>")
-    // - kategori lain: tanpa suffix
+    // Simpan format kategori agar konsisten dengan TransactionsMasyarakatPage.jsx.
+    // Untuk Masyarakat, nama budget harus sama persis dengan kategori transaksi
+    // supaya usage dan budget reminder bisa terbaca.
     let categoryName
-    if (userType === 'masyarakat_umum' && selectedOperationalCategory === 'Kebutuhan Lain') {
-      categoryName = operationalDetail
-        ? `Kebutuhan Lain - ${operationalDetail}`
-        : 'Kebutuhan Lain'
-    } else if (userType === 'mahasiswa' && selectedOperationalCategory === 'Kebutuhan Lainnya') {
+    if (userType === 'mahasiswa' && selectedOperationalCategory === 'Kebutuhan Lainnya') {
       categoryName = operationalDetail
         ? `Kebutuhan Lainnya - ${operationalDetail}`
         : 'Kebutuhan Lainnya'
@@ -192,13 +184,15 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
 
   // Get category options based on user type
   const getCategoryOptions = () => {
-    if (userType === 'masyarakat_umum') {
+    if (isMasyarakatUser) {
+      // Disamakan dengan kategori di TransactionsMasyarakatPage.jsx
       return [
         { value: 'Makan', label: 'Makan' },
+        { value: 'Hutang', label: 'Hutang' },
         { value: 'Transport', label: 'Transport' },
-        { value: 'Hiburan', label: 'Hiburan' },
         { value: 'Belanja', label: 'Belanja' },
-        { value: 'Kebutuhan Lain', label: 'Kebutuhan Lain' },
+        { value: 'Tagihan', label: 'Tagihan' },
+        { value: 'Kebutuhan Lainnya', label: 'Kebutuhan Lainnya' },
       ]
     } else if (userType === 'umkm') {
       return [
@@ -227,9 +221,11 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
 
   // Check if custom input is needed
   const shouldShowCustomInput = () => {
-    if (userType === 'masyarakat_umum') {
-      return formData.category === 'Kebutuhan Lain'    } else if (userType === 'mahasiswa') {
-      return formData.category === 'Kebutuhan Lainnya'    } else if (userType === 'umkm') {
+    if (isMasyarakatUser) {
+      return false
+    } else if (userType === 'mahasiswa') {
+      return formData.category === 'Kebutuhan Lainnya'
+    } else if (userType === 'umkm') {
       return !["Beli Bahan Baku / Stok", "Hutang Supplier"].includes(formData.category)
     }
     return false
@@ -321,17 +317,17 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
             {shouldShowCustomInput() && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  {userType === 'masyarakat_umum' ? 'Jelaskan Kebutuhan Lain' : userType === 'mahasiswa' ? 'Jelaskan Kebutuhan Lainnya' : 'Kebutuhan operasional'}
+                  {userType === 'mahasiswa' ? 'Jelaskan Kebutuhan Lainnya' : 'Kebutuhan operasional'}
                 </label>
                 <input
                   type="text"
                   value={formData.operationalDetail}
                   onChange={(e) => setFormData({ ...formData, operationalDetail: e.target.value })}
-                  placeholder={userType === 'masyarakat_umum' ? 'Contoh: Perawatan, Pakaian, dll' : userType === 'mahasiswa' ? 'Contoh: Perlengkapan, Kesehatan, dll' : 'Contoh: sewa kios untuk 1 bulan / biaya internet toko'}
+                  placeholder={userType === 'mahasiswa' ? 'Contoh: Perlengkapan, Kesehatan, dll' : 'Contoh: sewa kios untuk 1 bulan / biaya internet toko'}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
                 />
                 <p className="mt-2 text-xs text-slate-500">
-                  {userType === 'masyarakat_umum' ? 'Jelaskan jenis kebutuhan Anda' : userType === 'mahasiswa' ? 'Jelaskan jenis kebutuhan Anda' : 'Isi kebutuhan/jenis operasionalnya agar lebih spesifik.'}
+                  {userType === 'mahasiswa' ? 'Jelaskan jenis kebutuhan Anda' : 'Isi kebutuhan/jenis operasionalnya agar lebih spesifik.'}
                 </p>
               </div>
             )}
