@@ -279,7 +279,7 @@ function TransactionsUMKMPage({
       stockItemName: selectedStockName,
       stockQty,
       isCredit: isCreditCategory,
-      isSettled: form.isSettled,
+      isSettled: true,
       typeLabel:
         form.category === 'Penjualan' || form.category === 'Pemasukan' || form.category === 'Piutang Pelanggan'
           ? 'Pemasukan'

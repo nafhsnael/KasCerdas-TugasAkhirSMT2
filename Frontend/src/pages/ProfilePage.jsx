@@ -52,13 +52,19 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
     }
     const token = window.localStorage.getItem('token');
     try {
-      const response = await fetch('/api/update-profile', {
-        method: 'POST',
+      const response = await fetch('/api/user/profil', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ ...profile, profileImage }),
+        body: JSON.stringify({
+          name: profile.nama,
+          email: profile.email,
+          // Optionally include other fields if needed:
+          // phone: profile.phone,
+          // address: profile.address,
+        }),
       });
       if (response.ok) {
         setUserProfile((prev) => ({ ...prev, ...profile, profileImage }));

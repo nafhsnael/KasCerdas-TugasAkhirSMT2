@@ -129,7 +129,9 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate }) {
     return Array.from(mapped.values())
   }, [savings, transactionSavings])
 
-  const totalDebt = debts.reduce((sum, debt) => sum + debt.amount, 0)
+  const totalDebt = debts.reduce((sum, debt) => sum + debt.amount, 0);
+  const piutangTransactions = transactions.filter((t) => t.category === 'Piutang Pelanggan' && t.type === 'income');
+  const totalPiutang = piutangTransactions.reduce((sum, t) => sum + t.amount, 0);
   const savingTargets = allSavings.map((saving) => {
     const current = Number(saving.current || saving.current_amount || 0)
     const target = Number(saving.target || saving.target_amount || 0)
@@ -147,6 +149,7 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate }) {
     { id: 'monthly', label: 'Bulanan' },
     { id: 'annual', label: 'Tahunan' },
     { id: 'debt', label: 'Rekap Hutang' },
+    { id: 'receivable', label: 'Rekap Piutang' },
     { id: 'savings', label: 'Target Tabungan' },
   ]
 
@@ -306,6 +309,35 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate }) {
             </div>
           </div>
         </div>
+{activeTab === 'receivable' && (
+  <div className="space-y-6">
+    <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
+      <h2 className="text-xl font-semibold text-slate-900 mb-2">Rekap Piutang</h2>
+      <p className="text-sm text-slate-500 mb-4">Lacak seluruh piutang yang masih aktif.</p>
+      <p className="text-2xl font-bold text-[#38ADA9]">Total Piutang: Rp {totalPiutang.toLocaleString('id-ID')}</p>
+    </div>
+    <div className="rounded-[32px] border border-slate-200 bg-white p-6">
+      <h3 className="font-semibold text-slate-900 mb-4">Daftar Piutang</h3>
+      <div className="space-y-3">
+        {piutangTransactions.map((trx) => (
+          <div key={trx.id} className="flex flex-col gap-2 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-medium text-slate-900">{trx.title}</p>
+                <p className="text-sm text-slate-500">{trx.note}</p>
+              </div>
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{trx.status || ''}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+              <span>Rp {trx.amount.toLocaleString('id-ID')}</span>
+              {trx.dueDate && <span>Jatuh tempo {new Date(trx.dueDate).toLocaleDateString('id-ID')}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
       )}
 
       {activeTab === 'savings' && (

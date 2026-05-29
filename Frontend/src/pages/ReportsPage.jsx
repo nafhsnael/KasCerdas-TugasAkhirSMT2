@@ -3,7 +3,9 @@ import StatCard from '../components/StatCard'
 import { debtAPI, savingAPI } from '../utils/api'
 
 function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) {
-  const [activeTab, setActiveTab] = useState('daily')
+  const [selectedDebt, setSelectedDebt] = useState(null);
+  const [activeTab, setActiveTab] = useState('daily');
+  const [selectedPiutang, setSelectedPiutang] = useState(null);
   const [isAddingSaving, setIsAddingSaving] = useState(false)
   const [isAddingDebt, setIsAddingDebt] = useState(false)
   const [addForm, setAddForm] = useState({ name: '', amount: '' })
@@ -109,7 +111,9 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
     return Array.from(mapped.values())
   }, [savings, transactionSavings])
 
-  const totalDebt = debts.reduce((sum, debt) => sum + Number((debt.remaining_amount ?? debt.amount) || 0), 0)
+  const totalDebt = debts.reduce((sum, debt) => sum + Number((debt.remaining_amount ?? debt.amount) || 0), 0);
+  const piutangTransactions = transactions.filter((t) => t.category === 'Piutang Pelanggan' && t.type === 'income');
+  const totalPiutang = piutangTransactions.reduce((sum, t) => sum + Number(t.amount || 0), 0);
   const savingTargets = allSavings.map((saving) => {
     const current = Number(saving.current || saving.current_amount || 0)
     const target = Number(saving.target || saving.target_amount || 0)
@@ -127,8 +131,9 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
     { id: 'monthly', label: 'Bulanan' },
     { id: 'annual', label: 'Tahunan' },
     { id: 'debt', label: 'Rekap Hutang' },
+    { id: 'receivable', label: 'Rekap Piutang' },
     { id: 'savings', label: 'Target Tabungan' },
-  ]
+  ];
 
   return (
     <div className="space-y-6">
@@ -155,6 +160,77 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
           </button>
         ))}
       </div>
+
+      {activeTab === 'receivable' && (
+          <div className="space-y-6">
+            <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
+              <h2 className="text-xl font-semibold text-slate-900 mb-2">Rekap Piutang</h2>
+              <p className="text-sm text-slate-500 mb-4">Lacak seluruh piutang yang masih aktif.</p>
+              <p className="text-2xl font-bold text-[#38ADA9]">Total Piutang: Rp {totalPiutang.toLocaleString('id-ID')}</p>
+            </div>
+            <div className="rounded-[32px] border border-slate-200 bg-white p-6">
+              <h3 className="font-semibold text-slate-900 mb-4">Daftar Piutang</h3>
+              <div className="space-y-3">
+                {piutangTransactions.map((trx) => {
+                  const total = Number(trx.amount || 0);
+                  const paid = transactions
+                    .filter((t) => t.title === trx.title && t.type === 'expense')
+                    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+                  const remaining = Math.max(0, total - paid);
+                  const progress = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+                  const formattedDueDate = trx.dueDate ? new Date(trx.dueDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+                  return (
+                    <div key={trx.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xl font-semibold text-slate-900">{trx.title}</p>
+                          <p className="text-sm text-slate-500 mt-1">{trx.note}</p>
+                        </div>
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${remaining <= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                          {remaining <= 0 ? 'Lunas' : (trx.status || 'active')}
+                        </span>
+                      </div>
+                      <p className="mt-4 text-sm text-slate-500">{progress}% terbayar</p>
+                      <div className="mt-2 rounded-full bg-slate-100 h-3 overflow-hidden">
+                        <div className="h-3 rounded-full bg-[#38ADA9]" style={{ width: `${progress}%` }} />
+                      </div>
+                      <div className="mt-4 space-y-2 text-sm text-slate-600">
+                        <p>Di bayar: Rp {paid.toLocaleString('id-ID')}</p>
+                        <p>Jumlah Piutang: Rp {total.toLocaleString('id-ID')}</p>
+                        <p>Sisa: Rp {remaining.toLocaleString('id-ID')}</p>
+                        <p className="text-sm text-slate-500">Jatuh tempo: {formattedDueDate}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPiutang(trx)}
+                        className="mt-4 rounded-3xl bg-[#38ADA9] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2c8a7d]"
+                      >
+                        Lihat Transaksi Terkait
+                      </button>
+                    </div>
+                  );
+                })}
+
+                ))}
+              </div>
+              {selectedPiutang && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Detail Piutang: {selectedPiutang.title}</h3>
+                  <div className="p-4 rounded-2xl bg-slate-100">
+                    <p className="text-sm text-slate-600">Catatan: {selectedPiutang.note}</p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPiutang(null)}
+                      className="mt-4 rounded-3xl bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-300"
+                    >
+                      Tutup
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       {activeTab === 'daily' && (
         <div className="space-y-6">
@@ -199,7 +275,7 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
           <div className="grid gap-4 xl:grid-cols-3">
             <StatCard label="Total Pemasukan" value={`Rp ${monthlyIncome.toLocaleString('id-ID')}`} description={`${monthlyTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`} />
             <StatCard label="Total Pengeluaran" value={`Rp ${monthlyExpense.toLocaleString('id-ID')}`} description={`${monthlyTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`} />
-            <StatCard label="Saldo Bulanan" value={`Rp ${monthlyBalance.toLocaleString('id-ID')}`} description={monthlyBalance >= 0 ? 'Surplus ?' : 'Defisit ?'} />
+            <StatCard label="Saldo Bulanan" value={`Rp ${monthlyBalance.toLocaleString('id-ID')}`} description={monthlyBalance >= 0 ? 'Surplus ✓' : 'Defisit ✗'} />
           </div>
           {categoryExpenses.length > 0 && (
             <div className="rounded-[32px] border border-slate-200 bg-white p-6">
@@ -227,7 +303,7 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
           <div className="grid gap-4 xl:grid-cols-3">
             <StatCard label="Pemasukan Tahunan" value={`Rp ${annualIncome.toLocaleString('id-ID')}`} description={`${annualTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`} />
             <StatCard label="Pengeluaran Tahunan" value={`Rp ${annualExpense.toLocaleString('id-ID')}`} description={`${annualTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`} />
-            <StatCard label="Saldo Tahunan" value={`Rp ${annualBalance.toLocaleString('id-ID')}`} description={annualBalance >= 0 ? 'Surplus ?' : 'Defisit ?'} />
+            <StatCard label="Saldo Tahunan" value={`Rp ${annualBalance.toLocaleString('id-ID')}`} description={annualBalance >= 0 ? 'Surplus ✓' : 'Defisit ✗'} />
           </div>
           {categoryExpenses.length > 0 && (
             <div className="rounded-[32px] border border-slate-200 bg-white p-6">
@@ -371,11 +447,15 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
             <h3 className="font-semibold text-slate-900 mb-4">Daftar Hutang</h3>
             <div className="grid gap-4 lg:grid-cols-2">
               {debts.map((debt) => {
-                const paid = Number(debt.paid_amount || 0)
-                const total = Number(debt.amount || 0)
-                const remaining = Number(debt.remaining_amount ?? total)
-                const progress = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0
-                const isPaid = remaining <= 0
+                const total = Number(debt.amount || 0);
+                const paid = transactions
+                  .filter((t) => t.title === debt.creditor)
+                  .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+                const remaining = Math.max(0, total - paid);
+                const progress = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+                const isPaid = remaining <= 0;
+                // format due date as dd/mm/yyyy
+                const formattedDueDate = debt.dueDate ? new Date(debt.dueDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
                 return (
                   <div key={debt.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between gap-3">
@@ -395,11 +475,41 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
                       <p>Di bayar: Rp {paid.toLocaleString('id-ID')}</p>
                       <p>Jumlah Hutang: Rp {total.toLocaleString('id-ID')}</p>
                       <p>Sisa: Rp {remaining.toLocaleString('id-ID')}</p>
-                      <p>Jatuh tempo: {debt.dueDate ? new Date(debt.dueDate).toLocaleDateString('id-ID') : '-'}</p>
+                      <p className="text-sm text-slate-500">Jatuh tempo: {formattedDueDate}</p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDebt(debt)}
+                      className="mt-4 rounded-3xl bg-[#38ADA9] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2c8a7d]"
+                    >
+                      Lihat Transaksi Terkait
+                    </button>
                   </div>
                 )
               })}
+              {selectedDebt && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Transaksi untuk "{selectedDebt.creditor}"</h3>
+                  <div className="grid gap-4">
+                    {transactions
+                      .filter((t) => t.title === selectedDebt.creditor)
+                      .map((t) => (
+                        <div key={t.id} className="rounded-[32px] border border-slate-200 bg-white p-4">
+                          <p className="font-medium text-slate-900">{t.title}</p>
+                          <p className="text-sm text-slate-500">{t.category}</p>
+                          <p className={`font-semibold ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-900'}`}> {t.type === 'income' ? '+' : '-'}Rp {t.amount.toLocaleString('id-ID')}</p>
+                        </div>
+                      ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDebt(null)}
+                    className="mt-4 rounded-3xl bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-300"
+                  >
+                    Tutup Daftar Transaksi
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
