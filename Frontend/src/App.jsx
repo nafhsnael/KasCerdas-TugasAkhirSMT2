@@ -59,6 +59,21 @@ const buildApiUrl = (url) => {
   return `${backendUrl}/api${url.startsWith('/') ? url : `/${url}`}`
 }
 
+const formatDateToYMD = (value) => {
+  const date = value instanceof Date
+    ? value
+    : typeof value === 'string' && value.trim()
+      ? new Date(value)
+      : null
+
+  if (!date || Number.isNaN(date.getTime())) {
+    const fallback = new Date()
+    return `${fallback.getFullYear()}-${String(fallback.getMonth() + 1).padStart(2, '0')}-${String(fallback.getDate()).padStart(2, '0')}`
+  }
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
 const routeToPage = {
   '': 'dashboard',
   login: 'login',
@@ -177,6 +192,7 @@ function App() {
   const [selectedUmkmCategory, setSelectedUmkmCategory] = useState('all')
   const [transactions, setTransactions] = useState([])
   const [budgets, setBudgets] = useState([])
+  const [defaultReportTab, setDefaultReportTab] = useState('daily')
 
   const parseMetadata = (metadata) => {
     if (!metadata) return {}
@@ -650,6 +666,33 @@ function App() {
     const profileType = String(userProfile?.usertype || userType || '').toLowerCase()
     const incomingMetadata = parseMetadata(newTransaction.metadata)
 
+    const isDebtCategory = newTransaction?.category === 'Hutang'
+    const isSavingsCategory = newTransaction?.category === 'Tabungan'
+
+    // Sinkronisasi transaksi kategori mahasiswa ke rekap: Debt / Saving
+    // (default mapping)
+    const creatorNameOrNote = String(newTransaction?.title || newTransaction?.note || '').trim()
+    const debtPayload = {
+      wallet_id: walletInfo?.id || newTransaction?.wallet_id,
+      creditor_name: creatorNameOrNote || 'Hutang',
+      amount: Number(newTransaction?.amount) || 0,
+      due_date: newTransaction?.date || new Date().toISOString(),
+      note: String(newTransaction?.note || ''),
+      status: newTransaction?.isSettled ? 'paid' : 'active',
+    }
+
+    const savingsPayload = {
+      wallet_id: walletInfo?.id || newTransaction?.wallet_id,
+      name: String(newTransaction?.title || 'Tabungan').trim(),
+      target_amount: Number(newTransaction?.amount) || 0,
+      current_amount: Number(newTransaction?.amount) || 0,
+      target_date: newTransaction?.date || new Date().toISOString(),
+      category: 'Tabungan',
+      note: String(newTransaction?.note || ''),
+    }
+
+
+
     const isMahasiswa = hasMetaValue(incomingMetadata.is_mahasiswa)
       ? metaToBool(incomingMetadata.is_mahasiswa)
       : profileType === 'mahasiswa'
@@ -666,6 +709,12 @@ function App() {
       is_masyarakat: isMasyarakat,
     }
 
+    const walletId = walletInfo?.id || newTransaction?.wallet_id
+    if (!walletId) {
+      alert('Dompet belum tersedia. Silakan muat ulang aplikasi atau masuk ulang terlebih dahulu.')
+      return
+    }
+
     // Optimistic update (biar riwayat langsung terisi seperti UMKM)
     const tempTransaction = {
       id: tempId,
@@ -674,7 +723,7 @@ function App() {
       // Pastikan type/category/date field yang dipakai UI tetap konsisten
       type: newTransaction.type || (newTransaction.category && ['Penghasilan Kerja', 'Uang Saku', 'Tabungan'].includes(newTransaction.category) ? 'income' : 'expense'),
       metadata: transactionMetadata,
-      wallet_id: walletInfo?.id || newTransaction.wallet_id,
+      wallet_id: walletId,
       // Konsisten dengan TransactionCard
       wallet: walletInfo?.name || newTransaction.wallet || null,
       bank: newTransaction.bank || null,
@@ -687,12 +736,62 @@ function App() {
     try {
       const payload = {
         ...newTransaction,
-        wallet_id: walletInfo?.id || newTransaction.wallet_id,
+        wallet_id: walletId,
         metadata: transactionMetadata
       }
 
       const res = await transactionAPI.create(payload)
       const savedTransaction = normalizeTransaction(res.data)
+
+      // Sinkronisasi transaksi mahasiswa ke Debt/Saving (berdasarkan kategori)
+      // dilakukan setelah transaksi berhasil dibuat.
+      if (isDebtCategory) {
+        const creatorNameOrNote2 = String(newTransaction?.title || newTransaction?.note || '').trim()
+        await debtAPI.create({
+          wallet_id: walletInfo?.id || newTransaction?.wallet_id,
+          creditor_name: creatorNameOrNote2 || 'Hutang',
+          amount: Number(newTransaction?.amount) || 0,
+          due_date: formatDateToYMD(newTransaction?.date),
+          note: String(newTransaction?.note || ''),
+          status: newTransaction?.isSettled ? 'paid' : 'active'
+        })
+        const debtsRes2 = await debtAPI.list()
+        setDebts(debtsRes2.data)
+      }
+
+      if (isSavingsCategory) {
+        const name2 = String(newTransaction?.title || 'Tabungan').trim()
+        const existingSaving = savings.find((s) => String(s.name || '').trim().toLowerCase() === name2.toLowerCase())
+
+        if (existingSaving) {
+          const updatedCurrent = (Number(existingSaving.current_amount || existingSaving.current || 0) + Number(newTransaction?.amount) || 0)
+          await savingAPI.update(existingSaving.id, {
+            wallet_id: walletInfo?.id || newTransaction?.wallet_id,
+            name: existingSaving.name,
+            target_amount: Number(existingSaving.target_amount || existingSaving.target || 0),
+            current_amount: updatedCurrent,
+            target_date: formatDateToYMD(existingSaving.target_date || existingSaving.deadline),
+            category: existingSaving.category || 'Tabungan',
+            note: existingSaving.note || String(newTransaction?.note || ''),
+          })
+        } else {
+          await savingAPI.create({
+            wallet_id: walletInfo?.id || newTransaction?.wallet_id,
+            name: name2,
+            target_amount: Number(newTransaction?.amount) || 0,
+            current_amount: Number(newTransaction?.amount) || 0,
+            target_date: formatDateToYMD(newTransaction?.date),
+            category: 'Tabungan',
+            note: String(newTransaction?.note || ''),
+          })
+        }
+
+        const savingsRes2 = await savingAPI.list()
+        setSavings(savingsRes2.data)
+      }
+
+      // (lanjutkan flow replace temp transaction)
+
       const transaction = {
         ...savedTransaction,
         type: savedTransaction.type || tempTransaction.type,
@@ -736,7 +835,19 @@ function App() {
     } catch (e) {
       // Rollback optimistic updates
       setTransactions((prev) => prev.filter((t) => t.id !== tempId))
-      alert('Gagal menyimpan transaksi ke server: ' + (e.message || 'Error tidak diketahui'))
+      console.error('Failed to save transaction', {
+        payload: {
+          ...newTransaction,
+          wallet_id: walletId,
+          metadata: transactionMetadata,
+        },
+        error: e,
+      })
+      alert(
+        'Gagal menyimpan transaksi ke server: ' +
+          (e.message || 'Error tidak diketahui') +
+          (e.status ? ` (HTTP ${e.status})` : '')
+      )
       throw e
     }
   }
@@ -782,6 +893,8 @@ function App() {
 
     const amount = Number(newTransaction.amount) || 0
     const isDebtCategory = newTransaction.businessCategory === 'Hutang Supplier' || newTransaction.businessCategory === 'Piutang Pelanggan'
+    const isSavingsCategory = newTransaction.businessCategory === 'Tabungan'
+    const savingsName = String(newTransaction.title || 'Tabungan').trim()
 
     // Optimistically update wallet info & e-wallet balance
     if (newTransaction.type === 'income') {
@@ -900,7 +1013,7 @@ function App() {
         try {
           await debtAPI.create({
             wallet_id: walletInfo?.id,
-            creditor_name: newTransaction.businessCategory,
+            creditor_name: String(newTransaction.title || newTransaction.note || newTransaction.businessCategory || 'Hutang').trim(),
             amount: amount,
             due_date: newTransaction.date || new Date().toISOString(),
             note: newTransaction.note || '',
@@ -911,6 +1024,40 @@ function App() {
           setDebts(debtsRes.data)
         } catch (e) {
           console.error('Error creating debt:', e)
+        }
+      }
+
+      // Persist Tabungan category into savings report if applicable
+      if (isSavingsCategory) {
+        try {
+          const existingSaving = savings.find((s) => String(s.name || '').trim().toLowerCase() === savingsName.toLowerCase())
+
+          if (existingSaving) {
+            await savingAPI.update(existingSaving.id, {
+              wallet_id: walletInfo?.id,
+              name: existingSaving.name,
+              target_amount: Number(existingSaving.target_amount || existingSaving.target || 0),
+              current_amount: (Number(existingSaving.current_amount || existingSaving.current || 0) + amount),
+              target_date: formatDateToYMD(existingSaving.target_date || existingSaving.deadline),
+              category: existingSaving.category || 'Tabungan',
+              note: existingSaving.note || String(newTransaction.note || ''),
+            })
+          } else {
+            await savingAPI.create({
+              wallet_id: walletInfo?.id,
+              name: savingsName,
+              target_amount: amount,
+              current_amount: amount,
+              target_date: formatDateToYMD(newTransaction.date || new Date().toISOString()),
+              category: 'Tabungan',
+              note: String(newTransaction.note || ''),
+            })
+          }
+
+          const savingsRes = await savingAPI.list()
+          setSavings(savingsRes.data)
+        } catch (e) {
+          console.error('Error creating saving:', e)
         }
       }
 
@@ -943,7 +1090,7 @@ function App() {
         wallet_id: walletInfo?.id,
         creditor_name: newDebt.creditor,
         amount: newDebt.amount,
-        due_date: newDebt.dueDate,
+        due_date: formatDateToYMD(newDebt.dueDate),
         note: newDebt.note,
         status: 'active'
       }
@@ -966,7 +1113,7 @@ function App() {
         name: newSavings.name,
         target_amount: newSavings.target,
         current_amount: newSavings.current || 0,
-        target_date: newSavings.deadline,
+        target_date: formatDateToYMD(newSavings.deadline),
         category: newSavings.category || 'Tabungan',
         note: newSavings.note || ''
       }
@@ -1221,7 +1368,7 @@ function App() {
           )
         }
         if (userProfile?.usertype === 'mahasiswa') {
-          return <TransactionsMahasiswaPage transactions={mahasiswaTransactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
+          return <TransactionsMahasiswaPage transactions={mahasiswaTransactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} onNavigateToReports={(tab) => { setDefaultReportTab(tab); navigateTo('reports'); }} />
         }
         return <TransactionsMasyarakatPage transactions={masyarakatTransactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
       case 'analysis':
@@ -1236,7 +1383,7 @@ function App() {
         }
         return <AnalysisPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} />
       case 'reports':
-        return <ReportsPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
+        return <ReportsPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} debts={debts} savings={savings} onAddSavings={addSavings} onAddDebt={addDebt} onNavigate={setCurrentPage} defaultTab={defaultReportTab} setDefaultTab={setDefaultReportTab} />
       case 'budget':
         return <BudgetPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} budgets={budgets} setBudgets={setBudgets} userType={userProfile?.usertype || userType} />
       case 'add-debt':

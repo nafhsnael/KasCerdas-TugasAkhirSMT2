@@ -15,7 +15,17 @@ async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('token')
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
   
+  const authlessRoutes = ['/auth/login', '/auth/register']
+  const baseEndpoint = endpoint.split('?')[0].toLowerCase()
+  if (!token && !authlessRoutes.includes(baseEndpoint)) {
+    const error = new Error('Token autentikasi tidak ditemukan. Silakan login ulang.')
+    error.status = 401
+    throw error
+  }
+  
   const headers = {
+    Accept: 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
     ...(options.headers || {}),
   }
 
@@ -36,13 +46,17 @@ async function apiFetch(endpoint, options = {}) {
     headers,
   })
   
-  const data = await response.json().catch(() => ({}))
-  
+  const data = await response.json().catch(() => null)
+
   if (!response.ok) {
-    const firstError = data.errors ? Object.values(data.errors).flat()[0] : null
-    throw new Error(firstError || data.message || 'API request failed')
+    const firstError = data?.errors ? Object.values(data.errors).flat()[0] : null
+    const message = firstError || data?.message || `API request failed (${response.status} ${response.statusText})`
+    const error = new Error(message)
+    error.status = response.status
+    error.responseData = data
+    throw error
   }
-  
+
   return data
 }
 

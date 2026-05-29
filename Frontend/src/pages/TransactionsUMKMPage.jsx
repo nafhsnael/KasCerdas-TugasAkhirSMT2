@@ -332,7 +332,7 @@ function TransactionsUMKMPage({
               onChange={(e) => handleChange('title', e.target.value)}
               required
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-              placeholder="Contoh: Penjualan kue bolu"
+              placeholder="Contoh: Penjualan brownies"
             />
           </div>
 
@@ -453,7 +453,7 @@ function TransactionsUMKMPage({
                 rows="3"
                 style={{ resize: 'none' }}
                 className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-                placeholder="Contoh: Penjualan kredit pelanggan A"
+                placeholder="Contoh: Penjualan brownies di toko 1"
               />
 
 

@@ -300,19 +300,19 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Kategori</label>
-              <select
+              <label className="block text-sm font-medium text-slate-700 mb-2">Nama Tabungan (Target)</label>
+              <input
+                type="text"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                placeholder="Contoh: Tabungan Bulanan"
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
-              >
-                {getCategoryOptions().map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              />
+              <p className="mt-2 text-xs text-slate-500">
+                Field ini dipakai sebagai nama target tabungan untuk kategori budget tabungan.
+              </p>
             </div>
+
 
             {shouldShowCustomInput() && (
               <div>

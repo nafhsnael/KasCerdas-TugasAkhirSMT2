@@ -27,6 +27,7 @@ function TransactionsMahasiswaPage({
   setFilters,
   onAddTransaction,
   defaultCategory,
+  onNavigateToReports,
 }) {
   const [deletingId, setDeletingId] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
@@ -336,7 +337,7 @@ function TransactionsMahasiswaPage({
             )}
           </div>
 
-          {form.category !== 'Uang Saku' && form.category !== 'Beasiswa' && form.category !== 'Penghasilan Kerja Paruh Waktu' && (
+          {form.category !== 'Uang Saku' && form.category !== 'Beasiswa' && form.category !== 'Penghasilan Kerja Paruh Waktu' && form.category !== 'Tabungan' &&  (
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Upload Bukti Nota</label>
               <input
@@ -421,6 +422,31 @@ function TransactionsMahasiswaPage({
             </select>
           </div>
         </div>
+
+        {/* Connection buttons to Reports page */}
+        {(filters.type === 'Tabungan' || filters.type === 'Hutang') && (
+          <div className="mb-6 rounded-2xl border border-[#38ADA9] bg-blue-50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-900">
+                  {filters.type === 'Tabungan' ? 'Lihat detail tabungan Anda' : 'Lihat rekap hutang Anda'}
+                </p>
+                <p className="text-xs text-slate-600 mt-1">
+                  {filters.type === 'Tabungan' 
+                    ? 'Periksa target tabungan dan progress di halaman laporan'
+                    : 'Periksa daftar lengkap hutang di halaman laporan'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onNavigateToReports && onNavigateToReports(filters.type === 'Tabungan' ? 'savings' : 'debt')}
+                className="whitespace-nowrap rounded-3xl bg-[#38ADA9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]"
+              >
+                Lihat di Laporan
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
           {visibleTransactions.length > 0 ? (

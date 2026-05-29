@@ -1,8 +1,15 @@
 import { useMemo, useState } from 'react'
 import StatCard from '../components/StatCard'
+import { savingAPI } from '../utils/api'
 
 function ReportsUMKMPage({ transactions, debts, savings, onNavigate }) {
   const [activeTab, setActiveTab] = useState('daily')
+  const [isAddingSaving, setIsAddingSaving] = useState(false)
+  const [addForm, setAddForm] = useState({
+    name: '',
+    amount: '',
+  })
+
 
   const now = new Date()
   const currentMonth = now.getMonth()
@@ -81,11 +88,59 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate }) {
   const monthlyCategoryExpenses = useMemo(() => buildCategoryExpenses(monthlyTransactions), [monthlyTransactions])
   const annualCategoryExpenses = useMemo(() => buildCategoryExpenses(annualTransactions), [annualTransactions])
 
+  const transactionSavings = useMemo(() => {
+    const grouped = {}
+
+    transactions
+      .filter((transaction) => transaction.category === 'Tabungan' && transaction.type === 'income')
+      .forEach((transaction) => {
+        const name = String(transaction.title || transaction.category || 'Tabungan').trim()
+        const key = name.toLowerCase()
+        if (!grouped[key]) {
+          grouped[key] = {
+            id: `trx-${transaction.id}`,
+            name,
+            target: 0,
+            current: 0,
+            deadline: transaction.date || new Date().toISOString(),
+            note: transaction.note || 'Transaksi kategori Tabungan',
+          }
+        }
+        grouped[key].target += Number(transaction.amount) || 0
+        grouped[key].current += Number(transaction.amount) || 0
+      })
+
+    return Object.values(grouped)
+  }, [transactions])
+
+  const allSavings = useMemo(() => {
+    const mapped = new Map(
+      savings.map((saving) => [String(saving.name || '').trim().toLowerCase(), { ...saving }])
+    )
+
+    transactionSavings.forEach((transactionSaving) => {
+      const key = String(transactionSaving.name || '').trim().toLowerCase()
+      const existing = mapped.get(key)
+      if (!existing) {
+        mapped.set(key, transactionSaving)
+      }
+    })
+
+    return Array.from(mapped.values())
+  }, [savings, transactionSavings])
+
   const totalDebt = debts.reduce((sum, debt) => sum + debt.amount, 0)
-  const savingTargets = savings.map((saving) => ({
-    ...saving,
-    progress: saving.target > 0 ? Math.round((saving.current / saving.target) * 100) : 0,
-  }))
+  const savingTargets = allSavings.map((saving) => {
+    const current = Number(saving.current || saving.current_amount || 0)
+    const target = Number(saving.target || saving.target_amount || 0)
+    return {
+      ...saving,
+      current,
+      target,
+      progress: target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0,
+      remaining: Math.max(0, target - current),
+    }
+  })
 
   const tabs = [
     { id: 'daily', label: 'Harian' },
@@ -256,17 +311,118 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate }) {
       {activeTab === 'savings' && (
         <div className="space-y-6">
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Target Tabungan</h2>
-            <p className="text-sm text-slate-500 mb-4">Pantau pencapaian target tabungan Anda.</p>
-            <p className="text-2xl font-bold text-[#38ADA9]">{savings.length} target tabungan aktif</p>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 mb-2">Target Tabungan</h2>
+                <p className="text-sm text-slate-500 mb-4">Pantau pencapaian target tabungan Anda.</p>
+                <p className="text-2xl font-bold text-[#38ADA9]">{allSavings.length} target tabungan aktif</p>
+              </div>
+              {!isAddingSaving && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingSaving(true)
+                    setAddForm({ name: '', amount: '' })
+                  }}
+                  className="rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d] whitespace-nowrap"
+                >
+                  + Tambah Tabungan Baru
+                </button>
+              )}
+            </div>
           </div>
+
+          {isAddingSaving && (
+            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Tambah Target Tabungan</h3>
+
+              <form
+                className="grid gap-5 lg:grid-cols-2"
+                onSubmit={async (e) => {
+                  e.preventDefault()
+
+                  const name = String(addForm.name || '').trim()
+                  const target = parseFloat(addForm.amount)
+
+                  if (!name) {
+                    alert('Nama tabungan wajib diisi')
+                    return
+                  }
+                  if (!target || Number.isNaN(target) || target <= 0) {
+                    alert('Jumlah (Rp) harus lebih dari 0')
+                    return
+                  }
+
+                  try {
+                    const payload = {
+                      wallet_id: savings?.[0]?.wallet_id || null,
+                      name,
+                      target_amount: target,
+                      current_amount: 0,
+                      target_date: new Date().toISOString().slice(0, 10),
+                      category: 'Tabungan',
+                      note: '',
+                    }
+
+                    await savingAPI.create(payload)
+                    window.location.reload()
+                  } catch (err) {
+                    alert(err?.message || 'Gagal menambah target tabungan')
+                    return
+                  }
+                }}
+              >
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Nama Tabungan</label>
+                  <input
+                    type="text"
+                    value={addForm.name}
+                    onChange={(e) => setAddForm((prev) => ({ ...prev, name: e.target.value }))}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    placeholder="Contoh: Tabungan Pendidikan"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={addForm.amount}
+                    onChange={(e) => setAddForm((prev) => ({ ...prev, amount: e.target.value }))}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    placeholder="0"
+                    required
+                    min={1}
+                  />
+                </div>
+
+                <div className="lg:col-span-2 flex gap-3">
+                  <button
+                    type="submit"
+                    className="flex-1 rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]"
+                  >
+                    Simpan Target
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingSaving(false)}
+                    className="flex-1 rounded-3xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-300"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
           <div className="grid gap-4 lg:grid-cols-2">
             {savingTargets.map((saving) => (
               <div key={saving.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-xl font-semibold text-slate-900">{saving.name}</h3>
-                    <p className="text-sm text-slate-500">Deadline: {new Date(saving.deadline).toLocaleDateString('id-ID')}</p>
                   </div>
                   <span className="text-sm font-semibold text-slate-700">{saving.progress}% tercapai</span>
                 </div>
