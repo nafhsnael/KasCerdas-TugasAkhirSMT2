@@ -131,7 +131,6 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
     { id: 'monthly', label: 'Bulanan' },
     { id: 'annual', label: 'Tahunan' },
     { id: 'debt', label: 'Rekap Hutang' },
-    { id: 'receivable', label: 'Rekap Piutang' },
     { id: 'savings', label: 'Target Tabungan' },
   ];
 
@@ -161,76 +160,7 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
         ))}
       </div>
 
-      {activeTab === 'receivable' && (
-          <div className="space-y-6">
-            <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
-              <h2 className="text-xl font-semibold text-slate-900 mb-2">Rekap Piutang</h2>
-              <p className="text-sm text-slate-500 mb-4">Lacak seluruh piutang yang masih aktif.</p>
-              <p className="text-2xl font-bold text-[#38ADA9]">Total Piutang: Rp {totalPiutang.toLocaleString('id-ID')}</p>
-            </div>
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">Daftar Piutang</h3>
-              <div className="space-y-3">
-                {piutangTransactions.map((trx) => {
-                  const total = Number(trx.amount || 0);
-                  const paid = transactions
-                    .filter((t) => t.title === trx.title && t.type === 'expense')
-                    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-                  const remaining = Math.max(0, total - paid);
-                  const progress = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
-                  const formattedDueDate = trx.dueDate ? new Date(trx.dueDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
-                  return (
-                    <div key={trx.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xl font-semibold text-slate-900">{trx.title}</p>
-                          <p className="text-sm text-slate-500 mt-1">{trx.note}</p>
-                        </div>
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${remaining <= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                          {remaining <= 0 ? 'Lunas' : (trx.status || 'active')}
-                        </span>
-                      </div>
-                      <p className="mt-4 text-sm text-slate-500">{progress}% terbayar</p>
-                      <div className="mt-2 rounded-full bg-slate-100 h-3 overflow-hidden">
-                        <div className="h-3 rounded-full bg-[#38ADA9]" style={{ width: `${progress}%` }} />
-                      </div>
-                      <div className="mt-4 space-y-2 text-sm text-slate-600">
-                        <p>Di bayar: Rp {paid.toLocaleString('id-ID')}</p>
-                        <p>Jumlah Piutang: Rp {total.toLocaleString('id-ID')}</p>
-                        <p>Sisa: Rp {remaining.toLocaleString('id-ID')}</p>
-                        <p className="text-sm text-slate-500">Jatuh tempo: {formattedDueDate}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedPiutang(trx)}
-                        className="mt-4 rounded-3xl bg-[#38ADA9] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2c8a7d]"
-                      >
-                        Lihat Transaksi Terkait
-                      </button>
-                    </div>
-                  );
-                })}
-
-                ))}
-              </div>
-              {selectedPiutang && (
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Detail Piutang: {selectedPiutang.title}</h3>
-                  <div className="p-4 rounded-2xl bg-slate-100">
-                    <p className="text-sm text-slate-600">Catatan: {selectedPiutang.note}</p>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPiutang(null)}
-                      className="mt-4 rounded-3xl bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-300"
-                    >
-                      Tutup
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+     
 
       {activeTab === 'daily' && (
         <div className="space-y-6">
@@ -394,7 +324,7 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
                     value={debtForm.creditor}
                     onChange={(e) => setDebtForm((prev) => ({ ...prev, creditor: e.target.value }))}
                     className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-                    placeholder="Contoh: Hutang ke Bambang"
+                    placeholder="Contoh: Hutang ke Rendi"
                     required
                   />
                 </div>
@@ -464,7 +394,7 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
                         {debt.note && <p className="text-sm text-slate-500 mt-1">{debt.note}</p>}
                       </div>
                       <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                        {isPaid ? 'Lunas' : (debt.status || 'active')}
+                        {isPaid ? 'Paid' : (debt.status || 'active')}
                       </span>
                     </div>
                     <p className="mt-4 text-sm text-slate-500">{progress}% terbayar</p>

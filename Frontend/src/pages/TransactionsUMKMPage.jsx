@@ -337,14 +337,22 @@ function TransactionsUMKMPage({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah Uang</label>
             <input
-              type="number"
-              value={form.amount}
-              onChange={(e) => handleChange('amount', e.target.value)}
+              type="text"
+              inputMode="numeric"
+              value={form.amount?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') || ''}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/\D/g, '');
+                handleChange('amount', raw);
+              }}
+              onBlur={(e) => {
+                const raw = e.target.value.replace(/\D/g, '');
+                const formatted = raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+              }}
               required
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-              placeholder="0"
+              placeholder="Rp"
             />
           </div>
 
@@ -429,20 +437,7 @@ function TransactionsUMKMPage({
                 readOnly
               />
 
-              {isCreditCategory && (
-                <div className="mt-3 flex items-center gap-3">
-                  <input
-                    id="isSettled"
-                    type="checkbox"
-                    checked={form.isSettled}
-                    onChange={(e) => handleChange('isSettled', e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
-                  />
-                  <label htmlFor="isSettled" className="text-sm text-slate-700">
-                    Tandai Sudah dibayar / dilunasi
-                  </label>
-                </div>
-              )}
+              
             </div>
           ) : (
             <div className="lg:col-span-2">
@@ -458,20 +453,7 @@ function TransactionsUMKMPage({
 
 
 
-              {isCreditCategory && (
-                <div className="mt-3 flex items-center gap-3">
-                  <input
-                    id="isSettled"
-                    type="checkbox"
-                    checked={form.isSettled}
-                    onChange={(e) => handleChange('isSettled', e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
-                  />
-                  <label htmlFor="isSettled" className="text-sm text-slate-700">
-                    Tandai Sudah dibayar / dilunasi
-                  </label>
-                </div>
-              )}
+
             </div>
           )}
 

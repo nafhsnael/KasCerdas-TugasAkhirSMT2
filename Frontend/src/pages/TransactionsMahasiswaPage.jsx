@@ -274,17 +274,20 @@ function TransactionsMahasiswaPage({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={form.amount}
-              onChange={(e) => handleChange('amount', e.target.value)}
-              required
-              // hilangkan spinner ▲▼ agar tidak mengganggu tampilan
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              placeholder="0"
-            />
+            <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah Uang</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={form.amount?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') || ''}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/\D/g, '')
+                  handleChange('amount', raw)
+                }}
+                required
+                // hilangkan spinner ▲▼ agar tidak mengganggu tampilan
+                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                placeholder="Rp"
+              />
           </div>
 
 
@@ -321,20 +324,6 @@ function TransactionsMahasiswaPage({
               placeholder="Contoh: Makan siang di kantin kampus"
               onChange={(e) => handleChange('note', e.target.value)}
             />
-            {form.category === 'Hutang' && (
-              <div className="mt-3 flex items-center gap-3">
-                <input
-                  id="isSettled"
-                  type="checkbox"
-                  checked={form.isSettled}
-                  onChange={(e) => handleChange('isSettled', e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
-                />
-                <label htmlFor="isSettled" className="text-sm text-slate-700">
-                  Tandai Sudah dibayar / dilunasi
-                </label>
-              </div>
-            )}
           </div>
 
           {form.category !== 'Uang Saku' && form.category !== 'Beasiswa' && form.category !== 'Penghasilan Kerja Paruh Waktu' && form.category !== 'Tabungan' &&  (

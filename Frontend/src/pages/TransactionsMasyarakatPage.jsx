@@ -311,9 +311,13 @@ const deleteTransaction = async (transaction) => {
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah Uang</label>
             <input
-              type="number"
-              value={form.amount}
-              onChange={(e) => handleChange('amount', e.target.value)}
+              type="text"
+              inputMode="numeric"
+              value={form.amount?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') || ''}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/\D/g, '')
+                handleChange('amount', raw)
+              }}
               required
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
               placeholder="Rp"
@@ -351,20 +355,6 @@ const deleteTransaction = async (transaction) => {
               placeholder="Contoh: Makan siang di kantor"
               onChange={(e) => handleChange('note', e.target.value)}
             />
-            {form.category === 'Hutang' && (
-              <div className="mt-3 flex items-center gap-3">
-                <input
-                  id="isSettled"
-                  type="checkbox"
-                  checked={form.isSettled}
-                  onChange={(e) => handleChange('isSettled', e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
-                />
-                <label htmlFor="isSettled" className="text-sm text-slate-700">
-                  Tandai Sudah dibayar / dilunasi
-                </label>
-              </div>
-            )}
           </div>
           {form.type === 'expense' && (
             <div>
