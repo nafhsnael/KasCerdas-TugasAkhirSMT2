@@ -666,30 +666,14 @@ function App() {
     const profileType = String(userProfile?.usertype || userType || '').toLowerCase()
     const incomingMetadata = parseMetadata(newTransaction.metadata)
 
-    const isDebtCategory = newTransaction?.category === 'Hutang'
-    const isSavingsCategory = newTransaction?.category === 'Tabungan'
+    const categoryLabel = String(newTransaction?.category || '').trim()
+    const isDebtCategory = categoryLabel.toLowerCase().includes('hutang')
+    const isSavingsCategory = categoryLabel.toLowerCase() === 'tabungan'
 
     // Sinkronisasi transaksi kategori mahasiswa ke rekap: Debt / Saving
     // (default mapping)
-    const creatorNameOrNote = String(newTransaction?.title || newTransaction?.note || '').trim()
-    const debtPayload = {
-      wallet_id: walletInfo?.id || newTransaction?.wallet_id,
-      creditor_name: creatorNameOrNote || 'Hutang',
-      amount: Number(newTransaction?.amount) || 0,
-      due_date: newTransaction?.date || new Date().toISOString(),
-      note: String(newTransaction?.note || ''),
-      status: newTransaction?.isSettled ? 'paid' : 'active',
-    }
-
-    const savingsPayload = {
-      wallet_id: walletInfo?.id || newTransaction?.wallet_id,
-      name: String(newTransaction?.title || 'Tabungan').trim(),
-      target_amount: Number(newTransaction?.amount) || 0,
-      current_amount: Number(newTransaction?.amount) || 0,
-      target_date: newTransaction?.date || new Date().toISOString(),
-      category: 'Tabungan',
-      note: String(newTransaction?.note || ''),
-    }
+    const debtTitle = String(newTransaction?.title || newTransaction?.note || categoryLabel || 'Hutang').trim()
+    const debtAmount = Number(newTransaction?.amount) || 0
 
 
 
@@ -746,17 +730,14 @@ function App() {
       // Sinkronisasi transaksi mahasiswa ke Debt/Saving (berdasarkan kategori)
       // dilakukan setelah transaksi berhasil dibuat.
       if (isDebtCategory) {
-        const creatorNameOrNote2 = String(newTransaction?.title || newTransaction?.note || '').trim()
-        await debtAPI.create({
+        await mergeOrCreateDebt({
           wallet_id: walletInfo?.id || newTransaction?.wallet_id,
-          creditor_name: creatorNameOrNote2 || 'Hutang',
-          amount: Number(newTransaction?.amount) || 0,
+          creditor_name: debtTitle,
+          amount: debtAmount,
           due_date: formatDateToYMD(newTransaction?.date),
           note: String(newTransaction?.note || ''),
           status: newTransaction?.isSettled ? 'paid' : 'active'
         })
-        const debtsRes2 = await debtAPI.list()
-        setDebts(debtsRes2.data)
       }
 
       if (isSavingsCategory) {
@@ -892,8 +873,10 @@ function App() {
     syncBudgetWithTransaction(tempTransaction)
 
     const amount = Number(newTransaction.amount) || 0
-    const isDebtCategory = newTransaction.businessCategory === 'Hutang Supplier' || newTransaction.businessCategory === 'Piutang Pelanggan'
-    const isSavingsCategory = newTransaction.businessCategory === 'Tabungan'
+    const businessCategoryLabel = String(newTransaction.businessCategory || '').trim()
+    const isDebtCategory = businessCategoryLabel.toLowerCase().includes('hutang') || businessCategoryLabel.toLowerCase().includes('piutang')
+    const isSavingsCategory = businessCategoryLabel.toLowerCase() === 'tabungan'
+    const debtTitle = String(newTransaction.title || newTransaction.note || businessCategoryLabel || 'Hutang').trim()
     const savingsName = String(newTransaction.title || 'Tabungan').trim()
 
     // Optimistically update wallet info & e-wallet balance
@@ -1011,17 +994,14 @@ function App() {
       // Persist debt category in DB if applicable
       if (isDebtCategory) {
         try {
-          await debtAPI.create({
+          await mergeOrCreateDebt({
             wallet_id: walletInfo?.id,
-            creditor_name: String(newTransaction.title || newTransaction.note || newTransaction.businessCategory || 'Hutang').trim(),
+            creditor_name: debtTitle,
             amount: amount,
-            due_date: newTransaction.date || new Date().toISOString(),
+            due_date: formatDateToYMD(newTransaction.date || new Date()),
             note: newTransaction.note || '',
             status: newTransaction.isSettled ? 'paid' : 'active'
           })
-          
-          const debtsRes = await debtAPI.list()
-          setDebts(debtsRes.data)
         } catch (e) {
           console.error('Error creating debt:', e)
         }
@@ -1084,23 +1064,64 @@ function App() {
     }
   }
 
+  const normalizeDebt = (debt) => ({
+    ...debt,
+    creditor: debt.creditor_name || debt.creditor,
+    dueDate: debt.due_date || debt.dueDate,
+  })
+
+  const mergeOrCreateDebt = async (payload) => {
+    const creditorName = String(payload.creditor_name || payload.creditor || '').trim()
+    const amount = Number(payload.amount) || 0
+    const dueDate = payload.due_date || payload.dueDate || new Date()
+    const note = String(payload.note || '').trim()
+    const status = payload.status || 'active'
+
+    const existingDebt = debts.find(
+      (debt) => String(debt.creditor || '').trim().toLowerCase() === creditorName.toLowerCase()
+    )
+
+    if (existingDebt) {
+      const existingAmount = Number(existingDebt.amount || 0)
+      const updatedAmount = Math.max(0, existingAmount - amount)
+      const updatedStatus = updatedAmount === 0 ? 'paid' : (existingDebt.status || 'active')
+      const updatedPayload = {
+        wallet_id: payload.wallet_id || existingDebt.wallet_id,
+        creditor_name: creditorName,
+        amount: updatedAmount,
+        due_date: formatDateToYMD(existingDebt.dueDate || dueDate),
+        note: note || String(existingDebt.note || ''),
+        status: updatedStatus,
+      }
+      const res = await debtAPI.update(existingDebt.id, updatedPayload)
+      const normalized = normalizeDebt(res.data)
+      setDebts((prev) => prev.map((debt) => debt.id === existingDebt.id ? normalized : debt))
+      return normalized
+    }
+
+    const res = await debtAPI.create({
+      wallet_id: payload.wallet_id,
+      creditor_name: creditorName,
+      amount,
+      due_date: formatDateToYMD(dueDate),
+      note,
+      status,
+    })
+    const normalized = normalizeDebt(res.data)
+    setDebts((prev) => [...prev, normalized])
+    return normalized
+  }
+
   const addDebt = async (newDebt) => {
     try {
-      const payload = {
+      await mergeOrCreateDebt({
         wallet_id: walletInfo?.id,
         creditor_name: newDebt.creditor,
         amount: newDebt.amount,
-        due_date: formatDateToYMD(newDebt.dueDate),
+        due_date: newDebt.dueDate,
         note: newDebt.note,
         status: 'active'
-      }
-      const res = await debtAPI.create(payload)
-      const normalized = {
-        ...res.data,
-        creditor: res.data.creditor_name,
-        dueDate: res.data.due_date
-      }
-      setDebts((prev) => [...prev, normalized])
+      })
     } catch (e) {
       alert('Gagal menyimpan hutang: ' + (e.message || 'Error tidak diketahui'))
     }

@@ -109,7 +109,7 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
     return Array.from(mapped.values())
   }, [savings, transactionSavings])
 
-  const totalDebt = debts.reduce((sum, debt) => sum + Number(debt.amount || 0), 0)
+  const totalDebt = debts.reduce((sum, debt) => sum + Number((debt.remaining_amount ?? debt.amount) || 0), 0)
   const savingTargets = allSavings.map((saving) => {
     const current = Number(saving.current || saving.current_amount || 0)
     const target = Number(saving.target || saving.target_amount || 0)
@@ -370,27 +370,36 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
           <div className="rounded-[32px] border border-slate-200 bg-white p-6">
             <h3 className="font-semibold text-slate-900 mb-4">Daftar Hutang</h3>
             <div className="grid gap-4 lg:grid-cols-2">
-              {debts.map((debt) => (
-                <div key={debt.id} className="rounded-[32px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xl font-semibold text-slate-900">{debt.creditor}</p>
-                      {debt.note && <p className="text-sm text-slate-500 mt-1">{debt.note}</p>}
+              {debts.map((debt) => {
+                const paid = Number(debt.paid_amount || 0)
+                const total = Number(debt.amount || 0)
+                const remaining = Number(debt.remaining_amount ?? total)
+                const progress = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0
+                const isPaid = remaining <= 0
+                return (
+                  <div key={debt.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xl font-semibold text-slate-900">{debt.creditor}</p>
+                        {debt.note && <p className="text-sm text-slate-500 mt-1">{debt.note}</p>}
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                        {isPaid ? 'Lunas' : (debt.status || 'active')}
+                      </span>
                     </div>
-                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 uppercase tracking-[0.12em]">{debt.status || 'active'}</span>
+                    <p className="mt-4 text-sm text-slate-500">{progress}% terbayar</p>
+                    <div className="mt-2 rounded-full bg-slate-100 h-3 overflow-hidden">
+                      <div className="h-3 rounded-full bg-[#38ADA9]" style={{ width: `${progress}%` }} />
+                    </div>
+                    <div className="mt-4 space-y-2 text-sm text-slate-600">
+                      <p>Di bayar: Rp {paid.toLocaleString('id-ID')}</p>
+                      <p>Jumlah Hutang: Rp {total.toLocaleString('id-ID')}</p>
+                      <p>Sisa: Rp {remaining.toLocaleString('id-ID')}</p>
+                      <p>Jatuh tempo: {debt.dueDate ? new Date(debt.dueDate).toLocaleDateString('id-ID') : '-'}</p>
+                    </div>
                   </div>
-                  <div className="mt-5 space-y-3 text-sm text-slate-600">
-                    <p>
-                      <span className="block text-slate-400">Jumlah</span>
-                      <span className="font-semibold text-slate-900">Rp {Number(debt.amount || 0).toLocaleString('id-ID')}</span>
-                    </p>
-                    <p>
-                      <span className="block text-slate-400">Jatuh tempo</span>
-                      <span className="font-semibold text-slate-900">{debt.dueDate ? new Date(debt.dueDate).toLocaleDateString('id-ID') : '-'}</span>
-                    </p>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>
