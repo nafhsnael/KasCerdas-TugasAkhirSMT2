@@ -6,26 +6,41 @@ function LoginPage({ onSwitch, onAuthenticate }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      })
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    })
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        alert(json?.message || 'Login gagal')
+        return
+      }
 
-    const json = await res.json()
-    if (!res.ok || !json.success) {
-      alert(json?.message || 'Login gagal')
-      return
+      onAuthenticate({
+        token: json.data.token,
+        username: json.data.user.username,
+        email: json.data.user.email,
+        user_type: json.data.user.user_type,
+        name: json.data.user.name,
+      })
+    } catch (e) {
+      // Jika backend tidak tersedia saat pengembangan, tawarkan fallback lokal
+      // (memudahkan demo/tes tanpa backend). Hanya aktif bila pengguna setuju.
+      const useFallback = window.confirm('Tidak bisa terhubung ke server. Gunakan akun demo untuk pengembangan?')
+      if (!useFallback) return
+
+      const fakeToken = `dev-token-${Date.now()}`
+      onAuthenticate({
+        token: fakeToken,
+        username: username || 'devuser',
+        email: `${username || 'devuser'}@example.com`,
+        user_type: 'mahasiswa',
+        name: username || 'Developer',
+      })
     }
-
-    onAuthenticate({
-      token: json.data.token,
-      username: json.data.user.username,
-      email: json.data.user.email,
-      user_type: json.data.user.user_type,
-      name: json.data.user.name,
-    })
   }
 
 

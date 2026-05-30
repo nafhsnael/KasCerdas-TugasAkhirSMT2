@@ -11,6 +11,9 @@ import TransactionsUMKMPage from './pages/TransactionsUMKMPage'
 import TransactionsMahasiswaPage from './pages/TransactionsMahasiswaPage'
 import TransactionsMasyarakatPage from './pages/TransactionsMasyarakatPage'
 import ReportsPage from './pages/ReportsPage'
+import ReportsUMKMPage from './pages/ReportsUMKMPage'
+import ReportsMahasiswaPage from './pages/ReportsMahasiswaPage'
+import ReportsMasyarakatPage from './pages/ReportsMasyarakatPage'
 import BudgetPage from './pages/BudgetPage'
 import DashboardPage from './pages/DashboardPage'
 import DashboardMasyarakatPage from './pages/DashboardMasyarakatPage'
@@ -435,6 +438,33 @@ function App() {
       }
     } catch (e) {
       console.error('Error fetching data:', e)
+      // Jika sedang dalam mode pengembangan lokal (token dev), sediakan data demo
+      try {
+        const localToken = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null
+        if (localToken && String(localToken).startsWith('dev-token')) {
+          const now = new Date()
+          const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+          const sampleTransactions = [
+            { id: 't-dev-1', title: 'Makan Siang', amount: 25000, type: 'expense', category: 'Makan', date: today, metadata: {} },
+            { id: 't-dev-2', title: 'Ojek', amount: 15000, type: 'expense', category: 'Transportasi', date: today, metadata: {} },
+            { id: 't-dev-3', title: 'Gaji Sampingan', amount: 500000, type: 'income', category: 'Pemasukan', date: today, metadata: {} },
+            { id: 't-dev-4', title: 'Beli Buku', amount: 80000, type: 'expense', category: 'Kebutuhan Kuliah', date: today, metadata: {} },
+          ]
+
+          const sampleDebts = [
+            { id: 'd-dev-1', creditor: 'Toko Kelontong', amount: 100000, dueDate: today, note: 'Hutang dagang', status: 'active' }
+          ]
+
+          const sampleSavings = [
+            { id: 's-dev-1', name: 'Tabungan Liburan', target: 2000000, current: 150000, deadline: today }
+          ]
+
+          return { transactions: sampleTransactions, debts: sampleDebts, savings: sampleSavings, budgets: [] }
+        }
+      } catch (err) {
+        console.error('Error preparing demo data:', err)
+      }
+
       return { transactions: [], debts: [], savings: [], budgets: [] }
     }
   }
@@ -903,14 +933,27 @@ function App() {
   }
 
   const fetchCurrentUser = async () => {
-    const res = await authFetch('/api/auth/me', { method: 'GET' })
+    try {
+      const res = await authFetch('/api/auth/me', { method: 'GET' })
 
-    if (!res.ok) {
-      throw new Error('Gagal mengambil profil user')
+      if (!res.ok) {
+        throw new Error('Gagal mengambil profil user')
+      }
+
+      const json = await res.json()
+      return json.data
+    } catch (e) {
+      // Fallback untuk pengembangan lokal bila menggunakan token dev
+      try {
+        const localToken = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null
+        if (localToken && String(localToken).startsWith('dev-token')) {
+          return { name: 'Dev User', username: 'devuser', email: 'devuser@example.com', user_type: 'mahasiswa', role: 'mahasiswa' }
+        }
+      } catch (err) {
+        // ignore
+      }
+      throw e
     }
-
-    const json = await res.json()
-    return json.data
   }
 
   const fetchWalletInfo = async () => {
@@ -1124,7 +1167,13 @@ function App() {
       case 'analysis':
         return <AnalysisPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} />
       case 'reports':
-        return <ReportsPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
+        if (userProfile?.usertype === 'umkm') {
+          return <ReportsUMKMPage transactions={umkmTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
+        }
+        if (userProfile?.usertype === 'mahasiswa') {
+          return <ReportsMahasiswaPage transactions={mahasiswaTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
+        }
+        return <ReportsMasyarakatPage transactions={masyarakatTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
       case 'budget':
         return <BudgetPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} budgets={budgets} setBudgets={setBudgets} userType={userProfile?.usertype || userType} />
       case 'add-debt':

@@ -12,31 +12,44 @@ function RegisterPage({ onSwitch, onAuthenticate }) {
       alert('Password dan konfirmasi password tidak cocok')
       return
     }
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          username,
+          password,
+          password_confirmation: confirmPassword,
+        }),
+      })
 
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        username,
-        password,
-        password_confirmation: confirmPassword,
-      }),
-    })
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        alert(json?.message || 'Registrasi gagal')
+        return
+      }
 
-    const json = await res.json()
-    if (!res.ok || !json.success) {
-      alert(json?.message || 'Registrasi gagal')
-      return
+      onAuthenticate({
+        token: json.data.token,
+        username: json.data.user.username,
+        email: json.data.user.email,
+        role: json.data.user.role,
+        user_type: json.data.user.user_type,
+      }, true)
+    } catch (e) {
+      const useFallback = window.confirm('Tidak bisa terhubung ke server. Buat akun demo lokal untuk pengembangan?')
+      if (!useFallback) return
+
+      const fakeToken = `dev-token-${Date.now()}`
+      onAuthenticate({
+        token: fakeToken,
+        username: username || 'devuser',
+        email: email || `${username || 'devuser'}@example.com`,
+        role: 'user',
+        user_type: 'mahasiswa',
+      }, true)
     }
-
-    onAuthenticate({
-      token: json.data.token,
-      username: json.data.user.username,
-      email: json.data.user.email,
-      role: json.data.user.role,
-      user_type: json.data.user.user_type,
-    }, true)
   }
 
   return (
