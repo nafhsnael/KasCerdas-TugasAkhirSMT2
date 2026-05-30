@@ -44,22 +44,39 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
     }
   }
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (!profile.nama || !profile.email || !profile.user) {
-      alert('Mohon isi field Nama, Email, dan Username')
-      return
+      alert('Mohon isi field Nama, Email, dan Username');
+      return;
     }
-    setUserProfile((prev) => ({
-      ...prev,
-      nama: profile.nama,
-      email: profile.email,
-      user: profile.user,
-      phone: profile.phone,
-      address: profile.address,
-      profileImage: profileImage,
-    }))
-    alert('Profil berhasil diperbarui!')
+    const token = window.localStorage.getItem('token');
+    try {
+      const response = await fetch('/api/user/profil', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: profile.nama,
+          email: profile.email,
+          // Optionally include other fields if needed:
+          // phone: profile.phone,
+          // address: profile.address,
+        }),
+      });
+      if (response.ok) {
+        setUserProfile((prev) => ({ ...prev, ...profile, profileImage }));
+        alert('Profil berhasil diperbarui!');
+      } else {
+        const json = await response.json();
+        alert(json?.message || 'Gagal memperbarui profil');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Terjadi kesalahan saat menyimpan');
+    }
   }
 
   return (

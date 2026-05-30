@@ -2,12 +2,12 @@ import { useMemo } from 'react'
 
 
 const CATEGORY_META = {
-  'Makanan & Minuman': { icon: '◈', bar: 'bg-orange-500', barSoft: 'bg-orange-50', text: 'text-orange-700' },
-  Transportasi: { icon: '◈', bar: 'bg-blue-500', barSoft: 'bg-blue-50', text: 'text-blue-700' },
+  Makan: { icon: '◈', bar: 'bg-orange-500', barSoft: 'bg-orange-50', text: 'text-orange-700' },
+  Hutang: { icon: '◈', bar: 'bg-rose-500', barSoft: 'bg-rose-50', text: 'text-rose-700' },
+  Transport: { icon: '◈', bar: 'bg-blue-500', barSoft: 'bg-blue-50', text: 'text-blue-700' },
   Belanja: { icon: '◈', bar: 'bg-purple-500', barSoft: 'bg-purple-50', text: 'text-purple-700' },
   Tagihan: { icon: '◈', bar: 'bg-green-500', barSoft: 'bg-green-50', text: 'text-green-700' },
-  Hiburan: { icon: '◈', bar: 'bg-pink-500', barSoft: 'bg-pink-50', text: 'text-pink-700' },
-  Lainnya: { icon: '◈', bar: 'bg-slate-400', barSoft: 'bg-slate-100', text: 'text-slate-700' },
+  'Kebutuhan Lainnya': { icon: '◈', bar: 'bg-slate-400', barSoft: 'bg-slate-100', text: 'text-slate-700' },
 }
 
 
@@ -19,20 +19,38 @@ function formatRp(value) {
 function ExpenseCompositionCard({ transactions, periodLabel, compact = false }) {
   const { rows, totalExpense } = useMemo(() => {
     const tx = Array.isArray(transactions) ? transactions : []
-    const expenseTx = tx.filter((t) => t?.type === 'expense')
+    const expenseTx = tx.filter((t) => {
+      const type = (t?.type || '').toLowerCase()
+      return type === 'expense' || type === 'pengeluaran'
+    })
 
     const totalExpenseLocal = expenseTx.reduce((sum, t) => sum + (Number(t?.amount) || 0), 0)
 
     const byCategory = expenseTx.reduce((acc, t) => {
-      const category = t?.category || 'Lainnya'
+      let category = (t?.category || '').toLowerCase()
+
+      if (category.includes('makan')) {
+        category = 'Makan'
+      } else if (category.includes('hutang')) {
+        category = 'Hutang'
+      } else if (category.includes('transport')) {
+        category = 'Transport'
+      } else if (category.includes('belanja')) {
+        category = 'Belanja'
+      } else if (category.includes('tagihan')) {
+        category = 'Tagihan'
+      } else {
+        category = 'Kebutuhan Lainnya'
+      }
+
       acc[category] = (acc[category] || 0) + (Number(t?.amount) || 0)
       return acc
     }, {})
 
-    const orderedCats = ['Makanan & Minuman', 'Transportasi', 'Belanja', 'Tagihan', 'Hiburan', 'Lainnya']
+    const orderedCats = ['Makan', 'Hutang', 'Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
 
     const mapped = orderedCats.map((cat) => {
-      const nominal = Number(byCategory[cat] || byCategory[cat] || 0)
+      const nominal = Number(byCategory[cat] || 0)
       const pct = totalExpenseLocal > 0 ? (nominal / totalExpenseLocal) * 100 : 0
       return { category: cat, nominal, percentage: pct }
     })

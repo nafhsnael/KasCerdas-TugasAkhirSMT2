@@ -27,6 +27,7 @@ function TransactionsMahasiswaPage({
   setFilters,
   onAddTransaction,
   defaultCategory,
+  onNavigateToReports,
 }) {
   const [deletingId, setDeletingId] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
@@ -68,6 +69,29 @@ function TransactionsMahasiswaPage({
       setForm((prev) => ({ ...prev, category: filters.type }))
     }
   }, [filters?.type])
+
+  useEffect(() => {
+    const handler = (e) => {
+      const detail = e?.detail
+      if (typeof detail === 'string' && detail.trim()) {
+        setSearchQuery(detail)
+        return
+      }
+
+      if (!detail || typeof detail !== 'object') return
+
+      const { category, type } = detail
+      if (!category || typeof category !== 'string') return
+
+      const safeType = type === 'income' ? 'income' : 'expense'
+      setForm((prev) => ({ ...prev, type: safeType, category }))
+      setSearchQuery(category)
+      setSelectedMonth('')
+    }
+
+    window.addEventListener('quickActionCategory', handler)
+    return () => window.removeEventListener('quickActionCategory', handler)
+  }, [])
 
   const incomeCategories = ['Beasiswa', 'Tabungan', 'Uang Saku', 'Penghasilan Kerja Paruh Waktu']
   const expenseCategories = ['Kos', 'UKT', 'Makan', 'Hutang', 'Transportasi', 'Kebutuhan Kuliah', 'Kebutuhan Lainnya']
@@ -250,17 +274,20 @@ function TransactionsMahasiswaPage({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={form.amount}
-              onChange={(e) => handleChange('amount', e.target.value)}
-              required
-              // hilangkan spinner ▲▼ agar tidak mengganggu tampilan
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              placeholder="0"
-            />
+            <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah Uang</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={form.amount?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') || ''}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/\D/g, '')
+                  handleChange('amount', raw)
+                }}
+                required
+                // hilangkan spinner ▲▼ agar tidak mengganggu tampilan
+                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                placeholder="Rp"
+              />
           </div>
 
 
@@ -297,23 +324,9 @@ function TransactionsMahasiswaPage({
               placeholder="Contoh: Makan siang di kantin kampus"
               onChange={(e) => handleChange('note', e.target.value)}
             />
-            {form.category === 'Hutang' && (
-              <div className="mt-3 flex items-center gap-3">
-                <input
-                  id="isSettled"
-                  type="checkbox"
-                  checked={form.isSettled}
-                  onChange={(e) => handleChange('isSettled', e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
-                />
-                <label htmlFor="isSettled" className="text-sm text-slate-700">
-                  Tandai Sudah dibayar / dilunasi
-                </label>
-              </div>
-            )}
           </div>
 
-          {form.category !== 'Uang Saku' && form.category !== 'Beasiswa' && form.category !== 'Penghasilan Kerja Paruh Waktu' && (
+          {form.category !== 'Uang Saku' && form.category !== 'Beasiswa' && form.category !== 'Penghasilan Kerja Paruh Waktu' && form.category !== 'Tabungan' &&  (
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Upload Bukti Nota</label>
               <input
@@ -398,6 +411,31 @@ function TransactionsMahasiswaPage({
             </select>
           </div>
         </div>
+
+        {/* Connection buttons to Reports page */}
+        {(filters.type === 'Tabungan' || filters.type === 'Hutang') && (
+          <div className="mb-6 rounded-2xl border border-[#38ADA9] bg-blue-50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-900">
+                  {filters.type === 'Tabungan' ? 'Lihat detail tabungan Anda' : 'Lihat rekap hutang Anda'}
+                </p>
+                <p className="text-xs text-slate-600 mt-1">
+                  {filters.type === 'Tabungan' 
+                    ? 'Periksa target tabungan dan progress di halaman laporan'
+                    : 'Periksa daftar lengkap hutang di halaman laporan'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onNavigateToReports && onNavigateToReports(filters.type === 'Tabungan' ? 'savings' : 'debt')}
+                className="whitespace-nowrap rounded-3xl bg-[#38ADA9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]"
+              >
+                Lihat di Laporan
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
           {visibleTransactions.length > 0 ? (

@@ -62,9 +62,7 @@ class Debt extends Model
      * Get days until due date (negative if overdue)
      */
     public function getDaysUntilDueAttribute(): int
-    {
-        $today = now()->toDateString();
-        $daysUntil = (int) now()->parse($this->due_date)->diffInDays(now(), false);
-        return $daysUntil;
-    }
+{
+    return now()->startOfDay()->diffInDays($this->due_date, false);
+}
 }

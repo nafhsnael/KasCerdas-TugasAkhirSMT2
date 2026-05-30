@@ -6,7 +6,7 @@ import { transactionAPI } from '../utils/api'
 
 
 const incomeCategories = ['Penghasilan Kerja', 'Uang Saku', 'Tabungan']
-const expenseCategories = ['Makan', 'Hutang','Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
+const expenseCategories = ['Makan', 'Hutang', 'Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
 
 function TransactionsPage({ transactions, filters, setFilters, onAddTransaction }) {
   const [deletingId, setDeletingId] = useState(null)
@@ -253,10 +253,11 @@ const deleteTransaction = async (transaction) => {
   const quickActionEmoji = (() => {
     const map = {
       Makan: '🍜',
+      Hutang: '💳',
       Transport: '🚌',
-      Hiburan: '🎉',
       Belanja: '🛍️',
       Tagihan: '📄',
+      'Kebutuhan Lainnya': '🧩',
     }
     return map[form.category] || ''
   })()
@@ -267,7 +268,7 @@ const deleteTransaction = async (transaction) => {
         <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">
-              Transaksi Masyarakat {quickActionEmoji ? <span className="ml-2">{quickActionEmoji}</span> : null}
+              Transaksi Masyarakat
             </p>
             <h2 className="text-xl font-semibold text-slate-900">Kelola pengeluaran dan pemasukan</h2>
               <p className="mt-2 text-sm text-slate-500">
@@ -310,9 +311,13 @@ const deleteTransaction = async (transaction) => {
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah Uang</label>
             <input
-              type="number"
-              value={form.amount}
-              onChange={(e) => handleChange('amount', e.target.value)}
+              type="text"
+              inputMode="numeric"
+              value={form.amount?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') || ''}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/\D/g, '')
+                handleChange('amount', raw)
+              }}
               required
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
               placeholder="Rp"
@@ -350,20 +355,6 @@ const deleteTransaction = async (transaction) => {
               placeholder="Contoh: Makan siang di kantor"
               onChange={(e) => handleChange('note', e.target.value)}
             />
-            {form.category === 'Hutang' && (
-              <div className="mt-3 flex items-center gap-3">
-                <input
-                  id="isSettled"
-                  type="checkbox"
-                  checked={form.isSettled}
-                  onChange={(e) => handleChange('isSettled', e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-[#38ADA9] focus:ring-[#38ADA9]"
-                />
-                <label htmlFor="isSettled" className="text-sm text-slate-700">
-                  Tandai Sudah dibayar / dilunasi
-                </label>
-              </div>
-            )}
           </div>
           {form.type === 'expense' && (
             <div>
@@ -388,6 +379,7 @@ const deleteTransaction = async (transaction) => {
                 </svg>
                 <span>{successMessage}</span>
               </div>
+              
             )}
             <button
               type="submit"

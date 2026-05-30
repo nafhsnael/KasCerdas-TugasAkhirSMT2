@@ -164,7 +164,7 @@ class DebtController extends Controller
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $debt->update(array_filter($validated));
+        $debt->update(array_filter($validated, fn($value) => !is_null($value)));
 
         return response()->json([
             'success' => true,

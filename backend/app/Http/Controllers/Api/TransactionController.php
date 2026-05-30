@@ -17,7 +17,7 @@ class TransactionController extends Controller
     public function index(Request $request)
     {
         $userId = $request->user()->id;
-        
+
         $validated = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
@@ -32,9 +32,9 @@ class TransactionController extends Controller
         // Extra validation: wallet_id must belong to authenticated user
         if (!empty($validated['wallet_id'])) {
             $walletExists = Wallet::where('id', $validated['wallet_id'])
-                                  ->where('user_id', $userId)
-                                  ->exists();
-            
+                ->where('user_id', $userId)
+                ->exists();
+
             if (!$walletExists) {
                 return response()->json([
                     'success' => false,
@@ -52,7 +52,7 @@ class TransactionController extends Controller
             $from = $validated['from'] ?? now()->subYears(1)->toDateString();
             $to = $validated['to'] ?? now()->toDateString();
             $query->whereDate('date', '>=', $from)
-                  ->whereDate('date', '<=', $to);
+                ->whereDate('date', '<=', $to);
         }
 
         // Category filter
@@ -75,8 +75,8 @@ class TransactionController extends Controller
             $search = $validated['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('note', 'like', "%{$search}%")
-                  ->orWhere('invoice', 'like', "%{$search}%");
+                    ->orWhere('note', 'like', "%{$search}%")
+                    ->orWhere('invoice', 'like', "%{$search}%");
             });
         }
 
@@ -134,8 +134,8 @@ class TransactionController extends Controller
 
         // Verify wallet belongs to user
         $wallet = Wallet::where('id', $validated['wallet_id'])
-                        ->where('user_id', $request->user()->id)
-                        ->firstOrFail();
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
 
         // Handle receipt upload
         $receiptUrl = null;
@@ -229,14 +229,14 @@ class TransactionController extends Controller
         if (!empty($validated['wallet_id']) && $validated['wallet_id'] !== $oldWalletId) {
             // Verify old wallet belongs to user
             $oldWallet = Wallet::where('id', $oldWalletId)
-                              ->where('user_id', $request->user()->id)
-                              ->firstOrFail();
+                ->where('user_id', $request->user()->id)
+                ->firstOrFail();
             $this->updateWalletBalance($oldWallet, $oldType, $oldAmount, 'subtract');
 
             // Verify new wallet belongs to user
             $newWallet = Wallet::where('id', $validated['wallet_id'])
-                              ->where('user_id', $request->user()->id)
-                              ->firstOrFail();
+                ->where('user_id', $request->user()->id)
+                ->firstOrFail();
             $validated['wallet_id'] = $newWallet->id;
         }
 
@@ -345,7 +345,7 @@ class TransactionController extends Controller
     public function summary(Request $request)
     {
         $userId = $request->user()->id;
-        
+
         $validated = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
@@ -355,9 +355,9 @@ class TransactionController extends Controller
         // Extra validation: wallet_id must belong to authenticated user
         if (!empty($validated['wallet_id'])) {
             $walletExists = Wallet::where('id', $validated['wallet_id'])
-                                  ->where('user_id', $userId)
-                                  ->exists();
-            
+                ->where('user_id', $userId)
+                ->exists();
+
             if (!$walletExists) {
                 return response()->json([
                     'success' => false,
@@ -374,7 +374,7 @@ class TransactionController extends Controller
             $from = $validated['from'] ?? now()->subYears(1)->toDateString();
             $to = $validated['to'] ?? now()->toDateString();
             $query->whereDate('date', '>=', $from)
-                  ->whereDate('date', '<=', $to);
+                ->whereDate('date', '<=', $to);
         }
 
         // Wallet filter (now verified to belong to user)
@@ -389,14 +389,14 @@ class TransactionController extends Controller
 
         // Get top categories
         $topCategories = $query->replicate()
-                               ->select('category')
-                               ->selectRaw('SUM(CASE WHEN type = "expense" THEN amount ELSE 0 END) as total_expense')
-                               ->selectRaw('SUM(CASE WHEN type = "income" THEN amount ELSE 0 END) as total_income')
-                               ->selectRaw('COUNT(*) as count')
-                               ->groupBy('category')
-                               ->orderByDesc('count')
-                               ->limit(5)
-                               ->get();
+            ->select('category')
+            ->selectRaw('SUM(CASE WHEN type = "expense" THEN amount ELSE 0 END) as total_expense')
+            ->selectRaw('SUM(CASE WHEN type = "income" THEN amount ELSE 0 END) as total_income')
+            ->selectRaw('COUNT(*) as count')
+            ->groupBy('category')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -430,12 +430,12 @@ class TransactionController extends Controller
     protected function generateInvoiceNumber(int $userId, string $date): string
     {
         $year = substr($date, 0, 4);
-        
+
         // Get latest invoice number for this year
         $latestInvoice = Transaction::byUser($userId)
-                                   ->whereYear('date', $year)
-                                   ->orderByDesc('invoice')
-                                   ->value('invoice');
+            ->whereYear('date', $year)
+            ->orderByDesc('invoice')
+            ->value('invoice');
 
         if ($latestInvoice) {
             preg_match('/INV-\d{4}-(\d{4})/', $latestInvoice, $matches);
@@ -463,4 +463,3 @@ class TransactionController extends Controller
         ]);
     }
 }
-

@@ -9,9 +9,123 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
+    /**
+     * Redirect user to Google login page.
+     */
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->stateless()->redirect();
+    }
+
+    /**
+     * Handle Google callback.
+     */
+    public function handleGoogleCallback(Request $request)
+    {
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+
+            $googleId = $googleUser->getId();
+            $googleName = $googleUser->getName();
+            $googleEmail = $googleUser->getEmail();
+            $googleAvatar = $googleUser->getAvatar();
+
+            if (!$googleEmail) {
+                return redirect()->away($this->frontendUrl() . '/login?error=google_email_not_found');
+            }
+
+            $user = User::where('google_id', $googleId)
+                ->orWhere('email', $googleEmail)
+                ->first();
+
+            if (!$user) {
+                $user = User::create([
+                    'name' => $googleName ?: 'User Google',
+                    'username' => $this->generateUniqueUsername($googleEmail, $googleName),
+                    'email' => $googleEmail,
+                    'password' => Hash::make(Str::random(32)),
+                    'google_id' => $googleId,
+                    'avatar' => $googleAvatar,
+                    'role' => 'user',
+                    'user_type' => null,
+                    'is_active' => true,
+                ]);
+
+                ActivityLog::create([
+                    'user_id' => $user->id,
+                    'action' => 'Register with Google',
+                    'model_type' => User::class,
+                    'model_id' => $user->id,
+                    'ip_address' => $request->ip(),
+                    'level' => 'info',
+                    'data' => [
+                        'email' => $user->email,
+                        'google_id' => $googleId,
+                    ],
+                ]);
+            } else {
+                if (!$user->google_id) {
+                    $user->google_id = $googleId;
+                }
+
+                if (!$user->avatar && $googleAvatar) {
+                    $user->avatar = $googleAvatar;
+                }
+
+                if (!$user->name && $googleName) {
+                    $user->name = $googleName;
+                }
+
+                $user->save();
+            }
+
+            if (!$user->is_active) {
+                ActivityLog::create([
+                    'user_id' => $user->id,
+                    'action' => 'Blocked Google Login Attempt (Inactive)',
+                    'model_type' => User::class,
+                    'model_id' => $user->id,
+                    'ip_address' => $request->ip(),
+                    'level' => 'warning',
+                    'data' => ['email' => $user->email],
+                ]);
+
+                return redirect()->away($this->frontendUrl() . '/login?error=inactive');
+            }
+
+            $token = $user->createToken('kas-cerdas')->plainTextToken;
+
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'action' => 'Login with Google',
+                'model_type' => User::class,
+                'model_id' => $user->id,
+                'ip_address' => $request->ip(),
+                'level' => 'info',
+                'data' => ['email' => $user->email],
+            ]);
+
+            return redirect()->away(
+                $this->frontendUrl() . '/auth/google/callback?token=' . urlencode($token)
+            );
+        } catch (\Throwable $e) {
+            ActivityLog::create([
+                'action' => 'Google Login Failed',
+                'ip_address' => $request->ip(),
+                'level' => 'error',
+                'data' => [
+                    'message' => $e->getMessage(),
+                ],
+            ]);
+
+            return redirect()->away($this->frontendUrl() . '/login?error=google_failed');
+        }
+    }
+
     /**
      * Register new user.
      */
@@ -37,7 +151,6 @@ class AuthController extends Controller
 
         $token = $user->createToken('kas-cerdas')->plainTextToken;
 
-        // Log Activity
         ActivityLog::create([
             'user_id' => $user->id,
             'action' => 'Register',
@@ -60,6 +173,8 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'role' => $user->role,
                     'user_type' => $user->user_type,
+                    'is_active' => $user->is_active,
+                    'avatar' => $user->avatar ?? null,
                 ],
             ],
         ], 201);
@@ -82,7 +197,6 @@ class AuthController extends Controller
         $user = User::where($loginField, $loginInput)->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
-            // Log failed login attempt
             ActivityLog::create([
                 'action' => 'Failed Login Attempt',
                 'ip_address' => $request->ip(),
@@ -97,7 +211,6 @@ class AuthController extends Controller
         }
 
         if (!$user->is_active) {
-            // Log suspended user login attempt
             ActivityLog::create([
                 'user_id' => $user->id,
                 'action' => 'Blocked Login Attempt (Inactive)',
@@ -114,7 +227,6 @@ class AuthController extends Controller
 
         $token = $user->createToken('kas-cerdas')->plainTextToken;
 
-        // Log successful login
         ActivityLog::create([
             'user_id' => $user->id,
             'action' => 'Login',
@@ -136,6 +248,8 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'role' => $user->role,
                     'user_type' => $user->user_type,
+                    'is_active' => $user->is_active,
+                    'avatar' => $user->avatar ?? null,
                 ],
             ],
         ]);
@@ -147,8 +261,8 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $user = $request->user();
+
         if ($user) {
-            // Log logout
             ActivityLog::create([
                 'user_id' => $user->id,
                 'action' => 'Logout',
@@ -180,11 +294,43 @@ class AuthController extends Controller
             'data' => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'username' => $user->username,
                 'email' => $user->email,
                 'role' => $user->role,
                 'user_type' => $user->user_type,
                 'is_active' => $user->is_active,
+                'avatar' => $user->avatar ?? null,
             ],
         ]);
+    }
+
+    /**
+     * Generate username for Google account.
+     */
+    private function generateUniqueUsername(string $email, ?string $name = null): string
+    {
+        $base = Str::slug($name ?: Str::before($email, '@'), '_');
+
+        if (!$base) {
+            $base = 'user';
+        }
+
+        $username = Str::limit($base, 40, '');
+        $counter = 1;
+
+        while (User::where('username', $username)->exists()) {
+            $username = Str::limit($base, 35, '') . '_' . $counter;
+            $counter++;
+        }
+
+        return $username;
+    }
+
+    /**
+     * Get frontend URL.
+     */
+    private function frontendUrl(): string
+    {
+        return rtrim(env('FRONTEND_URL', 'http://localhost:5173'), '/');
     }
 }

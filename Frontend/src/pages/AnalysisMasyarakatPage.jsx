@@ -1,10 +1,10 @@
-import StatCard from '../components/StatCard'
-import BiggestExpenseCard from '../components/BiggestExpenseCard'
-import MonthlyCashflowTableCard from '../components/MonthlyCashflowTableCard'
-import ExpenseCompositionCard from '../components/ExpenseCompositionCard'
-import PeriodDevelopmentCard from '../components/PeriodDevelopmentCard'
-
 import { useMemo, useState } from 'react'
+
+import MasyarakatMonthlyCashflowTableCard from '../components/masyarakat/MasyarakatMonthlyCashflowTableCard'
+import MasyarakatExpenseCompositionCard from '../components/masyarakat/MasyarakatExpenseCompositionCard'
+import MasyarakatIncomeCompositionCard from '../components/masyarakat/MasyarakatIncomeCompositionCard'
+import MasyarakatPeriodDevelopmentCard from '../components/masyarakat/MasyarakatPeriodDevelopmentCard'
+
 
 const PERIOD_OPTIONS = [
   { key: 'bulan_ini', label: 'Bulan Ini' },
@@ -33,10 +33,7 @@ function getPeriodRanges(periodKey) {
   const endOfMonth = (d) => endOfDay(new Date(d.getFullYear(), d.getMonth() + 1, 0))
 
   const startOfYear = (d) => new Date(d.getFullYear(), 0, 1)
-  const endOfYear = (d) => {
-    // sesuai keputusan: sampai 31 Des
-    return endOfDay(new Date(d.getFullYear(), 11, 31))
-  }
+  const endOfYear = (d) => endOfDay(new Date(d.getFullYear(), 11, 31))
 
   const currentMonthStart = startOfMonth(now)
   const currentMonthEnd = endOfMonth(now)
@@ -97,7 +94,6 @@ function getPeriodRanges(periodKey) {
     }
   }
 
-  // tahun_ini
   return {
     label: 'Tahun Ini',
     currentStart: startOfDay(startOfYear(now)),
@@ -113,7 +109,7 @@ function isTxInRange(tx, start, end) {
   return d >= start && d <= end
 }
 
-function AnalysisPage({ transactions }) {
+function AnalysisMasyarakatPage({ transactions }) {
   const [selectedPeriod, setSelectedPeriod] = useState('bulan_ini')
 
   const { label, currentStart, currentEnd, previousStart, previousEnd } = useMemo(
@@ -123,7 +119,26 @@ function AnalysisPage({ transactions }) {
 
   const filteredTransactions = useMemo(() => {
     const tx = Array.isArray(transactions) ? transactions : []
-    return tx.filter((t) => isTxInRange(t, currentStart, currentEnd))
+
+    return tx.filter((t) => {
+      const inRange = isTxInRange(t, currentStart, currentEnd)
+      const type = (t?.type || '').toLowerCase()
+
+      const kategoriPengeluaran = [
+        'Makan',
+        'Hutang',
+        'Transport',
+        'Belanja',
+        'Tagihan',
+        'Kebutuhan Lainnya',
+      ]
+
+      return (
+        inRange &&
+        (type === 'expense' || type === 'pengeluaran') &&
+        kategoriPengeluaran.includes(t.category)
+      )
+    })
   }, [transactions, currentStart, currentEnd])
 
   return (
@@ -132,46 +147,20 @@ function AnalysisPage({ transactions }) {
         <div className="rounded-[32px] border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-[#0F172A] sm:text-[34px]">
-                Analisis Keuangan
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">ANALISIS KEUANGAN</p>
+              <h1 className="mt-2 text-[32px] font-semibold leading-tight tracking-tight text-[#0F172A] sm:text-[34px]">
+                Analisis Keuangan Masyarakat
               </h1>
               <p className="mt-2 text-[16px] leading-6 text-[#64748B]">
-                Analisis keuangan membantu pengguna memantau kondisi keuangan secara ringkas dan jelas
+                Pantau kondisi keuangan Anda secara ringkas dan jelas untuk membantu mengelola pengeluaran, tabungan, dan kebutuhan sehari-hari.
               </p>
+
             </div>
 
             <div className="flex shrink-0 items-center">
               <div className="h-[48px] w-[320px] rounded-xl border border-slate-200 bg-white px-3 shadow-sm">
                 <div className="flex h-full items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 text-[#0F172A]">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M8 2V4"
-                          stroke="#0F172A"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M16 2V4"
-                          stroke="#0F172A"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M3 9H21"
-                          stroke="#0F172A"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M5 5H19C20.1046 5 21 5.89543 21 7V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V7C3 5.89543 3.89543 5 5 5Z"
-                          stroke="#0F172A"
-                          strokeWidth="2"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </span>
                     <div className="min-w-0">
                       <select
                         aria-label="Pilih Periode"
@@ -190,13 +179,7 @@ function AnalysisPage({ transactions }) {
 
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 text-slate-600">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M6 9L12 15L18 9"
-                        stroke="#475569"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                      <path d="M6 9L12 15L18 9" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                 </div>
@@ -208,23 +191,59 @@ function AnalysisPage({ transactions }) {
         <div className="mt-8 space-y-8">
           <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
             <div className="min-w-0">
-              <MonthlyCashflowTableCard transactions={filteredTransactions} periodLabel={label} compact />
+              <MasyarakatMonthlyCashflowTableCard
+                transactions={filteredTransactions}
+                periodLabel={label}
+                compact
+              />
             </div>
           </section>
 
-          <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 px-2">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Komposisi Pengeluaran per Pos</p>
-            </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-4 px-2">
+                <p className="text-sm uppercase tracking-[0.24em] text-slate-500">
+                  Komposisi Pengeluaran per Pos
+                </p>
+              </div>
 
-            <div className="min-w-0">
-              <ExpenseCompositionCard transactions={filteredTransactions} periodLabel={label} compact />
-            </div>
-          </section>
+              <div className="min-w-0">
+                <MasyarakatExpenseCompositionCard
+                  transactions={filteredTransactions}
+                  periodLabel={label}
+                  compact
+                  categories={[
+                    'Makan',
+                    'Hutang',
+                    'Transport',
+                    'Belanja',
+                    'Tagihan',
+                    'Kebutuhan Lainnya',
+                  ]}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-4 px-2">
+                <p className="text-sm uppercase tracking-[0.24em] text-slate-500">
+                  Komposisi Pemasukan per Pos
+                </p>
+              </div>
+
+              <div className="min-w-0">
+                <MasyarakatIncomeCompositionCard
+                  transactions={filteredTransactions}
+                  periodLabel={label}
+                  compact
+                />
+              </div>
+            </section>
+          </div>
 
           <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-6">
-              <PeriodDevelopmentCard
+              <MasyarakatPeriodDevelopmentCard
                 transactions={transactions}
                 periodLabel={label}
                 currentStart={currentStart}
@@ -235,9 +254,10 @@ function AnalysisPage({ transactions }) {
             </div>
           </section>
         </div>
+
       </div>
     </div>
   )
 }
 
-export default AnalysisPage
+export default AnalysisMasyarakatPage

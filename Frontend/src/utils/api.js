@@ -15,7 +15,17 @@ async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('token')
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
   
+  const authlessRoutes = ['/auth/login', '/auth/register']
+  const baseEndpoint = endpoint.split('?')[0].toLowerCase()
+  if (!token && !authlessRoutes.includes(baseEndpoint)) {
+    const error = new Error('Token autentikasi tidak ditemukan. Silakan login ulang.')
+    error.status = 401
+    throw error
+  }
+  
   const headers = {
+    Accept: 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
     ...(options.headers || {}),
   }
 
@@ -36,13 +46,17 @@ async function apiFetch(endpoint, options = {}) {
     headers,
   })
   
-  const data = await response.json().catch(() => ({}))
-  
+  const data = await response.json().catch(() => null)
+
   if (!response.ok) {
-    const firstError = data.errors ? Object.values(data.errors).flat()[0] : null
-    throw new Error(firstError || data.message || 'API request failed')
+    const firstError = data?.errors ? Object.values(data.errors).flat()[0] : null
+    const message = firstError || data?.message || `API request failed (${response.status} ${response.statusText})`
+    const error = new Error(message)
+    error.status = response.status
+    error.responseData = data
+    throw error
   }
-  
+
   return data
 }
 
@@ -135,6 +149,59 @@ export const transactionAPI = {
     const queryString = params.toString()
     const url = queryString ? `/transactions?${queryString}` : '/transactions'
     return apiFetch(url, { method: 'GET' })
+  },
+
+  // FIX: Fetch ALL pages of transactions for initial load after login
+  listAll: async (filters = {}) => {
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && key !== 'fetchAll') {
+        params.append(key, value)
+      }
+    })
+    
+    // Start with limit=100 (max allowed by backend) and page 1
+    const allTransactions = []
+    let currentPage = 1
+    let lastPage = 1
+    
+    try {
+      while (currentPage <= lastPage) {
+        const pageParams = new URLSearchParams(params)
+        pageParams.set('limit', '100')
+        pageParams.set('page', currentPage.toString())
+        const queryString = pageParams.toString()
+        const url = queryString ? `/transactions?${queryString}` : '/transactions'
+        
+        const response = await apiFetch(url, { method: 'GET' })
+        
+        if (response.data && Array.isArray(response.data)) {
+          allTransactions.push(...response.data)
+        }
+        
+        // Update pagination info from response meta
+        if (response.meta) {
+          lastPage = response.meta.last_page || 1
+        }
+        
+        currentPage++
+      }
+      
+      // Return in the same format as list() for consistency
+      return {
+        success: true,
+        data: allTransactions,
+        meta: {
+          total: allTransactions.length,
+          per_page: 100,
+          current_page: 1,
+          last_page: 1,
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching all transactions:', e)
+      throw e
+    }
   },
   
   summary: () =>

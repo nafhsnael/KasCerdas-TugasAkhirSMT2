@@ -111,7 +111,7 @@ class BudgetController extends Controller
             'usage' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $budget->update(array_filter($validated));
+        $budget->update(array_filter($validated, fn($value) => !is_null($value)));
 
         return response()->json([
             'success' => true,

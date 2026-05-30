@@ -6,23 +6,26 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
   const [note, setNote] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (!balance || !date) {
       alert('Mohon isi saldo awal dan tanggal')
       return
     }
-    
+
     setIsLoading(true)
-    const parsedBalance = parseInt(balance) || 0
-    
+    const parsedBalance = Number(balance.replace(/\./g, '')) || 0;
+
     try {
       // Simpan ke backend
       const token = window.localStorage.getItem('token')
-      const res = await fetch('/api/wallets', {
+      const res = await fetch(`${backendUrl}/api/wallets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -30,16 +33,21 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
           balance: parsedBalance,
         }),
       })
-      
+
       const json = await res.json()
       if (!res.ok || !json.success) {
         alert(json?.message || 'Gagal menyimpan saldo awal')
         setIsLoading(false)
         return
       }
-      
-      // Jika berhasil, call onSave
-      onSave({ balance: parsedBalance, date, note })
+
+      // Jika berhasil, kirim saldo + data wallet ke App supaya dashboard langsung sinkron
+      onSave({
+        balance: Number(json?.data?.balance ?? parsedBalance),
+        wallet: json?.data || null,
+        date,
+        note,
+      })
       alert('Saldo awal berhasil disimpan!')
     } catch (e) {
       console.error('Error saving wallet:', e)
@@ -76,9 +84,9 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">Rp</span>
               <input
-                type="number"
+                type="text"
                 value={balance}
-                onChange={(e) => setBalance(e.target.value)}
+                onChange={(e) => setBalance(e.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}
                 required
                 disabled={isLoading}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-slate-900 transition-all disabled:opacity-50 focus:border-[#38ADA9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20"
@@ -115,7 +123,7 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
             />
           </div>
 
-          <button 
+          <button
             disabled={isLoading}
             className="w-full rounded-2xl bg-gradient-to-r from-[#38ADA9] to-[#38ADA9] py-3.5 text-base font-semibold text-white shadow-lg shadow-[#38ADA9]/25 transition-all hover:shadow-xl hover:shadow-[#38ADA9]/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
             {isLoading ? 'Menyimpan...' : 'Simpan Saldo'}

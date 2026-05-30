@@ -7,6 +7,11 @@ import UserTypePage from './pages/UserTypePage'
 import InitialBalancePage from './pages/InitialBalancePage'
 import LandingPage from './pages/LandingPage'
 import AnalysisPage from './pages/AnalysisPage'
+import AnalysisMasyarakatPage from './pages/AnalysisMasyarakatPage'
+import AnalysisMahasiswaPage from './pages/AnalysisMahasiswaPage'
+import AnalysisUMKMPage from './pages/AnalysisUMKMPage'
+
+
 import TransactionsUMKMPage from './pages/TransactionsUMKMPage'
 import TransactionsMahasiswaPage from './pages/TransactionsMahasiswaPage'
 import TransactionsMasyarakatPage from './pages/TransactionsMasyarakatPage'
@@ -29,6 +34,48 @@ import { transactionAPI, budgetAPI, debtAPI, savingAPI } from './utils/api'
 // Import Admin App kamu agar bisa dipanggil
 import AdminApp from '../admin/App'
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+
+const readInitialToken = () => {
+  if (typeof window === 'undefined') return null
+
+  const params = new URLSearchParams(window.location.search)
+  const isGoogleCallback = window.location.pathname === '/auth/google/callback'
+  const googleToken = isGoogleCallback ? params.get('token') : null
+
+  if (googleToken) {
+    window.localStorage.setItem('token', googleToken)
+    window.history.replaceState(null, '', '/')
+    return googleToken
+  }
+
+  return window.localStorage.getItem('token')
+}
+
+const buildApiUrl = (url) => {
+  if (/^https?:\/\//i.test(url)) return url
+
+  if (url.startsWith('/api')) {
+    return `${backendUrl}${url}`
+  }
+
+  return `${backendUrl}/api${url.startsWith('/') ? url : `/${url}`}`
+}
+
+const formatDateToYMD = (value) => {
+  const date = value instanceof Date
+    ? value
+    : typeof value === 'string' && value.trim()
+      ? new Date(value)
+      : null
+
+  if (!date || Number.isNaN(date.getTime())) {
+    const fallback = new Date()
+    return `${fallback.getFullYear()}-${String(fallback.getMonth() + 1).padStart(2, '0')}-${String(fallback.getDate()).padStart(2, '0')}`
+  }
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
 
 const routeToPage = {
   '': 'dashboard',
@@ -69,10 +116,7 @@ function App() {
     if (typeof window === 'undefined') return 'dashboard'
     return pathToPage(window.location.pathname)
   })
-  const [token, setToken] = useState(() => {
-    if (typeof window === 'undefined') return null
-    return window.localStorage.getItem('token')
-  })
+  const [token, setToken] = useState(readInitialToken)
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(token))
   const [authLoading, setAuthLoading] = useState(Boolean(token))
 
@@ -89,7 +133,55 @@ function App() {
       return true
     }
   })
+  const [showSplash, setShowSplash] = useState(() => {
+    try {
+      const t = window?.localStorage?.getItem('token')
+      return !t
+    } catch (e) {
+      return true
+    }
+  })
+  const [isSplashLeaving, setIsSplashLeaving] = useState(false)
+  const [pageVisible, setPageVisible] = useState(!showSplash)
   const [initialBalance, setInitialBalance] = useState(0)
+
+  useEffect(() => {
+    if (!showSplash) {
+      setPageVisible(true)
+      return
+    }
+
+    const leaveTimer = window.setTimeout(() => {
+      setIsSplashLeaving(true)
+      setPageVisible(true)
+    }, 1200)
+
+    const hideTimer = window.setTimeout(() => {
+      setShowSplash(false)
+      setIsSplashLeaving(false)
+    }, 1700)
+
+    return () => {
+      window.clearTimeout(leaveTimer)
+      window.clearTimeout(hideTimer)
+    }
+  }, [showSplash])
+
+  const SplashScreen = ({ leaving }) => (
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-r from-teal-600 via-[#38ADA9] to-teal-400 text-white transition-opacity duration-700 ${leaving ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`mx-auto text-center transition-transform duration-700 ${leaving ? 'scale-75 -translate-y-12' : 'scale-100 translate-y-0'}`}>
+        <div className={`mx-auto h-36 w-36 overflow-hidden rounded-full border-2 border-white/30 bg-white/30 p-4 flex items-center justify-center ${leaving ? 'logo-fly' : ''}`}>
+          <img
+            src="/logo.png"
+            alt="KasCerdas"
+            className={`h-full w-full object-contain transition-all duration-700 ${leaving ? 'opacity-0 -translate-y-4 scale-75' : 'opacity-100 translate-y-0 scale-100'} animate-bounce`}
+          />
+        </div>
+        <p className="mt-6 text-3xl font-semibold text-white">KasCerdas</p>
+        <p className="mt-2 text-base text-white/80">Sedang membuka landing page...</p>
+      </div>
+    </div>
+  );
 
   const buildWalletSummary = ({ walletInfoOverride = null } = {}) => {
     const current = Number(walletInfoOverride?.balance ?? walletInfo?.balance ?? initialBalance ?? 0)
@@ -103,6 +195,7 @@ function App() {
   const [selectedUmkmCategory, setSelectedUmkmCategory] = useState('all')
   const [transactions, setTransactions] = useState([])
   const [budgets, setBudgets] = useState([])
+  const [defaultReportTab, setDefaultReportTab] = useState('daily')
 
   const parseMetadata = (metadata) => {
     if (!metadata) return {}
@@ -410,7 +503,7 @@ function App() {
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
       
       const [transactionsRes, debtsRes, savingsRes, budgetsRes] = await Promise.all([
-        transactionAPI.list(),
+        transactionAPI.listAll(),
         debtAPI.list(),
         savingAPI.list(),
         budgetAPI.list(currentMonth)
@@ -470,63 +563,83 @@ function App() {
   }
 
   useEffect(() => {
-    if (!token) return
+  if (!token) return
 
-    // Mulai auto-auth dari token: pastikan tidak menampilkan landing
-    setShowLanding(false)
+  setShowLanding(false)
+  setAuthLoading(true)
 
-    setAuthLoading(true)
+  Promise.all([fetchCurrentUser(), fetchWalletInfo(), fetchAllData()])
+    .then(([authUser, walletData, allData]) => {
+      const isAdmin = authUser.role === 'admin'
 
+      // Kalau user login Google baru, biasanya user_type masih null.
+      // Jadi jangan pakai role "user" sebagai usertype.
+      const resolvedUserType = authUser.user_type || (isAdmin ? 'admin' : null)
 
-    Promise.all([fetchCurrentUser(), fetchWalletInfo(), fetchAllData()])
-      .then(([authUser, walletData, allData]) => {
-        setUserProfile(prev => ({
-          ...prev,
-          nama: authUser.name || prev.nama,
-          user: authUser.username || prev.user,
-          email: authUser.email || prev.email,
-          usertype: authUser.user_type || authUser.role || prev.usertype,
-          dompet: walletData?.name || (authUser.role === 'admin' ? 'Admin Wallet' : prev.dompet),
-        }))
-        setWalletInfo(walletData)
-        
-        if (allData) {
-          const allTransactions = allData.transactions || []
-          const resolvedUserType = String(authUser.user_type || authUser.role || userProfile?.usertype || '').toLowerCase()
-          const umkmItems = resolvedUserType === 'umkm'
-            ? allTransactions
-            : allTransactions.filter((t) => metaToBool(parseMetadata(t.metadata).is_umkm) || t.isUmkm || t.is_umkm)
+      setUserProfile((prev) => ({
+        ...prev,
+        nama: authUser.name || prev.nama,
+        user: authUser.username || prev.user,
+        email: authUser.email || prev.email,
+        usertype: resolvedUserType,
+        dompet: walletData?.name || (isAdmin ? 'Admin Wallet' : prev.dompet),
+        profileImage: authUser.avatar || prev.profileImage,
+      }))
 
-          setTransactions(allTransactions)
-          setUmkmTransactions(umkmItems)
-          setUmkmSummary(buildUmkmSummaryFromTransactions(umkmItems))
-          setDebts(allData.debts)
-          setSavings(allData.savings)
-          setBudgets(allData.budgets)
+      setWalletInfo(walletData)
+
+      if (walletData?.balance !== undefined && walletData?.balance !== null) {
+        const balance = Number(walletData.balance) || 0
+        setInitialBalance(balance)
+
+        if (resolvedUserType === 'umkm') {
+          setUmkmEWalletBalance(balance)
         }
+      }
 
-        // InitialBalance:
-        // - Saat USER BARU REGISTER: harus isi saldo awal.
-        // - Saat LOGIN biasa / auto-login: tidak diarahkan ke InitialBalance.
-        // Di sini kita biarkan InitialBalance hanya muncul jika usersedang onboarding (showUserType sudah true sebelumnya).
-        const walletHasBalance = walletData?.balance && Number(walletData.balance) > 0
-        if (showUserType) {
-          if (!walletHasBalance) {
-            setShowInitialBalance(true)
-          }
-        }
+      if (allData) {
+        const allTransactions = allData.transactions || []
+        const userTypeLower = String(resolvedUserType || '').toLowerCase()
 
+        const umkmItems = userTypeLower === 'umkm'
+          ? allTransactions
+          : allTransactions.filter((t) => {
+              const metadata = parseMetadata(t.metadata)
+              return metaToBool(metadata.is_umkm) || t.isUmkm || t.is_umkm
+            })
 
-        setIsAuthenticated(true)
-      })
-      .catch(() => {
-        handleLogout()
-      })
-      .finally(() => {
-        setAuthLoading(false)
-      })
+        setTransactions(allTransactions)
+        setUmkmTransactions(umkmItems)
+        setUmkmSummary(buildUmkmSummaryFromTransactions(umkmItems))
+        setDebts(allData.debts || [])
+        setSavings(allData.savings || [])
+        setBudgets(allData.budgets || [])
+      }
 
-  }, [token])
+      setIsAuthenticated(true)
+
+      // INI BAGIAN PALING PENTING:
+      // Kalau user belum punya user_type, tampilkan halaman pilih tipe pengguna.
+      // Ini cocok untuk Register Google / Login Google akun baru.
+      if (!authUser.user_type && !isAdmin) {
+        setShowUserType(true)
+        setShowInitialBalance(false)
+        setShowLanding(false)
+        return
+      }
+
+      // Kalau user sudah punya user_type, langsung dashboard.
+      setShowUserType(false)
+      setShowInitialBalance(false)
+      setShowLanding(false)
+    })
+    .catch(() => {
+      handleLogout()
+    })
+    .finally(() => {
+      setAuthLoading(false)
+    })
+}, [token])
 
   useEffect(() => {
     // JANGAN REDIRECT jika user sedang mengakses halaman admin
@@ -583,6 +696,17 @@ function App() {
     const profileType = String(userProfile?.usertype || userType || '').toLowerCase()
     const incomingMetadata = parseMetadata(newTransaction.metadata)
 
+    const categoryLabel = String(newTransaction?.category || '').trim()
+    const isDebtCategory = categoryLabel.toLowerCase().includes('hutang')
+    const isSavingsCategory = categoryLabel.toLowerCase() === 'tabungan'
+
+    // Sinkronisasi transaksi kategori mahasiswa ke rekap: Debt / Saving
+    // (default mapping)
+    const debtTitle = String(newTransaction?.title || newTransaction?.note || categoryLabel || 'Hutang').trim()
+    const debtAmount = Number(newTransaction?.amount) || 0
+
+
+
     const isMahasiswa = hasMetaValue(incomingMetadata.is_mahasiswa)
       ? metaToBool(incomingMetadata.is_mahasiswa)
       : profileType === 'mahasiswa'
@@ -599,6 +723,12 @@ function App() {
       is_masyarakat: isMasyarakat,
     }
 
+    const walletId = walletInfo?.id || newTransaction?.wallet_id
+    if (!walletId) {
+      alert('Dompet belum tersedia. Silakan muat ulang aplikasi atau masuk ulang terlebih dahulu.')
+      return
+    }
+
     // Optimistic update (biar riwayat langsung terisi seperti UMKM)
     const tempTransaction = {
       id: tempId,
@@ -607,7 +737,7 @@ function App() {
       // Pastikan type/category/date field yang dipakai UI tetap konsisten
       type: newTransaction.type || (newTransaction.category && ['Penghasilan Kerja', 'Uang Saku', 'Tabungan'].includes(newTransaction.category) ? 'income' : 'expense'),
       metadata: transactionMetadata,
-      wallet_id: walletInfo?.id || newTransaction.wallet_id,
+      wallet_id: walletId,
       // Konsisten dengan TransactionCard
       wallet: walletInfo?.name || newTransaction.wallet || null,
       bank: newTransaction.bank || null,
@@ -620,12 +750,59 @@ function App() {
     try {
       const payload = {
         ...newTransaction,
-        wallet_id: walletInfo?.id || newTransaction.wallet_id,
+        wallet_id: walletId,
         metadata: transactionMetadata
       }
 
       const res = await transactionAPI.create(payload)
       const savedTransaction = normalizeTransaction(res.data)
+
+      // Sinkronisasi transaksi mahasiswa ke Debt/Saving (berdasarkan kategori)
+      // dilakukan setelah transaksi berhasil dibuat.
+      if (isDebtCategory) {
+        await mergeOrCreateDebt({
+          wallet_id: walletInfo?.id || newTransaction?.wallet_id,
+          creditor_name: debtTitle,
+          amount: debtAmount,
+          due_date: formatDateToYMD(newTransaction?.date),
+          note: String(newTransaction?.note || ''),
+          status: newTransaction?.isSettled ? 'paid' : 'active'
+        })
+      }
+
+      if (isSavingsCategory) {
+        const name2 = String(newTransaction?.title || 'Tabungan').trim()
+        const existingSaving = savings.find((s) => String(s.name || '').trim().toLowerCase() === name2.toLowerCase())
+
+        if (existingSaving) {
+          const updatedCurrent = (Number(existingSaving.current_amount || existingSaving.current || 0) + Number(newTransaction?.amount) || 0)
+          await savingAPI.update(existingSaving.id, {
+            wallet_id: walletInfo?.id || newTransaction?.wallet_id,
+            name: existingSaving.name,
+            target_amount: Number(existingSaving.target_amount || existingSaving.target || 0),
+            current_amount: updatedCurrent,
+            target_date: formatDateToYMD(existingSaving.target_date || existingSaving.deadline),
+            category: existingSaving.category || 'Tabungan',
+            note: existingSaving.note || String(newTransaction?.note || ''),
+          })
+        } else {
+          await savingAPI.create({
+            wallet_id: walletInfo?.id || newTransaction?.wallet_id,
+            name: name2,
+            target_amount: Number(newTransaction?.amount) || 0,
+            current_amount: Number(newTransaction?.amount) || 0,
+            target_date: formatDateToYMD(newTransaction?.date),
+            category: 'Tabungan',
+            note: String(newTransaction?.note || ''),
+          })
+        }
+
+        const savingsRes2 = await savingAPI.list()
+        setSavings(savingsRes2.data)
+      }
+
+      // (lanjutkan flow replace temp transaction)
+
       const transaction = {
         ...savedTransaction,
         type: savedTransaction.type || tempTransaction.type,
@@ -669,7 +846,19 @@ function App() {
     } catch (e) {
       // Rollback optimistic updates
       setTransactions((prev) => prev.filter((t) => t.id !== tempId))
-      alert('Gagal menyimpan transaksi ke server: ' + (e.message || 'Error tidak diketahui'))
+      console.error('Failed to save transaction', {
+        payload: {
+          ...newTransaction,
+          wallet_id: walletId,
+          metadata: transactionMetadata,
+        },
+        error: e,
+      })
+      alert(
+        'Gagal menyimpan transaksi ke server: ' +
+          (e.message || 'Error tidak diketahui') +
+          (e.status ? ` (HTTP ${e.status})` : '')
+      )
       throw e
     }
   }
@@ -714,7 +903,11 @@ function App() {
     syncBudgetWithTransaction(tempTransaction)
 
     const amount = Number(newTransaction.amount) || 0
-    const isDebtCategory = newTransaction.businessCategory === 'Hutang Supplier' || newTransaction.businessCategory === 'Piutang Pelanggan'
+    const businessCategoryLabel = String(newTransaction.businessCategory || '').trim()
+    const isDebtCategory = businessCategoryLabel.toLowerCase().includes('hutang') || businessCategoryLabel.toLowerCase().includes('piutang')
+    const isSavingsCategory = businessCategoryLabel.toLowerCase() === 'tabungan'
+    const debtTitle = String(newTransaction.title || newTransaction.note || businessCategoryLabel || 'Hutang').trim()
+    const savingsName = String(newTransaction.title || 'Tabungan').trim()
 
     // Optimistically update wallet info & e-wallet balance
     if (newTransaction.type === 'income') {
@@ -831,19 +1024,50 @@ function App() {
       // Persist debt category in DB if applicable
       if (isDebtCategory) {
         try {
-          await debtAPI.create({
+          await mergeOrCreateDebt({
             wallet_id: walletInfo?.id,
-            creditor_name: newTransaction.businessCategory,
+            creditor_name: debtTitle,
             amount: amount,
-            due_date: newTransaction.date || new Date().toISOString(),
+            due_date: formatDateToYMD(newTransaction.date || new Date()),
             note: newTransaction.note || '',
             status: newTransaction.isSettled ? 'paid' : 'active'
           })
-          
-          const debtsRes = await debtAPI.list()
-          setDebts(debtsRes.data)
         } catch (e) {
           console.error('Error creating debt:', e)
+        }
+      }
+
+      // Persist Tabungan category into savings report if applicable
+      if (isSavingsCategory) {
+        try {
+          const existingSaving = savings.find((s) => String(s.name || '').trim().toLowerCase() === savingsName.toLowerCase())
+
+          if (existingSaving) {
+            await savingAPI.update(existingSaving.id, {
+              wallet_id: walletInfo?.id,
+              name: existingSaving.name,
+              target_amount: Number(existingSaving.target_amount || existingSaving.target || 0),
+              current_amount: (Number(existingSaving.current_amount || existingSaving.current || 0) + amount),
+              target_date: formatDateToYMD(existingSaving.target_date || existingSaving.deadline),
+              category: existingSaving.category || 'Tabungan',
+              note: existingSaving.note || String(newTransaction.note || ''),
+            })
+          } else {
+            await savingAPI.create({
+              wallet_id: walletInfo?.id,
+              name: savingsName,
+              target_amount: amount,
+              current_amount: amount,
+              target_date: formatDateToYMD(newTransaction.date || new Date().toISOString()),
+              category: 'Tabungan',
+              note: String(newTransaction.note || ''),
+            })
+          }
+
+          const savingsRes = await savingAPI.list()
+          setSavings(savingsRes.data)
+        } catch (e) {
+          console.error('Error creating saving:', e)
         }
       }
 
@@ -870,23 +1094,64 @@ function App() {
     }
   }
 
+  const normalizeDebt = (debt) => ({
+    ...debt,
+    creditor: debt.creditor_name || debt.creditor,
+    dueDate: debt.due_date || debt.dueDate,
+  })
+
+  const mergeOrCreateDebt = async (payload) => {
+    const creditorName = String(payload.creditor_name || payload.creditor || '').trim()
+    const amount = Number(payload.amount) || 0
+    const dueDate = payload.due_date || payload.dueDate || new Date()
+    const note = String(payload.note || '').trim()
+    const status = payload.status || 'active'
+
+    const existingDebt = debts.find(
+      (debt) => String(debt.creditor || '').trim().toLowerCase() === creditorName.toLowerCase()
+    )
+
+    if (existingDebt) {
+      const existingAmount = Number(existingDebt.amount || 0)
+      const updatedAmount = Math.max(0, existingAmount - amount)
+      const updatedStatus = updatedAmount === 0 ? 'paid' : (existingDebt.status || 'active')
+      const updatedPayload = {
+        wallet_id: payload.wallet_id || existingDebt.wallet_id,
+        creditor_name: creditorName,
+        amount: updatedAmount,
+        due_date: formatDateToYMD(existingDebt.dueDate || dueDate),
+        note: note || String(existingDebt.note || ''),
+        status: updatedStatus,
+      }
+      const res = await debtAPI.update(existingDebt.id, updatedPayload)
+      const normalized = normalizeDebt(res.data)
+      setDebts((prev) => prev.map((debt) => debt.id === existingDebt.id ? normalized : debt))
+      return normalized
+    }
+
+    const res = await debtAPI.create({
+      wallet_id: payload.wallet_id,
+      creditor_name: creditorName,
+      amount,
+      due_date: formatDateToYMD(dueDate),
+      note,
+      status,
+    })
+    const normalized = normalizeDebt(res.data)
+    setDebts((prev) => [...prev, normalized])
+    return normalized
+  }
+
   const addDebt = async (newDebt) => {
     try {
-      const payload = {
+      await mergeOrCreateDebt({
         wallet_id: walletInfo?.id,
         creditor_name: newDebt.creditor,
         amount: newDebt.amount,
         due_date: newDebt.dueDate,
         note: newDebt.note,
         status: 'active'
-      }
-      const res = await debtAPI.create(payload)
-      const normalized = {
-        ...res.data,
-        creditor: res.data.creditor_name,
-        dueDate: res.data.due_date
-      }
-      setDebts((prev) => [...prev, normalized])
+      })
     } catch (e) {
       alert('Gagal menyimpan hutang: ' + (e.message || 'Error tidak diketahui'))
     }
@@ -899,7 +1164,7 @@ function App() {
         name: newSavings.name,
         target_amount: newSavings.target,
         current_amount: newSavings.current || 0,
-        target_date: newSavings.deadline,
+        target_date: formatDateToYMD(newSavings.deadline),
         category: newSavings.category || 'Tabungan',
         note: newSavings.note || ''
       }
@@ -916,21 +1181,57 @@ function App() {
     }
   }
 
-  const authFetch = async (url, options = {}) => {
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    }
+  const updateSavings = async (id, updates) => {
+    try {
+      const payload = {}
+      if (updates.name !== undefined) payload.name = updates.name
+      if (updates.target !== undefined) payload.target_amount = updates.target
+      if (updates.current !== undefined) payload.current_amount = updates.current
+      if (updates.deadline !== undefined) payload.target_date = formatDateToYMD(updates.deadline)
+      if (updates.category !== undefined) payload.category = updates.category
+      if (updates.note !== undefined) payload.note = updates.note
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`
+      const res = await savingAPI.update(id, payload)
+      const normalized = {
+        ...res.data,
+        target: res.data.target_amount,
+        current: res.data.current_amount,
+        deadline: res.data.target_date
+      }
+      setSavings((prev) => prev.map((saving) => (saving.id === id ? normalized : saving)))
+      return normalized
+    } catch (e) {
+      alert('Gagal memperbarui tabungan: ' + (e.message || 'Error tidak diketahui'))
+      throw e
     }
-
-    return fetch(url, {
-      ...options,
-      headers,
-    })
   }
+
+  const deleteSavings = async (id) => {
+    try {
+      await savingAPI.delete(id)
+      setSavings((prev) => prev.filter((saving) => saving.id !== id))
+    } catch (e) {
+      alert('Gagal menghapus tabungan: ' + (e.message || 'Error tidak diketahui'))
+      throw e
+    }
+  }
+
+  const authFetch = async (url, options = {}) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(options.headers || {}),
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  return fetch(buildApiUrl(url), {
+    ...options,
+    headers,
+  })
+}
 
   const fetchCurrentUser = async () => {
     try {
@@ -1047,21 +1348,23 @@ function App() {
   }
 
   const handleSaveInitialBalance = async (data) => {
-    const balance = data.balance
+    const balance = Number(data?.wallet?.balance ?? data?.balance ?? 0)
     setInitialBalance(balance)
 
-    // UMKM: saldo awal harus masuk ke e-wallet UMKM + ringkasan pemasukan (agar Dompet Usaha ikut terisi)
+    if (data?.wallet) {
+      setWalletInfo(data.wallet)
+    }
+
+    // UMKM: saldo awal harus masuk ke e-wallet UMKM
+    // Catatan: jangan masukkan saldo awal ke ringkasan laba/rugi (umkmSummary.income),
+    // karena itu membuat fitur 'Laba Rugi Otomatis' ikut terbawa saldo awal.
     if (userProfile?.usertype === 'umkm') {
       setUmkmEWalletBalance(balance)
 
-      setUmkmSummary((prevSummary) => {
-        // Di dashboard UMKM, 'Saldo Pemasukan' memakai umkmSummary.income.
-        // Jadi saat saldo awal dimasukkan, income harus ikut terisi.
-        return {
-          ...prevSummary,
-          income: balance,
-        }
-      })
+      setUmkmSummary((prevSummary) => ({
+        ...prevSummary,
+        // sengaja tidak mengubah prevSummary.income
+      }))
     }
 
     setShowInitialBalance(false)
@@ -1071,6 +1374,7 @@ function App() {
       const walletData = await fetchWalletInfo()
       if (walletData) {
         setWalletInfo(walletData)
+        setInitialBalance(Number(walletData.balance) || balance)
       }
     } catch (e) {
       console.error('Error fetching wallet after initial balance save:', e)
@@ -1161,19 +1465,28 @@ function App() {
           )
         }
         if (userProfile?.usertype === 'mahasiswa') {
-          return <TransactionsMahasiswaPage transactions={mahasiswaTransactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
+          return <TransactionsMahasiswaPage transactions={mahasiswaTransactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} onNavigateToReports={(tab) => { setDefaultReportTab(tab); navigateTo('reports'); }} />
         }
         return <TransactionsMasyarakatPage transactions={masyarakatTransactions} filters={filters} setFilters={setFilters} onAddTransaction={addTransaction} />
       case 'analysis':
+        if (['masyarakat', 'masyarakat_umum'].includes(userProfile?.usertype)) {
+          return <AnalysisMasyarakatPage transactions={masyarakatTransactions} />
+        }
+        if (userProfile?.usertype === 'mahasiswa') {
+          return <AnalysisMahasiswaPage transactions={mahasiswaTransactions} />
+        }
+        if (userProfile?.usertype === 'umkm') {
+          return <AnalysisUMKMPage transactions={umkmTransactions} />
+        }
         return <AnalysisPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} />
       case 'reports':
         if (userProfile?.usertype === 'umkm') {
-          return <ReportsUMKMPage transactions={umkmTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
+          return <ReportsUMKMPage transactions={umkmTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} onAddSavings={addSavings} onEditSavings={updateSavings} onDeleteSavings={deleteSavings} />
         }
         if (userProfile?.usertype === 'mahasiswa') {
-          return <ReportsMahasiswaPage transactions={mahasiswaTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
+          return <ReportsMahasiswaPage transactions={mahasiswaTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} onAddSavings={addSavings} onEditSavings={updateSavings} onDeleteSavings={deleteSavings} />
         }
-        return <ReportsMasyarakatPage transactions={masyarakatTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} />
+        return <ReportsMasyarakatPage transactions={masyarakatTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} onAddSavings={addSavings} onEditSavings={updateSavings} onDeleteSavings={deleteSavings} />
       case 'budget':
         return <BudgetPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} budgets={budgets} setBudgets={setBudgets} userType={userProfile?.usertype || userType} />
       case 'add-debt':
@@ -1200,15 +1513,24 @@ function App() {
               onQuickAction={(category) => {
                 setFilters({ type: category })
                 navigateTo('transactions')
+                setTimeout(() => {
+                  try {
+                    const incomeCategories = ['Beasiswa', 'Tabungan', 'Uang Saku', 'Penghasilan Kerja Paruh Waktu']
+                    const isIncome = incomeCategories.includes(category)
+                    window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category, type: isIncome ? 'income' : 'expense' } }))
+                  } catch (e) {
+                    // ignore
+                  }
+                }, 0)
               }}
             />
-          ) : userProfile?.usertype === 'masyarakat' ? (
+          ) : ['masyarakat', 'masyarakat_umum'].includes(userProfile?.usertype) ? (
             <DashboardMasyarakatPage
               walletSummary={{
-                current: initialBalance,
+                current: Number(walletInfo?.balance ?? initialBalance ?? 0),
                 income: initialBalance,
                 expense: 0,
-                smartCashPerDay: initialBalance,
+                smartCashPerDay: Number(walletInfo?.balance ?? initialBalance ?? 0),
                 smartReductionPerDay: 0,
               }}
               transactions={masyarakatTransactions}
@@ -1216,12 +1538,15 @@ function App() {
               walletInfo={walletInfo}
               userProfile={userProfile}
               onQuickAction={(category) => {
-                setFilters({ type: 'expense' })
-                // Navigasi ke Transactions Masyarakat, lalu preset kategori melalui search agar sesuai label quick action.
+                // Filter harus memakai nama kategori, bukan string 'expense'.
+                // Kategori ini sudah disamakan dengan TransactionsMasyarakatPage.jsx.
+                setFilters({ type: category })
                 navigateTo('transactions')
                 setTimeout(() => {
                   try {
-window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category, type: 'expense' } } ))
+                    const incomeCategories = ['Penghasilan Kerja', 'Uang Saku', 'Tabungan']
+                    const isIncome = incomeCategories.includes(category)
+                    window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category, type: isIncome ? 'income' : 'expense' } }))
                   } catch (e) {}
                 }, 0)
               }}
@@ -1273,6 +1598,10 @@ window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category
         )
     }
   }, [currentPage, isAuthenticated, showUserType, showLanding, showInitialBalance, initialBalance, filters, selectedUmkmCategory, transactions, umkmTransactions, debts, savings, budgets, userProfile, walletInfo, umkmSummary, umkmEWalletBalance])
+
+  if (showSplash) {
+    return <SplashScreen />
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">

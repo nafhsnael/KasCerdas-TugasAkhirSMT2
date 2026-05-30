@@ -25,3 +25,20 @@ input::placeholder,
 textarea::placeholder {
   @apply text-slate-400;
 }
+@keyframes logoZoom {
+  from { transform: scale(1); }
+  to { transform: scale(0.5); }
+}
+
+.logo-zoom {
+  animation: logoZoom 0.8s ease-out forwards;
+}
+
+/* Splash logo transition */
+.logo-fly {
+  @apply fixed top-4 left-4 w-12 h-12 rounded-full border-0 bg-white;
+  transition: all 0.7s ease-in-out;
+}
+.logo-fly img {
+  @apply w-full h-full object-contain;
+}

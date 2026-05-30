@@ -1,8 +1,19 @@
 import { useMemo, useState } from 'react'
 import StatCard from '../components/StatCard'
 
-function ReportsMasyarakatPage({ transactions, debts, savings, onNavigate }) {
+function ReportsMasyarakatPage({ transactions, debts, savings, onNavigate, onAddSavings, onEditSavings, onDeleteSavings }) {
   const [activeTab, setActiveTab] = useState('daily')
+  const [isAddingSaving, setIsAddingSaving] = useState(false)
+  const [addForm, setAddForm] = useState({
+    name: '',
+    amount: '',
+  })
+  const [editingSavingId, setEditingSavingId] = useState(null)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    amount: '',
+  })
+
 
   const now = new Date()
   const currentMonth = now.getMonth()
@@ -81,11 +92,72 @@ function ReportsMasyarakatPage({ transactions, debts, savings, onNavigate }) {
   const monthlyCategoryExpenses = useMemo(() => buildCategoryExpenses(monthlyTransactions), [monthlyTransactions])
   const annualCategoryExpenses = useMemo(() => buildCategoryExpenses(annualTransactions), [annualTransactions])
 
+  const transactionSavings = useMemo(() => {
+    const grouped = {}
+
+    transactions
+      .filter((transaction) => transaction.category === 'Tabungan' && transaction.type === 'income')
+      .forEach((transaction) => {
+        const name = String(transaction.title || transaction.category || 'Tabungan').trim()
+        const key = name.toLowerCase()
+        if (!grouped[key]) {
+          grouped[key] = {
+            id: `trx-${transaction.id}`,
+            name,
+            target: 0,
+            current: 0,
+            deadline: transaction.date || new Date().toISOString(),
+            note: transaction.note || 'Transaksi kategori Tabungan',
+          }
+        }
+        grouped[key].target += Number(transaction.amount) || 0
+        grouped[key].current += Number(transaction.amount) || 0
+      })
+
+    return Object.values(grouped)
+  }, [transactions])
+
+  const allSavings = useMemo(() => {
+    const mapped = new Map(
+      savings.map((saving) => [String(saving.name || '').trim().toLowerCase(), { ...saving }])
+    )
+
+    transactionSavings.forEach((transactionSaving) => {
+      const key = String(transactionSaving.name || '').trim().toLowerCase()
+      const existing = mapped.get(key)
+      if (!existing) {
+        mapped.set(key, transactionSaving)
+      }
+    })
+
+    return Array.from(mapped.values())
+  }, [savings, transactionSavings])
+
   const totalDebt = debts.reduce((sum, debt) => sum + debt.amount, 0)
-  const savingTargets = savings.map((saving) => ({
-    ...saving,
-    progress: saving.target > 0 ? Math.round((saving.current / saving.target) * 100) : 0,
-  }))
+  const savingTargets = allSavings.map((saving) => {
+    const current = Number(saving.current || saving.current_amount || 0)
+    const target = Number(saving.target || saving.target_amount || 0)
+    return {
+      ...saving,
+      current,
+      target,
+      progress: target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0,
+      remaining: Math.max(0, target - current),
+    }
+  })
+
+  const startEditingSaving = (saving) => {
+    setEditingSavingId(saving.id)
+    setEditForm({
+      name: saving.name || '',
+      amount: String(saving.target || saving.target_amount || 0),
+    })
+  }
+
+  const cancelEditingSaving = () => {
+    setEditingSavingId(null)
+    setEditForm({ name: '', amount: '' })
+  }
 
   const tabs = [
     { id: 'daily', label: 'Harian' },
@@ -256,28 +328,234 @@ function ReportsMasyarakatPage({ transactions, debts, savings, onNavigate }) {
       {activeTab === 'savings' && (
         <div className="space-y-6">
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Target Tabungan</h2>
-            <p className="text-sm text-slate-500 mb-4">Pantau pencapaian target tabungan Anda.</p>
-            <p className="text-2xl font-bold text-[#38ADA9]">{savings.length} target tabungan aktif</p>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 mb-2">Target Tabungan</h2>
+                <p className="text-sm text-slate-500 mb-4">Pantau pencapaian target tabungan Anda.</p>
+                <p className="text-2xl font-bold text-[#38ADA9]">{allSavings.length} target tabungan aktif</p>
+              </div>
+              {!isAddingSaving && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingSaving(true)
+                    setAddForm({ name: '', amount: '' })
+                  }}
+                  className="rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d] whitespace-nowrap"
+                >
+                  + Tambah Tabungan Baru
+                </button>
+              )}
+            </div>
           </div>
+
+          {isAddingSaving && (
+            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Tambah Target Tabungan</h3>
+
+              <form
+                className="grid gap-5 lg:grid-cols-2"
+                onSubmit={async (e) => {
+                  e.preventDefault()
+
+                  const name = String(addForm.name || '').trim()
+                  const target = parseFloat(addForm.amount)
+
+                  if (!name) {
+                    alert('Nama tabungan wajib diisi')
+                    return
+                  }
+                  if (!target || Number.isNaN(target) || target <= 0) {
+                    alert('Jumlah (Rp) harus lebih dari 0')
+                    return
+                  }
+
+                  try {
+                    await onAddSavings({
+                      name,
+                      target,
+                      current: 0,
+                      deadline: new Date().toISOString(),
+                      category: 'Tabungan',
+                      note: '',
+                    })
+                    setIsAddingSaving(false)
+                    setAddForm({ name: '', amount: '' })
+                  } catch (err) {
+                    alert(err?.message || 'Gagal menambah target tabungan')
+                    return
+                  }
+                }}
+              >
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Nama Tabungan</label>
+                  <input
+                    type="text"
+                    value={addForm.name}
+                    onChange={(e) => setAddForm((prev) => ({ ...prev, name: e.target.value }))}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    placeholder="Contoh: Tabungan Pendidikan"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={addForm.amount}
+                    onChange={(e) => setAddForm((prev) => ({ ...prev, amount: e.target.value }))}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    placeholder="0"
+                    required
+                    min={1}
+                  />
+                </div>
+
+                <div className="lg:col-span-2 flex gap-3">
+                  <button
+                    type="submit"
+                    className="flex-1 rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]"
+                  >
+                    Simpan Target
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingSaving(false)}
+                    className="flex-1 rounded-3xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-300"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
           <div className="grid gap-4 lg:grid-cols-2">
             {savingTargets.map((saving) => (
               <div key={saving.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-xl font-semibold text-slate-900">{saving.name}</h3>
-                    <p className="text-sm text-slate-500">Deadline: {new Date(saving.deadline).toLocaleDateString('id-ID')}</p>
-                  </div>
-                  <span className="text-sm font-semibold text-slate-700">{saving.progress}% tercapai</span>
-                </div>
-                <div className="mt-4 rounded-full bg-slate-100 h-3 overflow-hidden">
-                  <div className="h-3 rounded-full bg-[#38ADA9]" style={{ width: `${Math.min(saving.progress, 100)}%` }} />
-                </div>
-                <div className="mt-4 text-sm text-slate-600 space-y-2">
-                  <p>Tabungan saat ini: Rp {saving.current.toLocaleString('id-ID')}</p>
-                  <p>Target: Rp {saving.target.toLocaleString('id-ID')}</p>
-                  <p>Sisa: Rp {(saving.target - saving.current).toLocaleString('id-ID')}</p>
-                </div>
+                {editingSavingId === saving.id ? (
+                  <form
+                    className="space-y-4"
+                    onSubmit={async (e) => {
+                      e.preventDefault()
+                      const name = String(editForm.name || '').trim()
+                      const target = parseFloat(editForm.amount)
+
+                      if (!name) {
+                        alert('Nama tabungan wajib diisi')
+                        return
+                      }
+                      if (!target || Number.isNaN(target) || target <= 0) {
+                        alert('Jumlah target harus lebih dari 0')
+                        return
+                      }
+
+                      try {
+                        await onEditSavings(saving.id, { name, target })
+                        cancelEditingSaving()
+                      } catch (err) {
+                        return
+                      }
+                    }}
+                  >
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">Nama Tabungan</label>
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                        className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">Target (Rp)</label>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={editForm.amount}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, amount: e.target.value }))}
+                        className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                        required
+                        min={1}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="submit"
+                        className="rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]"
+                      >
+                        Simpan Perubahan
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEditingSaving}
+                        className="rounded-3xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-300"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!window.confirm('Yakin ingin menghapus target tabungan ini?')) return
+                          try {
+                            await onDeleteSavings(saving.id)
+                            cancelEditingSaving()
+                          } catch (err) {
+                            return
+                          }
+                        }}
+                        className="rounded-3xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-xl font-semibold text-slate-900">{saving.name}</h3>
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700">{saving.progress}% tercapai</span>
+                    </div>
+                    <div className="mt-4 rounded-full bg-slate-100 h-3 overflow-hidden">
+                      <div className="h-3 rounded-full bg-[#38ADA9]" style={{ width: `${Math.min(saving.progress, 100)}%` }} />
+                    </div>
+                    <div className="mt-4 text-sm text-slate-600 space-y-2">
+                      <p>Tabungan saat ini: Rp {saving.current.toLocaleString('id-ID')}</p>
+                      <p>Target: Rp {saving.target.toLocaleString('id-ID')}</p>
+                      <p>Sisa: Rp {(saving.target - saving.current).toLocaleString('id-ID')}</p>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startEditingSaving(saving)}
+                        className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!window.confirm('Yakin ingin menghapus target tabungan ini?')) return
+                          try {
+                            await onDeleteSavings(saving.id)
+                          } catch (err) {
+                            return
+                          }
+                        }}
+                        className="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
