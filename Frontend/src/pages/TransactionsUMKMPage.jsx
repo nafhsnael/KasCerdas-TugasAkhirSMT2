@@ -331,7 +331,7 @@ function TransactionsUMKMPage({
               value={form.title}
               onChange={(e) => handleChange('title', e.target.value)}
               required
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200"
               placeholder="Contoh: Penjualan brownies"
             />
           </div>
@@ -351,7 +351,7 @@ function TransactionsUMKMPage({
                 const formatted = raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
               }}
               required
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200"
               placeholder="Rp"
             />
           </div>
@@ -361,7 +361,7 @@ function TransactionsUMKMPage({
             <select
               value={form.category}
               onChange={(e) => handleChange('category', e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200"
             >
               {categories.map((category) => (
                 <option key={category} value={category}>{category}</option>
@@ -379,7 +379,7 @@ function TransactionsUMKMPage({
               value={form.date}
               onChange={(e) => handleChange('date', e.target.value)}
               required
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200"
             />
           </div>
 
@@ -400,7 +400,7 @@ function TransactionsUMKMPage({
                       value={form.stockItemSearch}
                       onChange={(e) => setForm((prev) => ({ ...prev, stockItemSearch: e.target.value }))}
                       placeholder="nama item stok (wajib)"
-                      className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                      className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200"
                     />
 
                     {/* Hapus daftar hasil stok (autocomplete/bubble) agar user hanya input nama item stok + kuantitas */}
@@ -417,7 +417,7 @@ function TransactionsUMKMPage({
                     value={form.stockQty}
                     onChange={(e) => handleChange('stockQty', e.target.value)}
                     disabled={false}
-                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60"
                   />
                 </div>
               </div>
@@ -432,7 +432,7 @@ function TransactionsUMKMPage({
                 value={form.note}
                 onChange={(e) => handleChange('note', e.target.value)}
                 rows="3"
-                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200"
                 placeholder="Contoh: Lunas hutang supplier bulan ini"
                 readOnly
               />
@@ -447,7 +447,7 @@ function TransactionsUMKMPage({
                 onChange={(e) => handleChange('note', e.target.value)}
                 rows="3"
                 style={{ resize: 'none' }}
-                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200"
                 placeholder="Contoh: Penjualan brownies di toko 1"
               />
 
@@ -500,7 +500,6 @@ function TransactionsUMKMPage({
           </div>
           <span className="rounded-2xl bg-slate-100 px-3 py-1 text-sm text-slate-600">{visibleTransactions.length} transaksi</span>
         </div>
-
         <div className="mb-6 grid gap-4 md:grid-cols-3">
          
           <div>
@@ -508,7 +507,7 @@ function TransactionsUMKMPage({
             <select
               value={filters.type}
               onChange={(e) => setFilters({ type: e.target.value })}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200 cursor-pointer"
             >
               <option value="all">Semua</option>
               <option value="Penjualan">Penjualan</option>
@@ -520,22 +519,29 @@ function TransactionsUMKMPage({
               <option value="Hutang Supplier">Hutang Supplier</option>
             </select>
           </div>
-           <div>
+          <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Cari Transaksi</label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari judul, kategori, catatan, atau invoice..."
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-            />
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari judul, kategori, catatan, atau invoice..."
+                className="w-full rounded-3xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200"
+              />
+            </div>
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Filter Bulan</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 focus:outline-none transition-all duration-200 cursor-pointer"
             >
               <option value="">Semua Bulan</option>
               {Array.from({ length: 12 }, (_, index) => {

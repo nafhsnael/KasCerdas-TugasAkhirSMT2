@@ -4,7 +4,7 @@ function TransactionCard({ transaction, onViewInvoice, onDelete, isDeleting }) {
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-base font-semibold text-slate-900">{transaction.title}</p>
-          <p className="text-sm text-slate-500">{transaction.category} • {transaction.bank || transaction.wallet || '-'}</p>
+          <p className="text-sm text-slate-500">{transaction.category}</p>
 
         </div>
         <div className="flex items-center gap-3">

@@ -1,18 +1,92 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import StatCard from '../components/StatCard'
+import { debtAPI } from '../utils/api'
 
-function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSavings, onEditSavings, onDeleteSavings }) {
-  const [activeTab, setActiveTab] = useState('daily')
+function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSavings, onEditSavings, onDeleteSavings, onAddDebt, onEditDebt, onDeleteDebt, defaultTab = 'daily', setDefaultTab }) {
+  const [activeTab, setActiveTab] = useState(defaultTab)
+
+  useEffect(() => {
+    if (defaultTab && defaultTab !== activeTab) {
+      setActiveTab(defaultTab)
+    }
+  }, [defaultTab])
+
+  useEffect(() => {
+    if (setDefaultTab) {
+      setDefaultTab(activeTab)
+    }
+  }, [activeTab, setDefaultTab])
+
   const [isAddingSaving, setIsAddingSaving] = useState(false)
+  const [isAddingDebt, setIsAddingDebt] = useState(false)
+  const [isAddingPiutang, setIsAddingPiutang] = useState(false)
   const [addForm, setAddForm] = useState({
     name: '',
     amount: '',
+  })
+  const [debtForm, setDebtForm] = useState({
+    creditor: '',
+    amount: '',
+    dueDate: ''
+  })
+  const [piutangForm, setPiutangForm] = useState({
+    customer: '',
+    amount: '',
+    dueDate: ''
   })
   const [editingSavingId, setEditingSavingId] = useState(null)
   const [editForm, setEditForm] = useState({
     name: '',
     amount: '',
   })
+
+  const [editingDebtId, setEditingDebtId] = useState(null)
+  const [editDebtForm, setEditDebtForm] = useState({
+    creditor: '',
+    amount: '',
+    dueDate: '',
+    status: 'active'
+  })
+
+  const startEditingDebt = (debt) => {
+    setEditingDebtId(debt.id)
+    setEditDebtForm({
+      creditor: debt.creditor || '',
+      amount: String(debt.amount || 0),
+      dueDate: debt.dueDate ? debt.dueDate.split('T')[0] : '',
+      status: debt.status || 'active'
+    })
+  }
+
+  const cancelEditingDebt = () => {
+    setEditingDebtId(null)
+    setEditDebtForm({ creditor: '', amount: '', dueDate: '', status: 'active' })
+  }
+
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const [selectedYear, setSelectedYear] = useState(Math.max(2026, new Date().getFullYear()))
+
+  const [debtSearchQuery, setDebtSearchQuery] = useState('')
+  const [debtFilterMonth, setDebtFilterMonth] = useState('all')
+  const [savingSearchQuery, setSavingSearchQuery] = useState('')
+  const [savingFilterMonth, setSavingFilterMonth] = useState('all')
+  const [piutangSearchQuery, setPiutangSearchQuery] = useState('')
+  const [piutangFilterMonth, setPiutangFilterMonth] = useState('all')
+
+  const monthsList = [
+    { value: 1, label: 'Januari' },
+    { value: 2, label: 'Februari' },
+    { value: 3, label: 'Maret' },
+    { value: 4, label: 'April' },
+    { value: 5, label: 'Mei' },
+    { value: 6, label: 'Juni' },
+    { value: 7, label: 'Juli' },
+    { value: 8, label: 'Agustus' },
+    { value: 9, label: 'September' },
+    { value: 10, label: 'Oktober' },
+    { value: 11, label: 'November' },
+    { value: 12, label: 'Desember' }
+  ]
 
   const now = new Date()
   const currentMonth = now.getMonth()
@@ -37,6 +111,37 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
     }
   }
 
+  const availableYears = useMemo(() => {
+    const baseYears = [2026, 2027, 2028, 2029, 2030]
+    const years = new Set(baseYears)
+    transactions.forEach((t) => {
+      const d = parseDate(t.date)
+      if (d && d.getFullYear() >= 2026) {
+        years.add(d.getFullYear())
+      }
+    })
+    return Array.from(years).sort((a, b) => a - b)
+  }, [transactions])
+
+  const filterMonthOptions = useMemo(() => {
+    const list = [{ value: 'all', label: 'Semua Bulan' }]
+    const years = [2026]
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ]
+    years.forEach((yr) => {
+      months.forEach((m, idx) => {
+        const monthVal = String(idx + 1).padStart(2, '0')
+        list.push({
+          value: `${yr}-${monthVal}`,
+          label: `${m} ${yr}`
+        })
+      })
+    })
+    return list
+  }, [])
+
   const filterByDate = (dateValue, comparator) => {
     const date = parseDate(dateValue)
     if (!date) return false
@@ -53,12 +158,12 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
 
   const monthlyTransactions = transactions.filter((transaction) =>
     filterByDate(transaction.date, (date) =>
-      date.getMonth() === currentMonth && date.getFullYear() === currentYear
+      (date.getMonth() + 1) === selectedMonth && date.getFullYear() === currentYear
     )
   )
 
   const annualTransactions = transactions.filter((transaction) =>
-    filterByDate(transaction.date, (date) => date.getFullYear() === currentYear)
+    filterByDate(transaction.date, (date) => date.getFullYear() === selectedYear)
   )
 
   const sumAmount = (items) => items.reduce((sum, item) => sum + item.amount, 0)
@@ -132,13 +237,55 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
     return Array.from(mapped.values())
   }, [savings, transactionSavings])
 
-  const piutangTransactions = transactions.filter((t) => {
-    const cat = String(t.category || '').toLowerCase();
-    return cat.includes('piutang');
-  });
+  // Helper to determine the category of a debt
+  const getDebtCategory = (debt) => {
+    const noteLower = String(debt.note || '').toLowerCase().trim()
+    if (noteLower.includes('piutang pelanggan')) return 'Piutang Pelanggan'
+    if (noteLower.includes('hutang supplier')) return 'Hutang Supplier'
 
-  const totalPiutang = piutangTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const totalDebt = debts.reduce((sum, d) => sum + d.amount, 0);
+    const creditorLower = String(debt.creditor || debt.creditor_name || '').toLowerCase().trim()
+    if (creditorLower.includes('piutang pelanggan')) return 'Piutang Pelanggan'
+    if (creditorLower.includes('hutang supplier')) return 'Hutang Supplier'
+
+    const matchingTrx = transactions.find(
+      (t) => String(t.title || t.judul || '').toLowerCase().trim() === creditorLower
+    )
+    if (matchingTrx) {
+      const cat = String(matchingTrx.category || matchingTrx.kategori || '').toLowerCase()
+      if (cat.includes('piutang')) return 'Piutang Pelanggan'
+      if (cat.includes('hutang')) return 'Hutang Supplier'
+    }
+
+    if (creditorLower.includes('piutang') || creditorLower.includes('pelanggan')) {
+      return 'Piutang Pelanggan'
+    }
+    return 'Hutang Supplier'
+  }
+
+  const supplierDebts = useMemo(() => {
+    return debts.filter((d) => getDebtCategory(d) === 'Hutang Supplier')
+  }, [debts, transactions])
+
+  const customerPiutang = useMemo(() => {
+    return debts.filter((d) => getDebtCategory(d) === 'Piutang Pelanggan')
+  }, [debts, transactions])
+
+  const totalPiutang = useMemo(() => {
+    return customerPiutang.reduce((sum, d) => {
+      const amount = parseFloat(d.amount) || 0;
+      const dibayar = parseFloat(d.paid_amount || d.paidAmount) || 0;
+      return sum + Math.max(0, amount - dibayar);
+    }, 0);
+  }, [customerPiutang]);
+
+  const totalDebt = useMemo(() => {
+    return supplierDebts.reduce((sum, d) => {
+      const amount = parseFloat(d.amount) || 0;
+      const dibayar = parseFloat(d.paid_amount || d.paidAmount) || 0;
+      return sum + Math.max(0, amount - dibayar);
+    }, 0);
+  }, [supplierDebts]);
+
   const savingTargets = allSavings.map((saving) => {
     const current = Number(saving.current || saving.current_amount || 0)
     const target = Number(saving.target || saving.target_amount || 0)
@@ -150,6 +297,68 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
       remaining: Math.max(0, target - current),
     }
   })
+
+  const totalAccumulatedSavings = useMemo(() => {
+    return savingTargets.reduce((sum, s) => sum + s.current, 0)
+  }, [savingTargets])
+
+  const activeDebtsCount = useMemo(() => {
+    return supplierDebts.filter((d) => {
+      const amount = parseFloat(d.amount) || 0
+      const dibayar = parseFloat(d.paid_amount || d.paidAmount) || 0
+      const sisa = Math.max(0, amount - dibayar)
+      return d.status === 'active' || sisa > 0
+    }).length
+  }, [supplierDebts])
+
+  const activePiutangCount = useMemo(() => {
+    return customerPiutang.filter((d) => {
+      const amount = parseFloat(d.amount) || 0
+      const dibayar = parseFloat(d.paid_amount || d.paidAmount) || 0
+      const sisa = Math.max(0, amount - dibayar)
+      return d.status === 'active' || sisa > 0
+    }).length
+  }, [customerPiutang])
+
+  const unreachedSavingsCount = useMemo(() => {
+    return savingTargets.filter((s) => s.current < s.target).length
+  }, [savingTargets])
+
+  const filteredSupplierDebts = useMemo(() => {
+    return supplierDebts.filter((debt) => {
+      const creditor = (debt.creditor || debt.creditor_name || '').toLowerCase()
+      const noteStr = (debt.note || '').toLowerCase()
+      const matchesSearch = creditor.includes(debtSearchQuery.toLowerCase()) || noteStr.includes(debtSearchQuery.toLowerCase())
+      if (debtFilterMonth === 'all') return matchesSearch
+      const debtDate = debt.dueDate || debt.due_date
+      if (!debtDate) return false
+      return debtDate.startsWith(debtFilterMonth)
+    })
+  }, [supplierDebts, debtSearchQuery, debtFilterMonth])
+
+  const filteredSavings = useMemo(() => {
+    return savingTargets.filter((saving) => {
+      const name = (saving.name || '').toLowerCase()
+      const noteStr = (saving.note || '').toLowerCase()
+      const matchesSearch = name.includes(savingSearchQuery.toLowerCase()) || noteStr.includes(savingSearchQuery.toLowerCase())
+      if (savingFilterMonth === 'all') return matchesSearch
+      const savingDate = saving.deadline || saving.target_date || saving.targetDate || saving.date
+      if (!savingDate) return false
+      return savingDate.startsWith(savingFilterMonth)
+    })
+  }, [savingTargets, savingSearchQuery, savingFilterMonth])
+
+  const filteredCustomerPiutang = useMemo(() => {
+    return customerPiutang.filter((debt) => {
+      const creditor = (debt.creditor || debt.creditor_name || '').toLowerCase()
+      const noteStr = (debt.note || '').toLowerCase()
+      const matchesSearch = creditor.includes(piutangSearchQuery.toLowerCase()) || noteStr.includes(piutangSearchQuery.toLowerCase())
+      if (piutangFilterMonth === 'all') return matchesSearch
+      const debtDate = debt.dueDate || debt.due_date
+      if (!debtDate) return false
+      return debtDate.startsWith(piutangFilterMonth)
+    })
+  }, [customerPiutang, piutangSearchQuery, piutangFilterMonth])
 
   const startEditingSaving = (saving) => {
     setEditingSavingId(saving.id)
@@ -246,21 +455,43 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
 
       {activeTab === 'monthly' && (
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Laporan Bulanan</h2>
-            <p className="text-sm text-slate-500 mb-4">{now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</p>
-            <p className="text-2xl font-bold text-[#38ADA9]">Total {monthlyTransactions.length} transaksi</p>
+          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6 shadow-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 mb-2">Laporan Laba Rugi Bulanan</h2>
+                <p className="text-sm text-slate-500 mb-4">{monthsList.find((m) => m.value === selectedMonth)?.label} {currentYear}</p>
+                <p className="text-2xl font-bold text-[#38ADA9]">Total {monthlyTransactions.length} transaksi</p>
+              </div>
+              <div className="relative min-w-[160px] self-start lg:self-center">
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="w-full appearance-none bg-white border border-gray-300 rounded-3xl px-6 py-3 pr-12 text-base font-semibold text-gray-700 shadow-md focus:outline-none focus:ring-2 focus:ring-[#38ADA9] hover:border-gray-400 transition cursor-pointer"
+                >
+                  {monthsList.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="grid gap-4 xl:grid-cols-3">
             <StatCard label="Total Pemasukan" value={`Rp ${monthlyIncome.toLocaleString('id-ID')}`} description={`${monthlyTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`} />
             <StatCard label="Total Pengeluaran" value={`Rp ${monthlyExpense.toLocaleString('id-ID')}`} description={`${monthlyTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`} />
             <StatCard label="Saldo Bulanan" value={`Rp ${monthlyBalance.toLocaleString('id-ID')}`} description={monthlyBalance >= 0 ? 'Surplus ?' : 'Defisit ?'} />
           </div>
-          {categoryExpenses.length > 0 && (
+          {monthlyCategoryExpenses.length > 0 && (
             <div className="rounded-[32px] border border-slate-200 bg-white p-6">
               <h3 className="font-semibold text-slate-900 mb-4">Kategori Pengeluaran Terbesar</h3>
               <div className="space-y-3">
-                {categoryExpenses.slice(0, 5).map((item) => (
+                {monthlyCategoryExpenses.slice(0, 5).map((item) => (
                   <div key={item.category} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                     <span className="font-medium text-slate-900">{item.category}</span>
                     <span className="text-slate-600">Rp {item.amount.toLocaleString('id-ID')}</span>
@@ -274,21 +505,43 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
 
       {activeTab === 'annual' && (
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Laporan Tahunan</h2>
-            <p className="text-sm text-slate-500 mb-4">{currentYear}</p>
-            <p className="text-2xl font-bold text-[#38ADA9]">Total {annualTransactions.length} transaksi</p>
+          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6 shadow-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 mb-2">Laporan Tahunan</h2>
+                <p className="text-sm text-slate-500 mb-4">{selectedYear}</p>
+                <p className="text-2xl font-bold text-[#38ADA9]">Total {annualTransactions.length} transaksi</p>
+              </div>
+              <div className="relative min-w-[160px] self-start lg:self-center">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="w-full appearance-none bg-white border border-gray-300 rounded-3xl px-6 py-3 pr-12 text-base font-semibold text-gray-700 shadow-md focus:outline-none focus:ring-2 focus:ring-[#38ADA9] hover:border-gray-400 transition cursor-pointer"
+                >
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      {yr}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="grid gap-4 xl:grid-cols-3">
             <StatCard label="Pemasukan Tahunan" value={`Rp ${annualIncome.toLocaleString('id-ID')}`} description={`${annualTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`} />
             <StatCard label="Pengeluaran Tahunan" value={`Rp ${annualExpense.toLocaleString('id-ID')}`} description={`${annualTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`} />
             <StatCard label="Saldo Tahunan" value={`Rp ${annualBalance.toLocaleString('id-ID')}`} description={annualBalance >= 0 ? 'Surplus ?' : 'Defisit ?'} />
           </div>
-          {categoryExpenses.length > 0 && (
+          {annualCategoryExpenses.length > 0 && (
             <div className="rounded-[32px] border border-slate-200 bg-white p-6">
               <h3 className="font-semibold text-slate-900 mb-4">Pengeluaran Tahunan Berdasarkan Kategori</h3>
               <div className="grid gap-3 lg:grid-cols-2">
-                {categoryExpenses.map((item) => (
+                {annualCategoryExpenses.map((item) => (
                   <div key={item.category} className="rounded-2xl bg-slate-50 p-4">
                     <p className="font-medium text-slate-900">{item.category}</p>
                     <p className="mt-2 text-slate-600">Rp {item.amount.toLocaleString('id-ID')}</p>
@@ -302,59 +555,641 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
 
       {activeTab === 'debt' && (
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Rekap Hutang Supplier</h2>
-            <p className="text-sm text-slate-500 mb-4">Lacak seluruh hutang yang masih aktif.</p>
-            <p className="text-2xl font-bold text-[#38ADA9]">Total Hutang: Rp {totalDebt.toLocaleString('id-ID')}</p>
+          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6 shadow-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 mb-2">Rekap Hutang Supplier</h2>
+                <p className="text-sm text-slate-500 mb-4">Lacak seluruh hutang yang masih aktif.</p>
+                <p className="text-2xl font-bold text-[#38ADA9]">Total Hutang: Rp {Math.round(totalDebt).toLocaleString('id-ID')}</p>
+                <p className="text-sm text-slate-500 mt-1">{activeDebtsCount} hutang masih Active</p>
+              </div>
+              {!isAddingDebt && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingDebt(true)
+                    setDebtForm({ creditor: '', amount: '', dueDate: '' })
+                  }}
+                  className="rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d] whitespace-nowrap"
+                >
+                  + Tambah Daftar Hutang Baru
+                </button>
+              )}
+            </div>
           </div>
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6">
-            <h3 className="font-semibold text-slate-900 mb-4">Daftar Hutang</h3>
-            <div className="space-y-3">
-              {debts.map((debt) => (
-                <div key={debt.id} className="flex flex-col gap-2 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="font-medium text-slate-900">{debt.creditor}</p>
-                      <p className="text-sm text-slate-500">{debt.note}</p>
-                    </div>
-                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{debt.status}</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
-                    <span>Rp {debt.amount.toLocaleString('id-ID')}</span>
-                    <span>Jatuh tempo {new Date(debt.dueDate).toLocaleDateString('id-ID')}</span>
-                  </div>
+
+          {isAddingDebt && (
+            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-900 mb-4">Tambah Daftar Hutang Baru</h3>
+              <form className="grid gap-5 lg:grid-cols-3" onSubmit={async (e) => {
+                e.preventDefault()
+                const creditor = String(debtForm.creditor || '').trim()
+                const amount = Number(debtForm.amount)
+                const dueDate = debtForm.dueDate
+
+                if (!creditor) {
+                  alert('Judul hutang wajib diisi')
+                  return
+                }
+                if (!amount || Number.isNaN(amount) || amount <= 0) {
+                  alert('Jumlah hutang harus lebih dari 0')
+                  return
+                }
+                if (!dueDate) {
+                  alert('Jatuh tempo wajib diisi')
+                  return
+                }
+
+                try {
+                  const response = await debtAPI.create({
+                    wallet_id: savings?.[0]?.wallet_id || null,
+                    creditor_name: creditor,
+                    amount,
+                    due_date: dueDate,
+                    note: 'Hutang Supplier',
+                    status: 'active',
+                  })
+                  if (onAddDebt) {
+                    onAddDebt(response?.data || response)
+                  }
+                  setIsAddingDebt(false)
+                  setDebtForm({ creditor: '', amount: '', dueDate: '' })
+                } catch (error) {
+                  alert(error?.message || 'Gagal menambahkan daftar hutang baru')
+                }
+              }}>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Judul Hutang</label>
+                  <input
+                    type="text"
+                    value={debtForm.creditor}
+                    onChange={(e) => setDebtForm((prev) => ({ ...prev, creditor: e.target.value }))}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    placeholder="Contoh: Hutang ke Supplier A"
+                    required
+                  />
                 </div>
-              ))}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
+                  <input
+                    type="text"
+                    value={debtForm.amount ? Number(String(debtForm.amount).replace(/\D/g, '')).toLocaleString('id-ID') : ''}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/\D/g, '');
+                      setDebtForm((prev) => ({ ...prev, amount: rawValue }));
+                    }}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    placeholder="Contoh: 1.000.000"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Jatuh Tempo</label>
+                  <input
+                    type="date"
+                    value={debtForm.dueDate}
+                    onChange={(e) => setDebtForm((prev) => ({ ...prev, dueDate: e.target.value }))}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    required
+                  />
+                </div>
+                <div className="lg:col-span-3 flex gap-3">
+                  <button type="submit" className="flex-1 rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
+                    Simpan Daftar Hutang
+                  </button>
+                  <button type="button" onClick={() => { setIsAddingDebt(false); setDebtForm({ creditor: '', amount: '', dueDate: '' }) }} className="flex-1 rounded-3xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-300">
+                    Batal
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          <div>
+            <div className="flex items-center gap-3 mb-6 w-full">
+              {/* Bar Pencarian */}
+              <div className="relative flex-1">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </span>
+                <input 
+                  type="text" 
+                  value={debtSearchQuery}
+                  onChange={(e) => setDebtSearchQuery(e.target.value)}
+                  placeholder="Cari Daftar Hutang..." 
+                  className="w-full h-12 pl-9 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20 focus:border-[#38ADA9] transition-all duration-200"
+                />
+              </div>
+
+              {/* Dropdown Filter Bulan */}
+              <div className="relative w-48 min-w-[180px]">
+                <select 
+                  value={debtFilterMonth}
+                  onChange={(e) => setDebtFilterMonth(e.target.value)}
+                  className="w-full h-12 appearance-none bg-white border border-slate-200 rounded-xl px-4 pr-10 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20 focus:border-[#38ADA9] cursor-pointer transition-all duration-200"
+                >
+                  {filterMonthOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
+            <h3 className="font-bold text-slate-900 text-lg mb-4">Daftar Hutang</h3>
+            {filteredSupplierDebts.length === 0 ? (
+              <p className="text-sm text-slate-500">Tidak ada daftar hutang yang ditemukan.</p>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2">
+                {filteredSupplierDebts.map((debt) => {
+                  const amount = parseFloat(debt.amount) || 0
+                  const dibayar = parseFloat(debt.paid_amount || debt.paidAmount) || 0
+                  const sisa = Math.max(0, amount - dibayar)
+                  const progress = amount > 0 ? Math.min(100, Math.round((dibayar / amount) * 100)) : 0
+
+                  const today = new Date()
+                  today.setHours(0, 0, 0, 0)
+                  const dueDateObj = new Date(debt.dueDate)
+                  dueDateObj.setHours(0, 0, 0, 0)
+                  const isOverdue = dueDateObj < today && sisa > 0
+                  return (
+                    <div key={debt.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between transition-all duration-300 hover:shadow-md">
+                      {editingDebtId === debt.id ? (
+                        <form
+                          className="space-y-4"
+                          onSubmit={async (e) => {
+                            e.preventDefault()
+                            const creditor = String(editDebtForm.creditor || '').trim()
+                            const amount = parseFloat(editDebtForm.amount)
+                            const dueDate = editDebtForm.dueDate
+                            const status = editDebtForm.status
+
+                            if (!creditor) {
+                              alert('Kreditur wajib diisi')
+                              return
+                            }
+                            if (!amount || Number.isNaN(amount) || amount <= 0) {
+                              alert('Jumlah harus lebih dari 0')
+                              return
+                            }
+                            if (!dueDate) {
+                              alert('Tanggal wajib diisi')
+                              return
+                            }
+
+                            try {
+                              await onEditDebt(debt.id, { creditor, amount, dueDate, status, note: debt.note })
+                              cancelEditingDebt()
+                            } catch (err) {
+                              return
+                            }
+                          }}
+                        >
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-500">Judul Hutang</label>
+                            <input
+                              type="text"
+                              value={editDebtForm.creditor}
+                              onChange={(e) => setEditDebtForm((prev) => ({ ...prev, creditor: e.target.value }))}
+                              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-500">Jumlah Hutang (Rp)</label>
+                            <input
+                              type="number"
+                              value={editDebtForm.amount}
+                              onChange={(e) => setEditDebtForm((prev) => ({ ...prev, amount: e.target.value }))}
+                              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-500">Jatuh Tempo</label>
+                            <input
+                              type="date"
+                              value={editDebtForm.dueDate}
+                              onChange={(e) => setEditDebtForm((prev) => ({ ...prev, dueDate: e.target.value }))}
+                              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-500">Status Pembayaran</label>
+                            <select
+                              value={editDebtForm.status}
+                              onChange={(e) => setEditDebtForm((prev) => ({ ...prev, status: e.target.value }))}
+                              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                            >
+                              <option value="active">Active</option>
+                              <option value="paid">Paid</option>
+                            </select>
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <button
+                              type="submit"
+                              className="rounded-3xl bg-[#38ADA9] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#2c8a7d]"
+                            >
+                              Simpan
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEditingDebt}
+                              className="rounded-3xl bg-slate-200 px-4 py-2 text-xs font-semibold text-slate-900 transition hover:bg-slate-300"
+                            >
+                              Batal
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <h3 className="text-xl font-bold text-slate-900">{debt.creditor}</h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {sisa === 0 ? (
+                                <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded-full text-xs font-medium">Paid</span>
+                              ) : (
+                                <span className="bg-red-100 text-red-800 px-2.5 py-1 rounded-full text-xs font-medium">Active</span>
+                              )}
+                              <span className="text-sm font-semibold text-slate-700">{progress}% terbayar</span>
+                            </div>
+                          </div>
+                          <div className="mt-4 rounded-full bg-slate-100 h-3 overflow-hidden">
+                            <div className="h-3 rounded-full bg-[#38ADA9] transition-all duration-500" style={{ width: `${progress}%` }} />
+                          </div>
+                          <div className="mt-4 text-sm text-slate-600 space-y-2">
+                            <p>Dibayar: Rp {Math.round(dibayar).toLocaleString('id-ID')}</p>
+                            <p>Jumlah hutang: Rp {Math.round(amount).toLocaleString('id-ID')}</p>
+                            <p>Sisa: Rp {Math.round(sisa).toLocaleString('id-ID')}</p>
+                            <p className="text-xs text-slate-400 pt-1 flex items-center gap-2 flex-wrap">
+                              <span>Jatuh tempo: {new Date(debt.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                              {isOverdue && (
+                                <span className="bg-red-200 text-red-900 px-2 py-0.5 rounded text-xs font-semibold">Overdue</span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => startEditingDebt(debt)}
+                              className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!window.confirm('Yakin ingin menghapus hutang ini?')) return
+                                try {
+                                  await onDeleteDebt(debt.id)
+                                } catch (err) {
+                                  return
+                                }
+                              }}
+                              className="rounded-3xl bg-red-100 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-200"
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
-        </div>)}
+        </div>
+      )}
 
       {activeTab === 'piutang' && (
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Rekap Piutang Pelanggan</h2>
-            <p className="text-sm text-slate-500 mb-4">Ringkasan piutang pelanggan.</p>
-            <p className="text-2xl font-bold text-red-600">Total Piutang: -Rp {totalPiutang.toLocaleString('id-ID')}</p>
-          </div>
-          {piutangTransactions.length === 0 ? (
-            <p className="text-sm text-slate-500">Tidak ada data piutang.</p>
-          ) : (
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">Daftar Piutang</h3>
-              <div className="space-y-3">
-                {piutangTransactions.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-slate-900">{t.title}</p>
-                      <p className="text-sm text-slate-500">{t.category}</p>
-                    </div>
-                    <p className="font-semibold text-red-600">-Rp {t.amount.toLocaleString('id-ID')}</p>
-                  </div>
-                ))}
+          <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6 shadow-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 mb-2">Rekap Piutang Pelanggan</h2>
+                <p className="text-sm text-slate-500 mb-4">Lacak seluruh piutang pelanggan yang belum lunas.</p>
+                <p className="text-2xl font-bold text-[#38ADA9]">Total Piutang: Rp {Math.round(totalPiutang).toLocaleString('id-ID')}</p>
+                <p className="text-sm text-slate-500 mt-1">{activePiutangCount} piutang masih Active</p>
               </div>
+              {!isAddingPiutang && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingPiutang(true)
+                    setPiutangForm({ customer: '', amount: '', dueDate: '' })
+                  }}
+                  className="rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d] whitespace-nowrap"
+                >
+                  + Tambah Piutang Pelanggan Baru
+                </button>
+              )}
+            </div>
+          </div>
+
+          {isAddingPiutang && (
+            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-900 mb-4">Tambah Piutang Pelanggan Baru</h3>
+              <form className="grid gap-5 lg:grid-cols-3" onSubmit={async (e) => {
+                e.preventDefault()
+                const customer = String(piutangForm.customer || '').trim()
+                const amount = Number(piutangForm.amount)
+                const dueDate = piutangForm.dueDate
+
+                if (!customer) {
+                  alert('Nama pelanggan wajib diisi')
+                  return
+                }
+                if (!amount || Number.isNaN(amount) || amount <= 0) {
+                  alert('Jumlah piutang harus lebih dari 0')
+                  return
+                }
+                if (!dueDate) {
+                  alert('Jatuh tempo wajib diisi')
+                  return
+                }
+
+                try {
+                  const response = await debtAPI.create({
+                    wallet_id: savings?.[0]?.wallet_id || null,
+                    creditor_name: customer,
+                    amount,
+                    due_date: dueDate,
+                    note: 'Piutang Pelanggan',
+                    status: 'active',
+                  })
+                  if (onAddDebt) {
+                    onAddDebt(response?.data || response)
+                  }
+                  setIsAddingPiutang(false)
+                  setPiutangForm({ customer: '', amount: '', dueDate: '' })
+                } catch (error) {
+                  alert(error?.message || 'Gagal menambahkan daftar piutang baru')
+                }
+              }}>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Nama Pelanggan</label>
+                  <input
+                    type="text"
+                    value={piutangForm.customer}
+                    onChange={(e) => setPiutangForm((prev) => ({ ...prev, customer: e.target.value }))}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    placeholder="Contoh: Toko Berkah"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
+                  <input
+                    type="text"
+                    value={piutangForm.amount ? Number(String(piutangForm.amount).replace(/\D/g, '')).toLocaleString('id-ID') : ''}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/\D/g, '');
+                      setPiutangForm((prev) => ({ ...prev, amount: rawValue }));
+                    }}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    placeholder="Contoh: 1.000.000"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Jatuh Tempo</label>
+                  <input
+                    type="date"
+                    value={piutangForm.dueDate}
+                    onChange={(e) => setPiutangForm((prev) => ({ ...prev, dueDate: e.target.value }))}
+                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                    required
+                  />
+                </div>
+                <div className="lg:col-span-3 flex gap-3">
+                  <button type="submit" className="flex-1 rounded-3xl bg-[#38ADA9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c8a7d]">
+                    Simpan Daftar Piutang
+                  </button>
+                  <button type="button" onClick={() => { setIsAddingPiutang(false); setPiutangForm({ customer: '', amount: '', dueDate: '' }) }} className="flex-1 rounded-3xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-300">
+                    Batal
+                  </button>
+                </div>
+              </form>
             </div>
           )}
+
+          <div>
+            <div className="flex items-center gap-3 mb-6 w-full">
+              {/* Bar Pencarian */}
+              <div className="relative flex-1">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </span>
+                <input 
+                  type="text" 
+                  value={piutangSearchQuery}
+                  onChange={(e) => setPiutangSearchQuery(e.target.value)}
+                  placeholder="Cari Daftar Piutang..." 
+                  className="w-full h-12 pl-9 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20 focus:border-[#38ADA9] transition-all duration-200"
+                />
+              </div>
+
+              {/* Dropdown Filter Bulan */}
+              <div className="relative w-48 min-w-[180px]">
+                <select 
+                  value={piutangFilterMonth}
+                  onChange={(e) => setPiutangFilterMonth(e.target.value)}
+                  className="w-full h-12 appearance-none bg-white border border-slate-200 rounded-xl px-4 pr-10 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20 focus:border-[#38ADA9] cursor-pointer transition-all duration-200"
+                >
+                  {filterMonthOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <h3 className="font-bold text-slate-900 text-lg mb-4">Daftar Piutang</h3>
+            {filteredCustomerPiutang.length === 0 ? (
+              <p className="text-sm text-slate-500">Tidak ada daftar piutang yang ditemukan.</p>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2">
+                {filteredCustomerPiutang.map((debt) => {
+                  const amount = parseFloat(debt.amount) || 0
+                  const dibayar = parseFloat(debt.paid_amount || debt.paidAmount) || 0
+                  const sisa = Math.max(0, amount - dibayar)
+                  const progress = amount > 0 ? Math.min(100, Math.round((dibayar / amount) * 100)) : 0
+
+                  const today = new Date()
+                  today.setHours(0, 0, 0, 0)
+                  const dueDateObj = new Date(debt.dueDate)
+                  dueDateObj.setHours(0, 0, 0, 0)
+                  const isOverdue = dueDateObj < today && sisa > 0
+                  return (
+                    <div key={debt.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between transition-all duration-300 hover:shadow-md">
+                      {editingDebtId === debt.id ? (
+                        <form
+                          className="space-y-4"
+                          onSubmit={async (e) => {
+                            e.preventDefault()
+                            const creditor = String(editDebtForm.creditor || '').trim()
+                            const amount = parseFloat(editDebtForm.amount)
+                            const dueDate = editDebtForm.dueDate
+                            const status = editDebtForm.status
+
+                            if (!creditor) {
+                              alert('Nama pelanggan wajib diisi')
+                              return
+                            }
+                            if (!amount || Number.isNaN(amount) || amount <= 0) {
+                              alert('Jumlah harus lebih dari 0')
+                              return
+                            }
+                            if (!dueDate) {
+                              alert('Tanggal wajib diisi')
+                              return
+                            }
+
+                            try {
+                              await onEditDebt(debt.id, { creditor, amount, dueDate, status, note: debt.note })
+                              cancelEditingDebt()
+                            } catch (err) {
+                              return
+                            }
+                          }}
+                        >
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-500">Nama Pelanggan</label>
+                            <input
+                              type="text"
+                              value={editDebtForm.creditor}
+                              onChange={(e) => setEditDebtForm((prev) => ({ ...prev, creditor: e.target.value }))}
+                              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-500">Jumlah Piutang (Rp)</label>
+                            <input
+                              type="number"
+                              value={editDebtForm.amount}
+                              onChange={(e) => setEditDebtForm((prev) => ({ ...prev, amount: e.target.value }))}
+                              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-500">Jatuh Tempo</label>
+                            <input
+                              type="date"
+                              value={editDebtForm.dueDate}
+                              onChange={(e) => setEditDebtForm((prev) => ({ ...prev, dueDate: e.target.value }))}
+                              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold text-slate-500">Status Pembayaran</label>
+                            <select
+                              value={editDebtForm.status}
+                              onChange={(e) => setEditDebtForm((prev) => ({ ...prev, status: e.target.value }))}
+                              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
+                            >
+                              <option value="active">Active</option>
+                              <option value="paid">Paid</option>
+                            </select>
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <button
+                              type="submit"
+                              className="rounded-3xl bg-[#38ADA9] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#2c8a7d]"
+                            >
+                              Simpan
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEditingDebt}
+                              className="rounded-3xl bg-slate-200 px-4 py-2 text-xs font-semibold text-slate-900 transition hover:bg-slate-300"
+                            >
+                              Batal
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <h3 className="text-xl font-bold text-slate-900">{debt.creditor}</h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {sisa === 0 ? (
+                                <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded-full text-xs font-medium">Paid</span>
+                              ) : (
+                                <span className="bg-red-100 text-red-800 px-2.5 py-1 rounded-full text-xs font-medium">Active</span>
+                              )}
+                              <span className="text-sm font-semibold text-slate-700">{progress}% terbayar</span>
+                            </div>
+                          </div>
+                          <div className="mt-4 rounded-full bg-slate-100 h-3 overflow-hidden">
+                            <div className="h-3 rounded-full bg-[#38ADA9] transition-all duration-500" style={{ width: `${progress}%` }} />
+                          </div>
+                          <div className="mt-4 text-sm text-slate-600 space-y-2">
+                            <p>Dibayar: Rp {Math.round(dibayar).toLocaleString('id-ID')}</p>
+                            <p>Jumlah piutang: Rp {Math.round(amount).toLocaleString('id-ID')}</p>
+                            <p>Sisa: Rp {Math.round(sisa).toLocaleString('id-ID')}</p>
+                            <p className="text-xs text-slate-400 pt-1 flex items-center gap-2 flex-wrap">
+                              <span>Jatuh tempo: {new Date(debt.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                              {isOverdue && (
+                                <span className="bg-red-200 text-red-900 px-2 py-0.5 rounded text-xs font-semibold">Overdue</span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => startEditingDebt(debt)}
+                              className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!window.confirm('Yakin ingin menghapus piutang ini?')) return
+                                try {
+                                  await onDeleteDebt(debt.id)
+                                } catch (err) {
+                                  return
+                                }
+                              }}
+                              className="rounded-3xl bg-red-100 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-200"
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
       {activeTab === 'savings' && (
@@ -364,7 +1199,8 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
               <div>
                 <h2 className="text-xl font-semibold text-slate-900 mb-2">Target Tabungan</h2>
                 <p className="text-sm text-slate-500 mb-4">Pantau pencapaian target tabungan Anda.</p>
-                <p className="text-2xl font-bold text-[#38ADA9]">{allSavings.length} target tabungan aktif</p>
+                <p className="text-2xl font-bold text-[#38ADA9]">Total Tabungan: Rp {totalAccumulatedSavings.toLocaleString('id-ID')}</p>
+                <p className="text-sm text-slate-500 mt-1">{unreachedSavingsCount} tabungan belum tercapai 100%</p>
               </div>
               {!isAddingSaving && (
                 <button
@@ -434,14 +1270,15 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Jumlah (Rp)</label>
                   <input
-                    type="number"
-                    inputMode="numeric"
-                    value={addForm.amount}
-                    onChange={(e) => setAddForm((prev) => ({ ...prev, amount: e.target.value }))}
+                    type="text"
+                    value={addForm.amount ? Number(String(addForm.amount).replace(/\D/g, '')).toLocaleString('id-ID') : ''}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/\D/g, '');
+                      setAddForm((prev) => ({ ...prev, amount: rawValue }));
+                    }}
                     className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]"
-                    placeholder="0"
+                    placeholder="Contoh: 1.000.000"
                     required
-                    min={1}
                   />
                 </div>
 
@@ -464,8 +1301,50 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
             </div>
           )}
 
+          <div className="flex items-center gap-3 mb-6 w-full">
+            {/* Bar Pencarian */}
+            <div className="relative flex-1">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </span>
+              <input 
+                type="text" 
+                value={savingSearchQuery}
+                onChange={(e) => setSavingSearchQuery(e.target.value)}
+                placeholder="Cari Target Tabungan..." 
+                className="w-full h-12 pl-9 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20 focus:border-[#38ADA9] transition-all duration-200"
+              />
+            </div>
+
+            {/* Dropdown Filter Bulan */}
+            <div className="relative w-48 min-w-[180px]">
+              <select 
+                value={savingFilterMonth}
+                onChange={(e) => setSavingFilterMonth(e.target.value)}
+                className="w-full h-12 appearance-none bg-white border border-slate-200 rounded-xl px-4 pr-10 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20 focus:border-[#38ADA9] cursor-pointer transition-all duration-200"
+              >
+                {filterMonthOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <h3 className="font-bold text-slate-900 text-lg mb-4">Daftar Target Tabungan</h3>
+
           <div className="grid gap-4 lg:grid-cols-2">
-            {savingTargets.map((saving) => (
+            {filteredSavings.length === 0 ? (
+              <div className="lg:col-span-2 text-sm text-slate-500">Tidak ada target tabungan yang ditemukan.</div>
+            ) : filteredSavings.map((saving) => (
               <div key={saving.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
                 {editingSavingId === saving.id ? (
                   <form

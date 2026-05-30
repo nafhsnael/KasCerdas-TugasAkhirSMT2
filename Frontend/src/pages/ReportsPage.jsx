@@ -149,18 +149,17 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === tab.id
+            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id
                 ? 'border-[#38ADA9] text-[#38ADA9]'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
+              }`}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-     
+
 
       {activeTab === 'daily' && (
         <div className="space-y-6">
@@ -297,17 +296,18 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
                   }
 
                   try {
+                    // Directly create a new debt entry via the API and capture response
+                    const newDebt = await debtAPI.create({
+                      wallet_id: savings?.[0]?.wallet_id || null,
+                      creditor_name: creditor,
+                      amount,
+                      due_date: dueDate,
+                      note: '',
+                      status: 'active',
+                    })
+                    // Notify parent component to update its debt list if callback provided
                     if (onAddDebt) {
-                      await onAddDebt({ creditor, amount, dueDate, note: '' })
-                    } else {
-                      await debtAPI.create({
-                        wallet_id: savings?.[0]?.wallet_id || null,
-                        creditor_name: creditor,
-                        amount,
-                        due_date: dueDate,
-                        note: '',
-                        status: 'active',
-                      })
+                      onAddDebt(newDebt)
                     }
                     setIsAddingDebt(false)
                     setDebtForm({ creditor: '', amount: '', dueDate: '' })

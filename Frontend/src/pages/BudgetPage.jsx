@@ -25,14 +25,36 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
     return transactions
       .filter((t) => {
         const date = new Date(t.date)
+
+        // Parse budget category to extract main category and the 'Jenis kebutuhan' sub-detail
+        const budgetParts = String(category || '').split(' - ')
+        const budgetMainCat = String(budgetParts[0] || '').toLowerCase().trim()
+        const budgetSubDetail = budgetParts[1] ? String(budgetParts[1]).toLowerCase().trim() : ''
+
+        const tType = String(t.type || '').toLowerCase().trim()
+        const tCategory = String(t.kategori || t.category || '').toLowerCase().trim()
+        const tTitle = String(t.judul || t.title || '').toLowerCase().trim()
+
+        const isKebutuhanLainnya = budgetMainCat === 'kebutuhan lainnya'
+
+        if (isKebutuhanLainnya) {
+          return (
+            tType === 'expense' &&
+            tCategory === 'kebutuhan lainnya' &&
+            tTitle === budgetSubDetail &&
+            date.getMonth() === currentMonth &&
+            date.getFullYear() === currentYear
+          )
+        }
+
         return (
-          t.type === 'expense' &&
-          t.category === category &&
+          tType === 'expense' &&
+          tCategory === String(category).toLowerCase().trim() &&
           date.getMonth() === currentMonth &&
           date.getFullYear() === currentYear
         )
       })
-      .reduce((sum, t) => sum + t.amount, 0)
+      .reduce((sum, t) => sum + Number(t.jumlah_uang || t.amount || 0), 0)
   }
 
   const handleAddBudget = () => {
@@ -45,7 +67,7 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
     // For masyarakat_umum dan mahasiswa, try to split the category
     let categoryName = budget.category
     let categoryDetail = ''
-    
+
     if (isMasyarakatUser) {
       const [mainCategory, ...rest] = budget.category.split(' - ')
       categoryName = mainCategory
@@ -74,9 +96,9 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
 
     const selectedOperationalCategory = formData.category
 
-    const requiresOperationalDetail = userType === 'mahasiswa' && selectedOperationalCategory === 'Kebutuhan Lainnya'
+    const requiresOperationalDetail = (userType === 'mahasiswa' || isMasyarakatUser) && selectedOperationalCategory === 'Kebutuhan Lainnya'
 
-    // Untuk "Kebutuhan Lainnya" di Mahasiswa, detail harus diisi
+    // Untuk "Kebutuhan Lainnya" di Mahasiswa atau Masyarakat, detail harus diisi
     if (requiresOperationalDetail && !formData.operationalDetail.trim()) {
       setMessage('Silakan jelaskan kebutuhan Anda')
       setTimeout(() => setMessage(''), 3000)
@@ -106,7 +128,7 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
       return
     }
 
-      const limit = parseInt(formData.limit)
+    const limit = parseInt(formData.limit)
     if (Number.isNaN(limit) || limit <= 0) {
       setMessage('Limit harus lebih dari 0')
       setTimeout(() => setMessage(''), 3000)
@@ -117,7 +139,7 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
     // Untuk Masyarakat, nama budget harus sama persis dengan kategori transaksi
     // supaya usage dan budget reminder bisa terbaca.
     let categoryName
-    if (userType === 'mahasiswa' && selectedOperationalCategory === 'Kebutuhan Lainnya') {
+    if ((userType === 'mahasiswa' || isMasyarakatUser) && selectedOperationalCategory === 'Kebutuhan Lainnya') {
       categoryName = operationalDetail
         ? `Kebutuhan Lainnya - ${operationalDetail}`
         : 'Kebutuhan Lainnya'
@@ -131,10 +153,10 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
         currentBudgets.map((b) =>
           b.id === editingId
             ? {
-                ...b,
-                category: categoryName,
-                limit: limit,
-              }
+              ...b,
+              category: categoryName,
+              limit: limit,
+            }
             : b
         )
       )
@@ -143,23 +165,23 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
       // Add new budget
       // update state budgets harus benar-benar menambah item baru
       const newBudget = {
-      id: Math.max(0, ...budgets.map((b) => b.id)) + 1,
-      category: categoryName,
-      limit: limit,
-      usage: 0,
-    }
+        id: Math.max(0, ...budgets.map((b) => b.id)) + 1,
+        category: categoryName,
+        limit: limit,
+        usage: 0,
+      }
 
-    setBudgets((currentBudgets) => {
-      // pastikan id unik meski ada race condition
-      const nextId = Math.max(0, ...currentBudgets.map((b) => b.id)) + 1
-      return [
-        ...currentBudgets,
-        {
-          ...newBudget,
-          id: nextId,
-        },
-      ]
-    })
+      setBudgets((currentBudgets) => {
+        // pastikan id unik meski ada race condition
+        const nextId = Math.max(0, ...currentBudgets.map((b) => b.id)) + 1
+        return [
+          ...currentBudgets,
+          {
+            ...newBudget,
+            id: nextId,
+          },
+        ]
+      })
       setMessage('Budget berhasil ditambahkan!')
     }
 
@@ -221,9 +243,7 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
 
   // Check if custom input is needed
   const shouldShowCustomInput = () => {
-    if (isMasyarakatUser) {
-      return false
-    } else if (userType === 'mahasiswa') {
+    if (userType === 'mahasiswa' || isMasyarakatUser) {
       return formData.category === 'Kebutuhan Lainnya'
     } else if (userType === 'umkm') {
       return !["Beli Bahan Baku / Stok", "Hutang Supplier"].includes(formData.category)
@@ -306,7 +326,7 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
                 onChange={(e) => setFormData({ ...formData, category: e.target.value, operationalDetail: '' })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
               >
-                <option value="" disabled>
+                <option value="" disabled selected hidden>
                   Contoh: Makan
                 </option>
                 {getCategoryOptions().map((option) => (
@@ -317,31 +337,29 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
               </select>
             </div>
 
-            {shouldShowCustomInput() && (
+            {(userType === 'mahasiswa' || isMasyarakatUser) && formData.category === 'Kebutuhan Lainnya' && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  {userType === 'mahasiswa' ? 'Kebutuhan Lainnya' : 'Kebutuhan operasional'}
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Jenis kebutuhan</label>
                 <input
                   type="text"
-                  value={formData.operationalDetail}
+                  value={formData.operationalDetail || ''}
                   onChange={(e) => setFormData({ ...formData, operationalDetail: e.target.value })}
-                  placeholder={userType === 'mahasiswa' ? 'Contoh: Perlengkapan, Kesehatan, dll' : 'Contoh: sewa kios untuk 1 bulan / biaya internet toko'}
+                  placeholder="Contoh: Perlengkapan, Kesehatan, dll"
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
                 />
-                <p className="mt-2 text-xs text-slate-500">
-                  {userType === 'mahasiswa' ? 'Jenis kebutuhan' : 'Isi kebutuhan/jenis operasionalnya agar lebih spesifik.'}
-                </p>
               </div>
             )}
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Limit Budget (Rp)</label>
               <input
-                type="number"
-                value={formData.limit}
-                onChange={(e) => setFormData({ ...formData, limit: e.target.value })}
-                placeholder="Contoh: 1000000"
+                type="text"
+                value={formData.limit ? Number(String(formData.limit).replace(/\D/g, '')).toLocaleString('id-ID') : ''}
+                onChange={(e) => {
+                  const rawValue = e.target.value.replace(/\D/g, '');
+                  setFormData({ ...formData, limit: rawValue });
+                }}
+                placeholder="Contoh: 1.000.000"
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
               />
             </div>

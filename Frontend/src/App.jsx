@@ -116,6 +116,7 @@ function App() {
     if (typeof window === 'undefined') return 'dashboard'
     return pathToPage(window.location.pathname)
   })
+  const [reportsDefaultTab, setReportsDefaultTab] = useState('daily')
   const [token, setToken] = useState(readInitialToken)
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(token))
   const [authLoading, setAuthLoading] = useState(Boolean(token))
@@ -501,7 +502,7 @@ function App() {
     try {
       const now = new Date()
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-      
+
       const [transactionsRes, debtsRes, savingsRes, budgetsRes] = await Promise.all([
         transactionAPI.listAll(),
         debtAPI.list(),
@@ -563,83 +564,83 @@ function App() {
   }
 
   useEffect(() => {
-  if (!token) return
+    if (!token) return
 
-  setShowLanding(false)
-  setAuthLoading(true)
+    setShowLanding(false)
+    setAuthLoading(true)
 
-  Promise.all([fetchCurrentUser(), fetchWalletInfo(), fetchAllData()])
-    .then(([authUser, walletData, allData]) => {
-      const isAdmin = authUser.role === 'admin'
+    Promise.all([fetchCurrentUser(), fetchWalletInfo(), fetchAllData()])
+      .then(([authUser, walletData, allData]) => {
+        const isAdmin = authUser.role === 'admin'
 
-      // Kalau user login Google baru, biasanya user_type masih null.
-      // Jadi jangan pakai role "user" sebagai usertype.
-      const resolvedUserType = authUser.user_type || (isAdmin ? 'admin' : null)
+        // Kalau user login Google baru, biasanya user_type masih null.
+        // Jadi jangan pakai role "user" sebagai usertype.
+        const resolvedUserType = authUser.user_type || (isAdmin ? 'admin' : null)
 
-      setUserProfile((prev) => ({
-        ...prev,
-        nama: authUser.name || prev.nama,
-        user: authUser.username || prev.user,
-        email: authUser.email || prev.email,
-        usertype: resolvedUserType,
-        dompet: walletData?.name || (isAdmin ? 'Admin Wallet' : prev.dompet),
-        profileImage: authUser.avatar || prev.profileImage,
-      }))
+        setUserProfile((prev) => ({
+          ...prev,
+          nama: authUser.name || prev.nama,
+          user: authUser.username || prev.user,
+          email: authUser.email || prev.email,
+          usertype: resolvedUserType,
+          dompet: walletData?.name || (isAdmin ? 'Admin Wallet' : prev.dompet),
+          profileImage: authUser.avatar || prev.profileImage,
+        }))
 
-      setWalletInfo(walletData)
+        setWalletInfo(walletData)
 
-      if (walletData?.balance !== undefined && walletData?.balance !== null) {
-        const balance = Number(walletData.balance) || 0
-        setInitialBalance(balance)
+        if (walletData?.balance !== undefined && walletData?.balance !== null) {
+          const balance = Number(walletData.balance) || 0
+          setInitialBalance(balance)
 
-        if (resolvedUserType === 'umkm') {
-          setUmkmEWalletBalance(balance)
+          if (resolvedUserType === 'umkm') {
+            setUmkmEWalletBalance(balance)
+          }
         }
-      }
 
-      if (allData) {
-        const allTransactions = allData.transactions || []
-        const userTypeLower = String(resolvedUserType || '').toLowerCase()
+        if (allData) {
+          const allTransactions = allData.transactions || []
+          const userTypeLower = String(resolvedUserType || '').toLowerCase()
 
-        const umkmItems = userTypeLower === 'umkm'
-          ? allTransactions
-          : allTransactions.filter((t) => {
+          const umkmItems = userTypeLower === 'umkm'
+            ? allTransactions
+            : allTransactions.filter((t) => {
               const metadata = parseMetadata(t.metadata)
               return metaToBool(metadata.is_umkm) || t.isUmkm || t.is_umkm
             })
 
-        setTransactions(allTransactions)
-        setUmkmTransactions(umkmItems)
-        setUmkmSummary(buildUmkmSummaryFromTransactions(umkmItems))
-        setDebts(allData.debts || [])
-        setSavings(allData.savings || [])
-        setBudgets(allData.budgets || [])
-      }
+          setTransactions(allTransactions)
+          setUmkmTransactions(umkmItems)
+          setUmkmSummary(buildUmkmSummaryFromTransactions(umkmItems))
+          setDebts(allData.debts || [])
+          setSavings(allData.savings || [])
+          setBudgets(allData.budgets || [])
+        }
 
-      setIsAuthenticated(true)
+        setIsAuthenticated(true)
 
-      // INI BAGIAN PALING PENTING:
-      // Kalau user belum punya user_type, tampilkan halaman pilih tipe pengguna.
-      // Ini cocok untuk Register Google / Login Google akun baru.
-      if (!authUser.user_type && !isAdmin) {
-        setShowUserType(true)
+        // INI BAGIAN PALING PENTING:
+        // Kalau user belum punya user_type, tampilkan halaman pilih tipe pengguna.
+        // Ini cocok untuk Register Google / Login Google akun baru.
+        if (!authUser.user_type && !isAdmin) {
+          setShowUserType(true)
+          setShowInitialBalance(false)
+          setShowLanding(false)
+          return
+        }
+
+        // Kalau user sudah punya user_type, langsung dashboard.
+        setShowUserType(false)
         setShowInitialBalance(false)
         setShowLanding(false)
-        return
-      }
-
-      // Kalau user sudah punya user_type, langsung dashboard.
-      setShowUserType(false)
-      setShowInitialBalance(false)
-      setShowLanding(false)
-    })
-    .catch(() => {
-      handleLogout()
-    })
-    .finally(() => {
-      setAuthLoading(false)
-    })
-}, [token])
+      })
+      .catch(() => {
+        handleLogout()
+      })
+      .finally(() => {
+        setAuthLoading(false)
+      })
+  }, [token])
 
   useEffect(() => {
     // JANGAN REDIRECT jika user sedang mengakses halaman admin
@@ -843,6 +844,10 @@ function App() {
       // Update wallet info after transaction
       const walletData = await fetchWalletInfo()
       if (walletData) setWalletInfo(walletData)
+
+      if (isDebtCategory) {
+        setReportsDefaultTab('debt')
+      }
     } catch (e) {
       // Rollback optimistic updates
       setTransactions((prev) => prev.filter((t) => t.id !== tempId))
@@ -854,11 +859,9 @@ function App() {
         },
         error: e,
       })
-      alert(
-        'Gagal menyimpan transaksi ke server: ' +
-          (e.message || 'Error tidak diketahui') +
-          (e.status ? ` (HTTP ${e.status})` : '')
-      )
+      if (isDebtCategory) {
+        setReportsDefaultTab('debt')
+      }
       throw e
     }
   }
@@ -987,7 +990,7 @@ function App() {
         wallet_id: safeWalletId,
         metadata: transactionMetadata,
       }
-      
+
       const res = await transactionAPI.create(payload)
       const savedTransaction = normalizeTransaction(res.data)
       const transaction = {
@@ -1077,6 +1080,10 @@ function App() {
         setWalletInfo(walletData)
         setUmkmEWalletBalance(Number(walletData.balance))
       }
+
+      if (isDebtCategory) {
+        setReportsDefaultTab('debt')
+      }
     } catch (e) {
       // Rollback optimistic updates if backend fails
       setUmkmTransactions((prev) => prev.filter((t) => t.id !== tempId))
@@ -1090,7 +1097,9 @@ function App() {
         setWalletInfo((prev) => prev ? { ...prev, balance: Number(prev.balance) + amount } : prev)
       }
 
-      alert('Gagal menyimpan transaksi UMKM ke server: ' + (e.message || 'Error tidak diketahui'))
+      if (isDebtCategory) {
+        setReportsDefaultTab('debt')
+      }
     }
   }
 
@@ -1113,12 +1122,14 @@ function App() {
 
     if (existingDebt) {
       const existingAmount = Number(existingDebt.amount || 0)
-      const updatedAmount = Math.max(0, existingAmount - amount)
-      const updatedStatus = updatedAmount === 0 ? 'paid' : (existingDebt.status || 'active')
+      const existingPaidAmount = Number(existingDebt.paid_amount || existingDebt.paidAmount || 0)
+      const updatedPaidAmount = existingPaidAmount + amount
+      const updatedStatus = updatedPaidAmount >= existingAmount ? 'paid' : (existingDebt.status || 'active')
       const updatedPayload = {
         wallet_id: payload.wallet_id || existingDebt.wallet_id,
         creditor_name: creditorName,
-        amount: updatedAmount,
+        amount: existingAmount,
+        paid_amount: updatedPaidAmount,
         due_date: formatDateToYMD(existingDebt.dueDate || dueDate),
         note: note || String(existingDebt.note || ''),
         status: updatedStatus,
@@ -1144,16 +1155,74 @@ function App() {
 
   const addDebt = async (newDebt) => {
     try {
+      const targetDebt = newDebt?.data || newDebt
+      const isPiutang = String(targetDebt?.note || '').toLowerCase().includes('piutang') ||
+                        String(targetDebt?.creditor_name || targetDebt?.creditor || '').toLowerCase().includes('piutang')
+      
+      const targetTab = isPiutang ? 'piutang' : 'debt'
+
+      if (targetDebt && targetDebt.id && !String(targetDebt.id).startsWith('d')) {
+        const normalized = normalizeDebt(targetDebt)
+        setDebts((prev) => {
+          const exists = prev.some((d) => d.id === normalized.id)
+          if (exists) {
+            return prev.map((d) => (d.id === normalized.id ? normalized : d))
+          }
+          return [...prev, normalized]
+        })
+        setReportsDefaultTab(targetTab)
+        setCurrentPage('reports')
+        return normalized
+      }
+
+      const creditor = newDebt.creditor || newDebt.creditor_name
+      const dueDate = newDebt.dueDate || newDebt.due_date
+      const amount = newDebt.amount
+      const note = newDebt.note
+
       await mergeOrCreateDebt({
         wallet_id: walletInfo?.id,
-        creditor_name: newDebt.creditor,
-        amount: newDebt.amount,
-        due_date: newDebt.dueDate,
-        note: newDebt.note,
+        creditor_name: creditor,
+        amount: amount,
+        due_date: dueDate,
+        note: note,
         status: 'active'
       })
+
+      setReportsDefaultTab(targetTab)
+      setCurrentPage('reports')
     } catch (e) {
-      alert('Gagal menyimpan hutang: ' + (e.message || 'Error tidak diketahui'))
+      // Hapus alert error sepenuhnya
+    }
+  }
+
+  const updateDebt = async (id, updates) => {
+    try {
+      const payload = {
+        wallet_id: walletInfo?.id,
+        creditor_name: updates.creditor,
+        amount: Number(updates.amount),
+        due_date: formatDateToYMD(updates.dueDate),
+        note: updates.note || '',
+        status: updates.status || 'active',
+      }
+      const res = await debtAPI.update(id, payload)
+      const normalized = normalizeDebt(res.data)
+      setDebts((prev) => prev.map((debt) => (debt.id === id ? normalized : debt)))
+      return normalized
+    } catch (e) {
+      alert('Gagal memperbarui hutang: ' + (e.message || 'Error tidak diketahui'))
+      throw e
+    }
+  }
+
+  const deleteDebt = async (id) => {
+    try {
+      await debtAPI.delete(id)
+      setDebts((prev) => prev.filter((debt) => debt.id !== id))
+    } catch (e) {
+      alert('Gagal menghapus hutang: ' + (e.message || 'Error tidak diketahui'))
+      throw e
     }
   }
 
@@ -1217,21 +1286,21 @@ function App() {
   }
 
   const authFetch = async (url, options = {}) => {
-  const headers = {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-    ...(options.headers || {}),
-  }
+    const headers = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(options.headers || {}),
+    }
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`
-  }
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
 
-  return fetch(buildApiUrl(url), {
-    ...options,
-    headers,
-  })
-}
+    return fetch(buildApiUrl(url), {
+      ...options,
+      headers,
+    })
+  }
 
   const fetchCurrentUser = async () => {
     try {
@@ -1368,7 +1437,7 @@ function App() {
     }
 
     setShowInitialBalance(false)
-    
+
     // Re-fetch wallet info agar updated
     try {
       const walletData = await fetchWalletInfo()
@@ -1379,13 +1448,13 @@ function App() {
     } catch (e) {
       console.error('Error fetching wallet after initial balance save:', e)
     }
-    
+
     navigateTo('dashboard')
   }
 
   const handleLogout = async () => {
     if (token) {
-      await authFetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+      await authFetch('/api/auth/logout', { method: 'POST' }).catch(() => { })
     }
 
     setToken(null)
@@ -1481,12 +1550,12 @@ function App() {
         return <AnalysisPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} />
       case 'reports':
         if (userProfile?.usertype === 'umkm') {
-          return <ReportsUMKMPage transactions={umkmTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} onAddSavings={addSavings} onEditSavings={updateSavings} onDeleteSavings={deleteSavings} />
+          return <ReportsUMKMPage transactions={umkmTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} onAddSavings={addSavings} onEditSavings={updateSavings} onDeleteSavings={deleteSavings} onEditDebt={updateDebt} onDeleteDebt={deleteDebt} onAddDebt={addDebt} defaultTab={reportsDefaultTab} setDefaultTab={setReportsDefaultTab} />
         }
         if (userProfile?.usertype === 'mahasiswa') {
-          return <ReportsMahasiswaPage transactions={mahasiswaTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} onAddSavings={addSavings} onEditSavings={updateSavings} onDeleteSavings={deleteSavings} />
+          return <ReportsMahasiswaPage transactions={mahasiswaTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} onAddSavings={addSavings} onEditSavings={updateSavings} onDeleteSavings={deleteSavings} onEditDebt={updateDebt} onDeleteDebt={deleteDebt} onAddDebt={addDebt} defaultTab={reportsDefaultTab} setDefaultTab={setReportsDefaultTab} />
         }
-        return <ReportsMasyarakatPage transactions={masyarakatTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} onAddSavings={addSavings} onEditSavings={updateSavings} onDeleteSavings={deleteSavings} />
+        return <ReportsMasyarakatPage transactions={masyarakatTransactions} debts={debts} savings={savings} onNavigate={setCurrentPage} onAddSavings={addSavings} onEditSavings={updateSavings} onDeleteSavings={deleteSavings} onEditDebt={updateDebt} onDeleteDebt={deleteDebt} onAddDebt={addDebt} defaultTab={reportsDefaultTab} setDefaultTab={setReportsDefaultTab} />
       case 'budget':
         return <BudgetPage transactions={userProfile?.usertype === 'mahasiswa' ? mahasiswaTransactions : userProfile?.usertype === 'umkm' ? umkmTransactions : masyarakatTransactions} budgets={budgets} setBudgets={setBudgets} userType={userProfile?.usertype || userType} />
       case 'add-debt':
@@ -1547,7 +1616,7 @@ function App() {
                     const incomeCategories = ['Penghasilan Kerja', 'Uang Saku', 'Tabungan']
                     const isIncome = incomeCategories.includes(category)
                     window.dispatchEvent(new CustomEvent('quickActionCategory', { detail: { category, type: isIncome ? 'income' : 'expense' } }))
-                  } catch (e) {}
+                  } catch (e) { }
                 }, 0)
               }}
             />
