@@ -16,11 +16,13 @@ class WalletController extends Controller
         // CRITICAL: Always filter by authenticated user
         $wallet = Wallet::where('user_id', $userId)->first();
 
+        // Auto-create a default wallet if none exists
         if (!$wallet) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Wallet tidak ditemukan',
-            ], 404);
+            $wallet = Wallet::create([
+                'user_id' => $userId,
+                'name' => 'Default Wallet',
+                'balance' => 0,
+            ]);
         }
 
         // Load transactions yang terikat ke wallet ini dan user

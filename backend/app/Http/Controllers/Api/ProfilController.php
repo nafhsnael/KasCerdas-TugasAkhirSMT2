@@ -43,6 +43,7 @@ class ProfilController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'username' => ['required', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->id)],
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'user_type' => ['nullable', 'in:umkm,masyarakat_umum,mahasiswa'],
         ]);
@@ -50,6 +51,7 @@ class ProfilController extends Controller
         $updateData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'username' => $validated['username'],
         ];
 
         if (!empty($validated['password'])) {

@@ -240,8 +240,7 @@ class MonitoringController extends Controller
         $topUsers = User::withCount('transactions')
             ->orderBy('transactions_count', 'desc')
             ->limit(10)
-            ->select('id', 'name', 'email', 'user_type')
-            ->get();
+            ->get(['id', 'name', 'email', 'user_type', 'transactions_count']);
 
         return response()->json([
             'success' => true,
@@ -306,6 +305,7 @@ class MonitoringController extends Controller
 
         try {
             $perPage = $request->input('per_page', 10);
+// Removed erroneous wallet creation code that referenced undefined $wallet.
             $data = DB::table($table)->latest()->paginate($perPage);
 
             return response()->json([
@@ -315,7 +315,7 @@ class MonitoringController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data tabel: ' . $e.getMessage()
+                'message' => 'Gagal mengambil data tabel: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -4,32 +4,51 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
   const [profile, setProfile] = useState({
     nama: '',
     email: '',
-    user: '',
+    username: '',
     phone: '',
     address: '',
     usertype: '',
   })
-  const [profileImage, setProfileImage] = useState(userProfile?.profileImage || '')
-  const [imagePreview, setImagePreview] = useState(userProfile?.profileImage || '')
-
-  useEffect(() => {
-    if (userProfile) {
-      setProfile({
-        nama: userProfile.nama || '',
-        email: userProfile.email || '',
-        user: userProfile.user || '',
-        phone: userProfile.phone || '',
-        address: userProfile.address || '',
-        usertype: userProfile.usertype || '',
-      })
-      setProfileImage(userProfile.profileImage || '')
-      setImagePreview(userProfile.profileImage || '')
-    }
-  }, [userProfile])
-
   const handleChange = (field, value) => {
-    setProfile((prev) => ({ ...prev, [field]: value }))
-  }
+    setProfile(prev => ({ ...prev, [field]: value }));
+  };
+  const [password, setPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [profileImage, setProfileImage] = useState(userProfile?.profileImage || '');
+  const [imagePreview, setImagePreview] = useState(userProfile?.profileImage || '');
+
+  // Fetch user profile from backend on mount
+  useEffect(() => {
+    const token = window.localStorage.getItem('token');
+    fetch('/api/user/profil', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          const data = json.data;
+          setProfile({
+            nama: data.name || '',
+            email: data.email || '',
+            username: data.username || '',
+            phone: data.phone || '',
+            address: data.address || '',
+            usertype: data.user_type || '',
+          });
+          setProfileImage(data.profileImage || '');
+          setImagePreview(data.profileImage || '');
+          if (setUserProfile) setUserProfile(data);
+        }
+      })
+      .catch((e) => console.error('Failed to load profile', e));
+  }, []);
+
+
+  
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0]
@@ -46,7 +65,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!profile.nama || !profile.email || !profile.user) {
+    if (!profile.nama || !profile.email || !profile.username) {
       alert('Mohon isi field Nama, Email, dan Username');
       return;
     }
@@ -61,13 +80,20 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
         body: JSON.stringify({
           name: profile.nama,
           email: profile.email,
+          username: profile.username,
+          ...(password ? { password, password_confirmation: passwordConfirmation } : {}),
           // Optionally include other fields if needed:
           // phone: profile.phone,
           // address: profile.address,
         }),
       });
       if (response.ok) {
-        setUserProfile((prev) => ({ ...prev, ...profile, profileImage }));
+        const json = await response.json();
+        // Update user profile with fresh data from backend
+        setUserProfile((prev) => ({ ...prev, ...json.data.user, profileImage }));
+        // Clear password fields
+        setPassword('');
+        setPasswordConfirmation('');
         alert('Profil berhasil diperbarui!');
       } else {
         const json = await response.json();
@@ -92,7 +118,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
         <div className="relative">
           <img
             src={imagePreview}
-            alt="Profile"
+            alt=""
             className="h-32 w-32 rounded-full object-cover border-4 border-[#F6B93B]"
           />
           <label className="absolute bottom-0 right-0 bg-[#F6B93B] hover:bg-[#D9CFC7] text-white rounded-full p-2 cursor-pointer transition shadow-lg">
@@ -123,10 +149,24 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
             <label className="block text-sm font-medium text-slate-700">Username *</label>
             <input
               type="text"
-              value={profile.user}
-              onChange={(e) => handleChange('user', e.target.value)}
+              value={profile.username}
+              onChange={(e) => handleChange('username', e.target.value)}
               className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
               required
+            />
+            <label className="block text-sm font-medium text-slate-700 mt-4">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
+            />
+            <label className="block text-sm font-medium text-slate-700 mt-4">Confirm Password</label>
+            <input
+              type="password"
+              value={passwordConfirmation}
+              onChange={(e) => setPasswordConfirmation(e.target.value)}
+              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
             />
           </div>
         </div>

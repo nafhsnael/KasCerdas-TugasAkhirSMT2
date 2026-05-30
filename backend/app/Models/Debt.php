@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -62,7 +64,7 @@ class Debt extends Model
      * Get days until due date (negative if overdue)
      */
     public function getDaysUntilDueAttribute(): int
-{
-    return now()->startOfDay()->diffInDays($this->due_date, false);
-}
+    {
+        return now()->diffInDays($this->due_date, false);
+    }
 }

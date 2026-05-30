@@ -16,17 +16,32 @@ class CheckMaintenance
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $isMaintenance = Cache::get('maintenance_mode', false);
+        // Retrieve maintenance mode flag from .env
+        $isMaintenance = env('MAINTENANCE_MODE', false);
 
         if ($isMaintenance) {
-            // Admin is allowed to bypass maintenance mode
+            // Admin can bypass maintenance mode
             $user = $request->user();
-            if (!$user || !$user->isAdmin()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Service Unavailable. The system is under maintenance.'
-                ], 503);
+            if ($user && $user->isAdmin()) {
+                return $next($request);
             }
+
+            // Whitelisted routes that should work during maintenance
+            $whitelisted = [
+                'api/user/profil', // profile view/update
+                'api/user/profil/*', // any sub‑routes for profile
+                'api/auth/logout', // logout
+                'api/auth/me', // get authenticated user info
+                'api/wallet/me', // wallet info after login
+            ];
+            foreach ($whitelisted as $path) {
+                if ($request->is($path)) {
+                    return $next($request);
+                }
+            }
+
+            // Return a generic Service Unavailable response without extra text
+            return response()->json([], 503);
         }
 
         return $next($request);

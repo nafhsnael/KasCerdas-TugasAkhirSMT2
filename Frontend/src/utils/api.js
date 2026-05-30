@@ -3,10 +3,10 @@
  * Handles all API calls to the backend with proper headers and error handling
  */
 
-const API_BASE_URL = 
+const API_BASE_URL =
   (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_URL) ||
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
-  '/api'
+  'http://localhost:8000/api';
 
 /**
  * Generic fetch wrapper with authentication
@@ -48,14 +48,19 @@ async function apiFetch(endpoint, options = {}) {
   
   const data = await response.json().catch(() => null)
 
-  if (!response.ok) {
-    const firstError = data?.errors ? Object.values(data.errors).flat()[0] : null
-    const message = firstError || data?.message || `API request failed (${response.status} ${response.statusText})`
-    const error = new Error(message)
-    error.status = response.status
-    error.responseData = data
-    throw error
-  }
+    // Maintenance mode (503) should be treated as a silent success
+    if (response.status === 503) {
+      return {};
+    }
+
+    if (!response.ok) {
+      const firstError = data?.errors ? Object.values(data.errors).flat()[0] : null;
+      const message = firstError || data?.message || `API request failed (${response.status} ${response.statusText})`;
+      const error = new Error(message);
+      error.status = response.status;
+      error.responseData = data;
+      throw error;
+    }
 
   return data
 }
