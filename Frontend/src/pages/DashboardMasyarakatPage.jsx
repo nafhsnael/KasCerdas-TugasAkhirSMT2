@@ -31,7 +31,51 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
     .filter((t) => t.type === 'income')
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
 
+  const monthStart = new Date(currentYear, currentMonth, 1)
+
+  const isSaldoAwalTransaction = (transaction) => {
+    const cat = String(transaction.category || '').toLowerCase()
+    const businessCat = String(transaction.businessCategory || '').toLowerCase()
+    return (
+      cat === 'saldo awal' ||
+      cat === 'initial' ||
+      businessCat === 'saldo awal' ||
+      businessCat === 'initial'
+    )
+  }
+
+  // Saldo awal yang dimasukkan *sebelum bulan berjalan* dihitung untuk kartu Saldo Pemasukan.
+  const saldoAwalSebelumBulanIni = (transactions || [])
+    .filter((t) => t.type === 'income')
+    .filter((t) => {
+      const d = new Date(t.date)
+      if (Number.isNaN(d.getTime())) return false
+      return isSaldoAwalTransaction(t) && d < monthStart
+    })
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+
+  const hasSaldoAwalTransaction = (transactions || [])
+    .some((t) => t.type === 'income' && isSaldoAwalTransaction(t))
+
+  // Jika ada transaksi saldo awal yang jatuh di bulan berjalan, tetap ikut masuk.
+  const saldoAwalBulanIni = monthTransactions
+    .filter((t) => t.type === 'income')
+    .filter(isSaldoAwalTransaction)
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+
+  // Untuk kartu "Saldo Pemasukan" kita memang tetap memasukkan transaksi "Saldo Awal".
+  // Namun, agar tidak menggandakan/ikut logika yang salah, kita pastikan "Saldo Awal" yang dijumlahkan hanya transaksi kategori saldo awal.
+  const fallbackInitialBalance = hasSaldoAwalTransaction
+    ? 0
+    : Number(walletSummary?.income ?? walletSummary?.current ?? 0)
+
+  const saldoPemasukanBulanIniTermasukSaldoAwal = saldoPemasukanBulanIni + saldoAwalSebelumBulanIni + fallbackInitialBalance
+
+
+
+
   const saldoPengeluaranBulanIni = monthTransactions
+
     .filter((t) => t.type === 'expense')
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
 
@@ -99,8 +143,12 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
     }
   })()
 
+  // businessIncome untuk perhitungan skor/health tidak boleh menganggap saldo awal sebagai pemasukan bisnis.
+  // Karena feedback: saat akun baru (hanya saldo awal), skor dan metrik seharusnya tidak terlihat seolah-olah ada pemasukan.
   const businessIncome = saldoPemasukanBulanIni
+
   const businessExpense = saldoPengeluaranBulanIni
+
   // Pakai saldo asli dari wallet backend dulu, baru fallback ke walletSummary.
   // Ini supaya Saldo E-Wallet selalu sesuai saldo yang diinput/tersimpan dan berubah setelah transaksi.
   const eWalletBalance = Number(walletInfo?.balance ?? walletSummary?.current ?? 0)
@@ -115,20 +163,45 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
       : 0
 
   const cashflow = businessIncome - businessExpense
-  const cashflowScore = businessIncome > 0
-    ? Math.round(Math.max(0, Math.min(100, (cashflow / businessIncome) * 50 + 50)))
+
+  // Kondisi akun baru: tidak ada pemasukan/pengeluaran selain saldo awal.
+  const hasNonInitialIncome = monthTransactions.some((t) => {
+    if (t.type !== 'income') return false
+    const cat = String(t.category || '').toLowerCase()
+    const businessCat = String(t.businessCategory || '').toLowerCase()
+    return !(cat === 'saldo awal' || cat === 'initial' || businessCat === 'saldo awal' || businessCat === 'initial')
+  })
+
+
+  const hasAnyExpense = businessExpense > 0
+  const isAkunBaru = !hasNonInitialIncome && !hasAnyExpense
+
+  const cashflowScore = isAkunBaru
+    ? 100
+    : businessIncome > 0
+      ? Math.round(Math.max(0, Math.min(100, (cashflow / businessIncome) * 50 + 50)))
+      : currentBalance > 0
+        ? 60
+        : 0
+
+  const savingsRatio = businessIncome > 0
+    ? Math.min(1, currentBalance / businessIncome)
     : currentBalance > 0
-      ? 60
+      ? 0.5
       : 0
 
-  const savingsRatio = businessIncome > 0 ? Math.min(1, currentBalance / businessIncome) : currentBalance > 0 ? 0.5 : 0
-  const savingsScore = Math.round(Math.max(0, Math.min(100, savingsRatio * 100)))
+  const savingsScore = isAkunBaru
+    ? 100
+    : Math.round(Math.max(0, Math.min(100, savingsRatio * 100)))
 
-  const efficiencyScore = totalBudgetLimit > 0
-    ? Math.round(Math.max(0, Math.min(100, (1 - Math.min(1, budgetUsageRatio)) * 100)))
-    : businessExpense > 0 && businessIncome > 0
-      ? Math.round(Math.max(0, Math.min(100, (1 - Math.min(1, businessExpense / businessIncome)) * 100)))
-      : 70
+  const efficiencyScore = isAkunBaru
+    ? 100
+    : totalBudgetLimit > 0
+      ? Math.round(Math.max(0, Math.min(100, (1 - Math.min(1, budgetUsageRatio)) * 100)))
+      : businessExpense > 0 && businessIncome > 0
+        ? Math.round(Math.max(0, Math.min(100, (1 - Math.min(1, businessExpense / businessIncome)) * 100)))
+        : 70
+
 
   const debtTransactions = monthTransactions.filter((transaction) => {
     const term = `${transaction?.category || ''} ${transaction?.note || ''} ${transaction?.title || ''}`.toLowerCase()
@@ -234,8 +307,9 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
               <h2 className="mt-4 text-4xl font-semibold text-slate-900">
-                Rp {saldoPemasukanBulanIni.toLocaleString('id-ID')}
+                Rp {saldoPemasukanBulanIniTermasukSaldoAwal.toLocaleString('id-ID')}
               </h2>
+
               <p className="mt-3 text-sm text-slate-500">Total pemasukan per bulan</p>
             </div>
           </div>

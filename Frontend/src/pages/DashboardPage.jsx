@@ -5,8 +5,21 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
 
   const recentTransactions = transactions.slice(0, 4)
   const isUmkm = userProfile?.usertype === 'umkm'
-  const businessIncome = isUmkm ? umkmSummary.income : walletSummary.income || 0
-  const businessExpense = isUmkm ? umkmSummary.operationalExpense : walletSummary.expense || 0
+  // Ambil pendapatan usaha tanpa memasukkan saldo awal (Initial/Saldo Awal)
+  const initialIncome = Number(transactions
+    .filter((t) => {
+      const cat = (t.businessCategory || t.category || '').toString().toLowerCase();
+      return cat === 'initial' || cat === 'saldo awal';
+    })
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0) || 0)
+
+  const businessIncome = isUmkm ? (umkmSummary.income + initialIncome) : walletSummary.income || 0
+  const businessExpense = isUmkm ? umkmSummary.operationalExpense - Number(transactions
+    .filter((t) => {
+      const cat = (t.category || '').toString();
+      return cat === 'Initial' || cat === 'Saldo Awal';
+    })
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0) || 0) : walletSummary.expense || 0
   const inventoryItems = isUmkm
     ? umkmSummary.inventory
     : [
@@ -19,7 +32,8 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
   const totalReceivables = isUmkm ? umkmSummary.receivables : 1750000
   const estimatedHpp = isUmkm ? umkmSummary.estimatedHpp : Math.round(businessIncome * 0.42)
   const costOfGoodsSold = estimatedHpp
-  const profitLoss = businessIncome - costOfGoodsSold - businessExpense
+
+  const profitLoss = (businessIncome - initialIncome) - costOfGoodsSold - businessExpense
   const netCash = profitLoss
   const financialHealthRaw = businessIncome > 0 ? (netCash / businessIncome) * 100 : 0
   const financialHealthPercent = Math.max(0, Math.min(100, financialHealthRaw))
@@ -36,7 +50,9 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
   const savingsRatio = businessIncome > 0 ? Math.min(1, walletSummary.current / businessIncome) : 0
   const savingsScore = Math.round(Math.max(0, Math.min(100, savingsRatio * 100)))
 
-  const efficiencyScore = totalBudgetLimit > 0 ? Math.round(Math.max(0, Math.min(100, (1 - budgetUsageRatio) * 100))) : 70
+  // Efisiensi pengeluaran: jika belum ada budget/usage, anggap maksimal (100)
+  const efficiencyScore = totalBudgetLimit > 0 ? Math.round(Math.max(0, Math.min(100, (1 - budgetUsageRatio) * 100))) : 100
+
 
   const debtTransactions = transactions.filter((t) => {
     const term = (t.category || '').toString().toLowerCase() + ' ' + (t.note || '').toString().toLowerCase()

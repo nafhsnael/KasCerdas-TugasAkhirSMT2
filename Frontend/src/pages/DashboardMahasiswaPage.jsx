@@ -93,9 +93,11 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
   const debtRatio = totalIncome > 0 ? Math.min(1, totalDebt / totalIncome) : 1
   const debtScore = Math.round(Math.max(0, Math.min(100, 100 - debtRatio * 80)))
 
+  // Efisiensi pengeluaran: jika belum ada pengeluaran/budget, anggap maksimal (100)
   const efficiencyScore = totalBudgetLimit > 0
     ? Math.round(Math.max(0, Math.min(100, (1 - budgetUsageRatio) * 100)))
-    : 70
+    : 100
+
 
   const positiveIncomeTransactions = transactions.filter((t) => {
     const d = new Date(t.date)
@@ -199,6 +201,8 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
             <p className="text-sm uppercase tracking-[0.24em] text-slate-100/80">Selamat Datang, Mahasiswa</p>
             <h1 className="mt-2 text-3xl font-semibold">{userProfile?.nama || 'Mahasiswa'}</h1>
             <p className="mt-3 max-w-2xl text-sm text-slate-100/90">Kelola keuangan kuliah, kos, dan pengeluaran sehari-hari dengan mudah.</p>
+
+
           </div>
           <div className="flex items-center justify-end">
             <div className="rounded-[28px] border border-white/20 bg-white/10 px-5 py-4 text-right text-slate-100/90 shadow-sm">

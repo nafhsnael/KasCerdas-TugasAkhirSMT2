@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import UmkmMonthlyCashflowTableCard from '../components/umkm/UmkmMonthlyCashflowTableCard'
 import UmkmExpenseCompositionCard from '../components/umkm/UmkmExpenseCompositionCard'
 import UmkmPeriodDevelopmentCard from '../components/umkm/UmkmPeriodDevelopmentCard'
+import UmkmIncomeCompositionCard from '../components/umkm/UmkmIncomeCompositionCard'
 
 import BiggestExpenseCard from '../components/BiggestExpenseCard'
 import StatCard from '../components/StatCard'
@@ -147,11 +148,10 @@ function AnalysisUMKMPage({ transactions }) {
         <div className="rounded-[32px] border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-[#0F172A] sm:text-[34px]">
-                Analisis Keuangan UMKM
-              </h1>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500 font-semibold">ANALISIS KEUANGAN</p>
+              <h1 className="mt-2 text-[32px] font-semibold leading-tight tracking-tight text-[#0F172A] sm:text-[34px]">Analisis Keuangan UMKM</h1>
               <p className="mt-2 text-[16px] leading-6 text-[#64748B]">
-                Analisis keuangan membantu memantau kondisi keuangan UMKM secara ringkas dan jelas
+                Pantau kondisi keuangan usaha Anda secara ringkas dan jelas untuk membantu pengelolaan bisnis yang lebih baik.
               </p>
             </div>
 
@@ -193,14 +193,25 @@ function AnalysisUMKMPage({ transactions }) {
             </div>
           </section>
 
-          <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 px-2">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Komposisi Pengeluaran per Pos</p>
-            </div>
-            <div className="min-w-0">
-              <UmkmExpenseCompositionCard transactions={filteredTransactions} periodLabel={label} compact />
-            </div>
-          </section>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-4 px-2">
+                <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Komposisi Pengeluaran per Pos</p>
+              </div>
+              <div className="min-w-0">
+                <UmkmExpenseCompositionCard transactions={filteredTransactions} periodLabel={label} compact />
+              </div>
+            </section>
+
+            <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-4 px-2">
+                <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Komposisi Pemasukan per Pos</p>
+              </div>
+              <div className="min-w-0">
+                <UmkmIncomeCompositionCard transactions={filteredTransactions} periodLabel={label} compact />
+              </div>
+            </section>
+          </div>
 
           <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-6">
@@ -221,5 +232,4 @@ function AnalysisUMKMPage({ transactions }) {
 }
 
 export default AnalysisUMKMPage
-
 

@@ -12,12 +12,31 @@ function DashboardUMKMPage({
   eWalletBalance,
   onQuickAction,
 }) {
-  const recentTransactions = transactions.slice(0, 4)
+  // initialIncome = saldo awal yang dimasukkan (Initial/Saldo Awal)
+  // NOTE: di beberapa backend payload, saldo awal kadang sudah tercampur di umkmSummary.income.
+  // Agar output benar-benar berubah sesuai instruksi: masukkan saldo awal dari transaksi, lalu
+  // keluarkan saldo awal yang kemungkinan sudah ada di umkmSummary.income.
+  const initialIncome = (transactions || [])
+    .filter((t) => {
+      const cat = (t.businessCategory || t.category || '').toString().toLowerCase()
+      return cat === 'initial' || cat === 'saldo awal'
+    })
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
 
-  const businessIncome = umkmSummary.income
+  const rawUmkmIncome = Number(umkmSummary?.income ?? 0)
+
+  // Instruksi: "Saldo Pemasukan" di dashboard UMKM harus memasukkan saldo awal.
+  // Jadi businessIncome = income UMKM + saldo awal (tanpa mencoba heuristik double-add).
+  const businessIncome = rawUmkmIncome + initialIncome
+
+  // Untuk laba/rugi: SALDO AWAL tidak ikut masuk.
+  const profitIncome = rawUmkmIncome
+
   const businessExpense = transactions
     .filter((t) => (t.businessCategory || t.category) === 'Pengeluaran Operasional')
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+
+
 
   const inventoryItems = Array.isArray(umkmSummary.inventory) ? umkmSummary.inventory : []
 
@@ -25,7 +44,7 @@ function DashboardUMKMPage({
   const totalPayables = umkmSummary.payables
   const totalReceivables = umkmSummary.receivables
   const costOfGoodsSold = umkmSummary.estimatedHpp
-  const profitLoss = businessIncome - costOfGoodsSold - businessExpense
+  const profitLoss = profitIncome - costOfGoodsSold - businessExpense
   
   // Gunakan eWalletBalance dari props untuk Saldo E-Wallet
   const eWalletBalanceValue = Number(eWalletBalance ?? 0)
@@ -38,8 +57,11 @@ function DashboardUMKMPage({
     if (businessIncome > 0) score += 15
     
     // Bonus untuk pengeluaran terkontrol
-    if (businessExpense > 0 && businessExpense <= businessIncome * 0.5) score += 20
+    // Jika belum ada pengeluaran sama sekali, efisiensi dianggap maksimal.
+    if (businessExpense <= 0) score += 20
+    else if (businessExpense <= businessIncome * 0.5) score += 20
     else if (businessExpense > businessIncome * 0.5) score -= 10
+
     
     // Bonus untuk stok yang sehat
     const lowStockRatio = inventoryItems.length > 0 ? lowStockItems.length / inventoryItems.length : 0

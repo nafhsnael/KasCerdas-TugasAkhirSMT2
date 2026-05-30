@@ -1277,18 +1277,16 @@ function App() {
       setWalletInfo(data.wallet)
     }
 
-    // UMKM: saldo awal harus masuk ke e-wallet UMKM + ringkasan pemasukan (agar Dompet Usaha ikut terisi)
+    // UMKM: saldo awal harus masuk ke e-wallet UMKM
+    // Catatan: jangan masukkan saldo awal ke ringkasan laba/rugi (umkmSummary.income),
+    // karena itu membuat fitur 'Laba Rugi Otomatis' ikut terbawa saldo awal.
     if (userProfile?.usertype === 'umkm') {
       setUmkmEWalletBalance(balance)
 
-      setUmkmSummary((prevSummary) => {
-        // Di dashboard UMKM, 'Saldo Pemasukan' memakai umkmSummary.income.
-        // Jadi saat saldo awal dimasukkan, income harus ikut terisi.
-        return {
-          ...prevSummary,
-          income: balance,
-        }
-      })
+      setUmkmSummary((prevSummary) => ({
+        ...prevSummary,
+        // sengaja tidak mengubah prevSummary.income
+      }))
     }
 
     setShowInitialBalance(false)
