@@ -152,8 +152,9 @@ function AnalysisMasyarakatPage({ transactions }) {
                 Analisis Keuangan Masyarakat
               </h1>
               <p className="mt-2 text-[16px] leading-6 text-[#64748B]">
-                Pantau kondisi keuangan Anda secara ringkas dan jelas untuk membantu mengelola pengeluaran, tabungan, dan kebutuhan sehari-hari.
+                Pantau kondisi keuangan Anda secara ringkas dan jelas untuk membantu pengelolaan keuangan pribadi yang lebih baik.
               </p>
+
 
             </div>
 

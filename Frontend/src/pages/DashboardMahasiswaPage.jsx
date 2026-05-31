@@ -1,5 +1,4 @@
 import TransactionCard from '../components/TransactionCard'
-import BudgetCard from '../components/BudgetCard'
 
 function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletInfo, userProfile, onQuickAction }) {
   const now = new Date()
@@ -227,8 +226,7 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
         </div>
       </section>
 
-      {/* Budget Reminder (tetap di atas Financial Health Score) */}
-      <section className="mt-1">
+      <section className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] p-4 shadow-sm">
         {(() => {
           const totalBudget = (budgets || []).reduce((sum, b) => sum + (Number(b?.limit) || 0), 0)
           const totalBudgetUsage = (budgets || []).reduce((sum, b) => sum + (Number(b?.usage) || 0), 0)
@@ -284,39 +282,26 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
           const badgeText = totalBudget > 0 ? `${Math.round(budgetUsageRatioLocal * 100)}%` : '-'
 
           return (
-            <div className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white border border-slate-200 text-[16px]">
-                    {icon}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] uppercase tracking-[0.24em] text-slate-500">Budget Reminder</p>
-                    <h3 className="mt-1 text-[15px] font-semibold text-slate-900 leading-tight">{status.label}</h3>
-                    <p className="mt-1 text-[11px] text-slate-600 leading-tight line-clamp-2 w-full">{status.desc}</p>
-                  </div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white border border-slate-200 text-[16px]">
+                  {icon}
                 </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] uppercase tracking-[0.24em] text-slate-500">Budget Reminder</p>
+                  <h3 className="mt-1 text-[15px] font-semibold text-slate-900 leading-tight">{status.label}</h3>
+                  <p className="mt-1 text-[11px] text-slate-600 leading-tight line-clamp-2 w-full">{status.desc}</p>
+                </div>
+              </div>
 
-                <div className={`shrink-0 rounded-2xl border px-3 py-1 text-[12px] font-semibold ${badgeClass}`}>
-                  {badgeText}
-                </div>
+              <div className={`shrink-0 rounded-2xl border px-3 py-1 text-[12px] font-semibold ${badgeClass}`}>
+                {badgeText}
               </div>
             </div>
           )
         })()}
-
-        {budgets && budgets.length > 0 ? (
-          <div className="mt-4 space-y-4">
-            {budgets.map((b) => (
-              <BudgetCard key={b.id} category={b.category} usage={b.usage || 0} limit={b.limit || 0}>
-                <span className="text-xs font-semibold text-slate-600">{b.usage > b.limit ? '⚠️' : '✅'}</span>
-              </BudgetCard>
-            ))}
-          </div>
-        ) : null}
       </section>
 
-      {/* Financial Health Score */}
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>

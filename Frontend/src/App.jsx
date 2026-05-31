@@ -1391,6 +1391,7 @@ function App() {
         body: JSON.stringify({
           name: userProfile.nama,
           email: userProfile.email,
+          username: userProfile.user || userProfile.username,
           user_type: selectedUserType,
         })
       })

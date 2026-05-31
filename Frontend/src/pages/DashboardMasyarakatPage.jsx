@@ -1,5 +1,3 @@
-import BudgetCard from '../components/BudgetCard'
-
 function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletInfo, userProfile, onQuickAction }) {
   // Kategori ini disamakan dengan kategori di TransactionsMasyarakatPage.jsx
   const quickActions = [
@@ -135,7 +133,9 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
     return {
       icon: hasExceededBudget ? '⛔' : '⚠️',
       label: hasExceededBudget ? 'Ada budget terlampaui' : 'Ada budget hampir limit',
-      desc: `${budgetReminders.length} kategori perlu diperhatikan. Yang ditampilkan hanya budget yang sudah mencapai 80% atau lebih.`,
+      desc: hasExceededBudget 
+        ? `Kategori "${budgetReminders[0]?.category || '—'}" telah melebihi batas budget.`
+        : `Kategori "${budgetReminders[0]?.category || '—'}" mulai mendekati batas budget.`,
       badge: `${Math.round(budgetReminders[0].ratio * 100)}%`,
       badgeClass: hasExceededBudget
         ? 'bg-rose-50 text-rose-700 border-rose-200'
@@ -288,7 +288,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
             <p className="text-sm uppercase tracking-[0.24em] text-slate-100/80">Selamat Datang</p>
             <h1 className="mt-2 text-3xl font-semibold">{userProfile?.nama || 'Pengguna'}</h1>
             <p className="mt-3 max-w-2xl text-sm text-slate-100/90">
-              Pantau saldo eco-wallet, pencapaian keberlanjutan, dan transaksi terbaru dalam satu tampilan bersih.
+              Pantau saldo e-wallet, pencapaian keberlanjutan, dan transaksi terbaru dalam satu tampilan bersih.
             </p>
           </div>
           <div className="rounded-[28px] border border-white/20 bg-white/10 p-4 text-right">
@@ -345,18 +345,6 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
               {budgetReminderStatus.badge}
             </div>
           </div>
-
-          {budgetReminders.length > 0 ? (
-            <div className="mt-4 space-y-4">
-              {budgetReminders.map((budget) => (
-                <BudgetCard key={budget.id} category={budget.category} usage={budget.usage} limit={budget.limit}>
-                  <span className={`text-xs font-semibold ${budget.ratio > 1 ? 'text-rose-600' : 'text-amber-600'}`}>
-                    {budget.ratio > 1 ? 'Lewat limit' : 'Hampir limit'}
-                  </span>
-                </BudgetCard>
-              ))}
-            </div>
-          ) : null}
       </section>
 
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
