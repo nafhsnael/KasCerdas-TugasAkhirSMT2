@@ -8,6 +8,7 @@ use App\Models\Wallet;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
@@ -120,78 +121,73 @@ class TransactionController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'wallet_id' => ['required', 'integer', 'exists:wallets,id'],
-            'title' => ['required', 'string', 'max:150'],
-            'category' => ['required', 'string', 'max:100'],
-            'note' => ['nullable', 'string', 'max:1000'],
-            'description_detail' => ['nullable', 'string', 'max:5000'],
-            'type' => ['required', 'in:income,expense'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'date' => ['required', 'date', 'date_format:Y-m-d'],
-            'receipt' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], // 5MB
-        ]);
-
-        // Verify wallet belongs to user
-        $wallet = Wallet::where('id', $validated['wallet_id'])
-            ->where('user_id', $request->user()->id)
-            ->firstOrFail();
-
-        // Handle receipt upload
-        $receiptUrl = null;
-        if ($request->hasFile('receipt')) {
-            $receiptUrl = $request->file('receipt')->store('receipts', 'public');
-        }
-
-        // Create transaction
-        $transaction = Transaction::create([
-            'user_id' => $request->user()->id,
-            'wallet_id' => $validated['wallet_id'],
-            'title' => $validated['title'],
-            'category' => $validated['category'],
-            'note' => $validated['note'] ?? null,
-            'description_detail' => $validated['description_detail'] ?? null,
-            'type' => $validated['type'],
-            'amount' => (float) $validated['amount'],
-            'date' => $validated['date'],
-            'receipt_url' => $receiptUrl,
-            'invoice' => $this->generateInvoiceNumber($request->user()->id, $validated['date']),
-        ]);
-
-        // Update wallet balance (skip for Initial/Saldo Awal category to avoid double-applying)
-        if (!in_array($validated['category'] ?? '', ['Initial', 'Saldo Awal'], true)) {
-            $this->updateWalletBalance($wallet, $transaction->type, $transaction->amount, 'add');
-        }
-
-        // Log activity
-        $this->logActivity($request->user()->id, 'CREATE', 'Transaction', $transaction->id, [
-            'title' => $transaction->title,
-            'amount' => $transaction->amount,
-            'type' => $transaction->type,
-        ]);
-
-        // Mutasi saldo wallet untuk update e-wallet dashboard.
-        // Catatan: transaksi kategori 'Initial' atau 'Saldo Awal' dipakai untuk reporting, bukan untuk mengubah saldo.
-        if (!in_array($validated['category'] ?? '', ['Initial', 'Saldo Awal'], true)) {
-            $wallet = Wallet::query()->where('user_id', $request->user()->id)->where('id', $validated['wallet_id'])->first();
-
-            if ($wallet) {
-                $delta = (float) $validated['amount'];
-                if ($validated['type'] === 'income') {
-                    $wallet->balance = (float) $wallet->balance + $delta;
-                } else {
-                    $wallet->balance = (float) $wallet->balance - $delta;
-                }
-
-                $wallet->save();
+        if ($request->has('metadata') && is_string($request->input('metadata'))) {
+            $metadataDecoded = json_decode($request->input('metadata'), true);
+            if (is_array($metadataDecoded)) {
+                $request->merge(['metadata' => $metadataDecoded]);
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Transaksi berhasil dibuat',
-            'data' => $transaction,
-        ], 201);
+        return DB::transaction(function () use ($request) {
+            $validated = $request->validate([
+                'wallet_id' => ['required', 'integer', 'exists:wallets,id'],
+                'title' => ['required', 'string', 'max:150'],
+                'category' => ['required', 'string', 'max:100'],
+                'note' => ['nullable', 'string', 'max:1000'],
+                'description_detail' => ['nullable', 'string', 'max:5000'],
+                'type' => ['required', 'in:income,expense'],
+                'amount' => ['required', 'numeric', 'min:0.01'],
+                'date' => ['required', 'date', 'date_format:Y-m-d'],
+                'receipt' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], // 5MB
+                'metadata' => ['nullable', 'array'],
+            ]);
+
+            // Verify wallet belongs to user
+            $wallet = Wallet::where('id', $validated['wallet_id'])
+                ->where('user_id', $request->user()->id)
+                ->firstOrFail();
+
+            // Handle receipt upload
+            $receiptUrl = null;
+            if ($request->hasFile('receipt')) {
+                $receiptUrl = $request->file('receipt')->store('receipts', 'public');
+            }
+
+            // Create transaction
+            $transaction = Transaction::create([
+                'user_id' => $request->user()->id,
+                'wallet_id' => $validated['wallet_id'],
+                'title' => $validated['title'],
+                'category' => $validated['category'],
+                'note' => $validated['note'] ?? null,
+                'description_detail' => $validated['description_detail'] ?? null,
+                'type' => $validated['type'],
+                'amount' => (float) $validated['amount'],
+                'date' => $validated['date'],
+                'receipt_url' => $receiptUrl,
+                'invoice' => $this->generateInvoiceNumber($request->user()->id, $validated['date']),
+                'metadata' => $validated['metadata'] ?? null,
+            ]);
+
+            // Update wallet balance efficiently
+            if (!in_array($validated['category'] ?? '', ['Initial', 'Saldo Awal'], true)) {
+                $balanceChange = $validated['type'] === 'income' ? $validated['amount'] : -$validated['amount'];
+                $wallet->increment('balance', $balanceChange);
+            }
+
+            // Log activity
+            $this->logActivity($request->user()->id, 'CREATE', 'Transaction', $transaction->id, [
+                'title' => $transaction->title,
+                'amount' => $transaction->amount,
+                'type' => $transaction->type,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil dibuat',
+                'data' => $transaction,
+            ], 201);
+        });
     }
 
     /**
@@ -207,81 +203,97 @@ class TransactionController extends Controller
             ], 403);
         }
 
-
-        $validated = $request->validate([
-            'wallet_id' => ['nullable', 'integer', 'exists:wallets,id'],
-            'title' => ['nullable', 'string', 'max:150'],
-            'category' => ['nullable', 'string', 'max:100'],
-            'note' => ['nullable', 'string', 'max:1000'],
-            'description_detail' => ['nullable', 'string', 'max:5000'],
-            'type' => ['nullable', 'in:income,expense'],
-            'amount' => ['nullable', 'numeric', 'min:0.01'],
-            'date' => ['nullable', 'date', 'date_format:Y-m-d'],
-            'receipt' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-        ]);
-
-        // Store old values for comparison
-        $oldAmount = $transaction->amount;
-        $oldType = $transaction->type;
-        $oldWalletId = $transaction->wallet_id;
-
-        // Handle wallet change and balance reconciliation
-        if (!empty($validated['wallet_id']) && $validated['wallet_id'] !== $oldWalletId) {
-            // Verify old wallet belongs to user
-            $oldWallet = Wallet::where('id', $oldWalletId)
-                ->where('user_id', $request->user()->id)
-                ->firstOrFail();
-            $this->updateWalletBalance($oldWallet, $oldType, $oldAmount, 'subtract');
-
-            // Verify new wallet belongs to user
-            $newWallet = Wallet::where('id', $validated['wallet_id'])
-                ->where('user_id', $request->user()->id)
-                ->firstOrFail();
-            $validated['wallet_id'] = $newWallet->id;
-        }
-
-        // Handle amount or type change
-        if (!empty($validated['amount']) || !empty($validated['type'])) {
-            $newAmount = $validated['amount'] ?? $oldAmount;
-            $newType = $validated['type'] ?? $oldType;
-            $currentWallet = Wallet::findOrFail($validated['wallet_id'] ?? $oldWalletId);
-
-            // Reverse old amount
-            $this->updateWalletBalance($currentWallet, $oldType, $oldAmount, 'subtract');
-
-            // Add new amount
-            $this->updateWalletBalance($currentWallet, $newType, $newAmount, 'add');
-        }
-
-        // Handle receipt upload
-        if ($request->hasFile('receipt')) {
-            // Delete old receipt if exists
-            if ($transaction->receipt_url) {
-                \Storage::disk('public')->delete($transaction->receipt_url);
+        if ($request->has('metadata') && is_string($request->input('metadata'))) {
+            $metadataDecoded = json_decode($request->input('metadata'), true);
+            if (is_array($metadataDecoded)) {
+                $request->merge(['metadata' => $metadataDecoded]);
             }
-            $validated['receipt_url'] = $request->file('receipt')->store('receipts', 'public');
         }
 
-        // Update transaction
-        $transaction->update(array_filter($validated, fn($val) => $val !== null && $val !== ''));
+        return DB::transaction(function () use ($request, $transaction) {
+            $validated = $request->validate([
+                'wallet_id' => ['nullable', 'integer', 'exists:wallets,id'],
+                'title' => ['nullable', 'string', 'max:150'],
+                'category' => ['nullable', 'string', 'max:100'],
+                'note' => ['nullable', 'string', 'max:1000'],
+                'description_detail' => ['nullable', 'string', 'max:5000'],
+                'type' => ['nullable', 'in:income,expense'],
+                'amount' => ['nullable', 'numeric', 'min:0.01'],
+                'date' => ['nullable', 'date', 'date_format:Y-m-d'],
+                'receipt' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+                'metadata' => ['nullable', 'array'],
+            ]);
 
-        // Log activity
-        $this->logActivity($request->user()->id, 'UPDATE', 'Transaction', $transaction->id, [
-            'old' => [
-                'amount' => $oldAmount,
-                'type' => $oldType,
-            ],
-            'new' => [
-                'amount' => $transaction->amount,
-                'type' => $transaction->type,
-            ],
-        ]);
+            // Store old values for comparison
+            $oldAmount = $transaction->amount;
+            $oldType = $transaction->type;
+            $oldWalletId = $transaction->wallet_id;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Transaksi berhasil diperbarui',
-            'data' => $transaction->fresh(),
-        ]);
+            // Handle wallet change and balance reconciliation
+            if (!empty($validated['wallet_id']) && $validated['wallet_id'] !== $oldWalletId) {
+                // Adjust old wallet
+                $oldWallet = Wallet::where('id', $oldWalletId)
+                    ->where('user_id', $request->user()->id)
+                    ->firstOrFail();
+                $oldBalanceChange = $oldType === 'income' ? -$oldAmount : $oldAmount;
+                $oldWallet->increment('balance', $oldBalanceChange);
+
+                // Adjust new wallet
+                $newWallet = Wallet::where('id', $validated['wallet_id'])
+                    ->where('user_id', $request->user()->id)
+                    ->firstOrFail();
+                $validated['wallet_id'] = $newWallet->id;
+            }
+
+            // Handle amount or type change
+            if (!empty($validated['amount']) || !empty($validated['type'])) {
+                $newAmount = $validated['amount'] ?? $oldAmount;
+                $newType = $validated['type'] ?? $oldType;
+                $walletId = $validated['wallet_id'] ?? $oldWalletId;
+                $wallet = Wallet::findOrFail($walletId);
+
+                // Reverse old amount
+                $reverseChange = $oldType === 'income' ? -$oldAmount : $oldAmount;
+                $wallet->increment('balance', $reverseChange);
+
+                // Apply new amount
+                $applyChange = $newType === 'income' ? $newAmount : -$newAmount;
+                $wallet->increment('balance', $applyChange);
+            }
+
+            // Handle receipt upload
+            if ($request->hasFile('receipt')) {
+                if ($transaction->receipt_url) {
+                    \Storage::disk('public')->delete($transaction->receipt_url);
+                }
+                $validated['receipt_url'] = $request->file('receipt')->store('receipts', 'public');
+            }
+
+            // Update transaction
+            $updateData = array_filter($validated, fn($val) => $val !== null && $val !== '');
+            if (array_key_exists('metadata', $validated)) {
+                $updateData['metadata'] = $validated['metadata'];
+            }
+            $transaction->update($updateData);
+
+            // Log activity
+            $this->logActivity($request->user()->id, 'UPDATE', 'Transaction', $transaction->id, [
+                'old' => [
+                    'amount' => $oldAmount,
+                    'type' => $oldType,
+                ],
+                'new' => [
+                    'amount' => $transaction->amount,
+                    'type' => $transaction->type,
+                ],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil diperbarui',
+                'data' => $transaction->fresh(),
+            ]);
+        });
     }
 
     /**
@@ -297,46 +309,38 @@ class TransactionController extends Controller
             ], 403);
         }
 
-        // Get wallet before deletion
-        $wallet = $transaction->wallet;
-
-        // Delete receipt file if exists
-        if ($transaction->receipt_url) {
-            \Storage::disk('public')->delete($transaction->receipt_url);
-        }
-
-        // Rollback saldo wallet saat transaksi dihapus (kecuali transaksi Initial atau Saldo Awal).
-        if (!in_array($transaction->category, ['Initial', 'Saldo Awal'], true)) {
-            $wallet = Wallet::query()->where('user_id', $request->user()->id)->where('id', $transaction->wallet_id)->first();
-
-            if ($wallet) {
-                $delta = (float) $transaction->amount;
-                if ($transaction->type === 'income') {
-                    // menghapus income => kurangi delta
-                    $wallet->balance = (float) $wallet->balance - $delta;
-                } else {
-                    // menghapus expense => tambah delta
-                    $wallet->balance = (float) $wallet->balance + $delta;
-                }
-
-                $wallet->save();
+        return DB::transaction(function () use ($request, $transaction) {
+            // Delete receipt file if exists
+            if ($transaction->receipt_url) {
+                \Storage::disk('public')->delete($transaction->receipt_url);
             }
-        }
 
-        // Log activity
-        $this->logActivity($request->user()->id, 'DELETE', 'Transaction', $transaction->id, [
-            'title' => $transaction->title,
-            'amount' => $transaction->amount,
-            'type' => $transaction->type,
-        ]);
+            // Rollback wallet balance if needed (excluding Initial/Saldo Awal)
+            if (!in_array($transaction->category, ['Initial', 'Saldo Awal'], true)) {
+                $wallet = Wallet::where('user_id', $request->user()->id)
+                    ->where('id', $transaction->wallet_id)
+                    ->first();
+                if ($wallet) {
+                    $delta = (float) $transaction->amount;
+                    $balanceChange = $transaction->type === 'income' ? -$delta : $delta;
+                    $wallet->increment('balance', $balanceChange);
+                }
+            }
 
+            // Log activity
+            $this->logActivity($request->user()->id, 'DELETE', 'Transaction', $transaction->id, [
+                'title' => $transaction->title,
+                'amount' => $transaction->amount,
+                'type' => $transaction->type,
+            ]);
 
-        $transaction->delete();
+            $transaction->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Transaksi berhasil dihapus',
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil dihapus',
+            ]);
+        });
     }
 
     /**

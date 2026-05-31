@@ -4,15 +4,16 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
   const [balance, setBalance] = useState(initialBalance.toString())
   const [date, setDate] = useState('')
   const [note, setNote] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const [notif, setNotif] = useState({ open: false, type: '', message: '' });
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (!balance || !date) {
-      alert('Mohon isi saldo awal dan tanggal')
-      return
+      setNotif({ open: true, type: 'error', message: 'Mohon isi saldo awal dan tanggal' });
+      return;
     }
 
     setIsLoading(true)
@@ -36,7 +37,7 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
 
       const json = await res.json()
       if (!res.ok || !json.success) {
-        alert(json?.message || 'Gagal menyimpan saldo awal')
+        setNotif({ open: true, type: 'error', message: json?.message || 'Gagal menyimpan saldo awal' });
         setIsLoading(false)
         return
       }
@@ -48,10 +49,10 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
         date,
         note,
       })
-      alert('Saldo awal berhasil disimpan!')
+      setNotif({ open: true, type: 'success', message: 'Saldo awal berhasil disimpan!' });
     } catch (e) {
       console.error('Error saving wallet:', e)
-      alert('Terjadi kesalahan saat menyimpan saldo awal')
+      setNotif({ open: true, type: 'error', message: 'Terjadi kesalahan saat menyimpan saldo awal' });
     } finally {
       setIsLoading(false)
     }
@@ -60,9 +61,9 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
   return (
     <div className="mx-auto max-w-lg">
       {/* Header Card */}
-      <div className="mb-6 rounded-3xl bg-[#38ADA9] p-6 text-white">
+      <div className="mb-6 rounded-3xl bg-gradient-to-r from-teal-500 to-emerald-600 p-6 text-white shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/30 backdrop-blur-md">
             <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -75,49 +76,43 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
       </div>
 
       {/* Form Card */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200">
-        <form className="space-y-5" onSubmit={handleSubmit}>
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Input Saldo Awal
-            </label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Input Saldo Awal</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">Rp</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base font-medium text-gray-400">Rp</span>
               <input
                 type="text"
                 value={balance}
                 onChange={(e) => setBalance(e.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}
                 required
                 disabled={isLoading}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-slate-900 transition-all disabled:opacity-50 focus:border-[#38ADA9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20"
+                className="w-full rounded-xl border border-slate-200 bg-gray-50 px-4 py-3 pl-12 text-lg text-gray-900 transition-all disabled:opacity-50 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 placeholder="0"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Tanggal
-            </label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Tanggal</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
               disabled={isLoading}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 transition-all disabled:opacity-50 focus:border-[#38ADA9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20"
+              className="w-full rounded-xl border border-slate-200 bg-gray-50 px-4 py-3 text-lg text-gray-900 transition-all disabled:opacity-50 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Catatan
-            </label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Catatan</label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               disabled={isLoading}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 transition-all disabled:opacity-50 focus:border-[#38ADA9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20"
+              className="w-full rounded-xl border border-slate-200 bg-gray-50 px-4 py-3 text-lg text-gray-900 transition-all disabled:opacity-50 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
               placeholder="Tambahkan catatan (opsional)"
               rows={3}
             />
@@ -125,11 +120,34 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
 
           <button
             disabled={isLoading}
-            className="w-full rounded-2xl bg-gradient-to-r from-[#38ADA9] to-[#38ADA9] py-3.5 text-base font-semibold text-white shadow-lg shadow-[#38ADA9]/25 transition-all hover:shadow-xl hover:shadow-[#38ADA9]/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+            className="w-full rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 py-3.5 text-base font-semibold text-white shadow-lg transition-all hover:from-teal-700 hover:to-emerald-700 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {isLoading ? 'Menyimpan...' : 'Simpan Saldo'}
           </button>
         </form>
       </div>
+      {notif.open && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col items-center space-y-4 max-w-xs w-full mx-4">
+            {notif.type === 'success' ? (
+              <svg className="h-12 w-12 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01" />
+              </svg>
+            )}
+            <p className="text-lg font-medium text-center">{notif.message}</p>
+            <button
+              onClick={() => setNotif({ open: false, type: '', message: '' })}
+              className="w-full py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition"
+            >
+              Lanjutkan ke Dashboard
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

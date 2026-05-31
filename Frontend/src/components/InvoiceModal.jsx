@@ -40,7 +40,7 @@ const buildReceiptApiUrl = (transactionId) => {
   return `${getApiBaseUrl()}/transactions/${transactionId}/receipt`
 }
 
-function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt }) {
+function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt, transaction }) {
   const [secureUrl, setSecureUrl] = useState(null)
   const [secureType, setSecureType] = useState('')
   const [secureLoading, setSecureLoading] = useState(false)
@@ -54,7 +54,13 @@ function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt }
       receipt?.preview,
       receipt?.path,
       receipt?.receipt_url,
+      receipt?.bukti_nota,
+      receipt?.bukti,
       receipt?.name,
+      transaction?.bukti_nota,
+      transaction?.bukti,
+      transaction?.receipt_url,
+      transaction?.receiptUrl,
     ]
 
     const candidates = []
@@ -71,6 +77,11 @@ function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt }
       }
 
       if (/^https?:/i.test(raw)) {
+        if (backendOrigin && raw.startsWith(backendOrigin) && !raw.includes('/storage/')) {
+          const pathOnly = raw.replace(backendOrigin, '').replace(/^\/+/, '')
+          const storagePath = pathOnly.startsWith('storage/') ? pathOnly : `storage/${pathOnly}`
+          candidates.push(`${backendOrigin}/${storagePath}`)
+        }
         candidates.push(raw)
         return
       }
@@ -82,7 +93,7 @@ function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt }
     })
 
     return [...new Set(candidates.filter(Boolean))]
-  }, [receipt])
+  }, [receipt, transaction])
 
   const canFetchSecureReceipt = Boolean(
     transactionId &&
@@ -220,9 +231,11 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
     transaction.stockItemId ||
     metadata.stockItemId ||
     metadata.stock_item_id ||
+    transaction.title ||
     '-'
-  const stockQty = transaction.stockQty ?? metadata.stockQty ?? metadata.stock_qty ?? '-'
-  const receiptPath = transaction.receipt_url || transaction.receiptUrl
+  const stockQtyVal = transaction.stockQty ?? metadata.stockQty ?? metadata.stock_qty ?? null
+  const stockQty = (stockQtyVal !== null && stockQtyVal !== undefined && String(stockQtyVal).trim() !== '' && stockQtyVal !== '-') ? `${stockQtyVal} unit` : '1 unit'
+  const receiptPath = transaction.receipt_url || transaction.receiptUrl || transaction.bukti_nota || transaction.bukti
   const receiptName = receiptPath ? String(receiptPath).split('/').pop() : 'Bukti Nota'
   const receiptUrl = buildReceiptUrl(receiptPath)
   const receipt = transaction.receipt
@@ -247,24 +260,28 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
   })()
 
   const receiptText = `${receipt?.type || ''} ${receipt?.name || ''} ${receipt?.url || ''} ${receiptPath || ''}`
-  const isImageReceipt = /image\//i.test(receiptText) || /\.(jpg|jpeg|png)(\?|#|$)/i.test(receiptText)
+  const isImageReceipt = /image\//i.test(receiptText) || /\.(jpg|jpeg|png|webp|gif)(\?|#|$)/i.test(receiptText)
   const isPdfReceipt = /application\/pdf/i.test(receiptText) || /\.pdf(\?|#|$)/i.test(receiptText)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-white shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all duration-300">
+      <div className="relative w-full max-w-md overflow-hidden rounded-[28px] bg-white shadow-2xl border border-slate-50 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">Detail Invoice</h2>
-            <p className="text-sm text-slate-500">{transaction.invoice}</p>
+            <h3 className="text-lg font-bold text-slate-800">Detail Invoice</h3>
+            {transaction.invoice && (
+              <span className="inline-block mt-1 px-2.5 py-0.5 bg-slate-100 text-slate-500 rounded text-xs font-mono tracking-wider">
+                {transaction.invoice}
+              </span>
+            )}
           </div>
-          <button
+          <button 
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-700 transition"
+            className="text-slate-400 hover:text-slate-600 hover:bg-slate-50 p-2 rounded-full transition-all"
           >
             <svg
-              className="h-6 w-6"
+              className="h-5 w-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -279,91 +296,95 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="space-y-6 px-6 py-6">
-          {/* Informasi Transaksi */}
-          <div>
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
-              Informasi Transaksi
-            </h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-xs text-slate-600">Judul</p>
-                <p className="text-sm font-semibold text-slate-900">{transaction.title}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-xs text-slate-600">Kategori</p>
-                <p className="text-sm font-semibold text-slate-900">{category}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-xs text-slate-600">Tanggal</p>
-                <p className="text-sm font-semibold text-slate-900">{displayDate}</p>
-              </div>
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto p-6 space-y-6 flex-1">
+          {/* Highlight Jumlah (Total) */}
+          <div className="text-center p-5 bg-slate-50 rounded-2xl border border-slate-100">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Transaksi</span>
+            <h2 className="text-2xl font-extrabold text-[#38ADA9] mt-1">
+              Rp {amount.toLocaleString('id-ID')}
+            </h2>
+          </div>
 
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-xs text-slate-600">Jumlah</p>
-                <p className="text-sm font-semibold text-slate-900">
-                  Rp {amount.toLocaleString('id-ID')}
-                </p>
-              </div>
+          {/* Informasi Transaksi */}
+          <div className="space-y-3.5">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+              Informasi Transaksi
+            </span>
+            
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-400">Judul Transaksi</span>
+              <span className="font-semibold text-slate-800 capitalize">{transaction.title}</span>
+            </div>
+            
+            <div className="flex justify-between items-center text-sm pt-2.5 border-t border-dashed border-slate-200">
+              <span className="text-slate-400">Kategori</span>
+              <span className="px-2.5 py-0.5 bg-[#38ADA9]/10 text-[#38ADA9] rounded-md text-xs font-medium">
+                {category}
+              </span>
+            </div>
+            
+            <div className="flex justify-between items-center text-sm pt-2.5 border-t border-dashed border-slate-200">
+              <span className="text-slate-400">Tanggal</span>
+              <span className="font-medium text-slate-700">{displayDate}</span>
             </div>
           </div>
 
+          {/* Detail Stok */}
+          {isStockTransaction && (
+            <div className="space-y-3.5 pt-4 border-t border-slate-100">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Detail Stok
+              </span>
+              
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-400">Item</span>
+                <span className="font-semibold text-slate-800">{stockItemName}</span>
+              </div>
+              
+              <div className="flex justify-between items-center text-sm pt-2.5 border-t border-dashed border-slate-200">
+                <span className="text-slate-400">Kuantitas</span>
+                <span className="font-semibold text-slate-800">{stockQty}</span>
+              </div>
+            </div>
+          )}
+
           {/* Catatan */}
           {transaction.note && (
-            <div>
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
+            <div className="space-y-2 pt-4 border-t border-slate-100">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
                 Catatan
-              </h3>
-              <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
+              </span>
+              <p className="rounded-xl bg-slate-50 p-3.5 text-sm text-slate-700 leading-relaxed border border-slate-100">
                 {transaction.note}
               </p>
             </div>
           )}
 
-          {/* Detail Stok */}
-          {isStockTransaction && (
-            <div>
-              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
-                Detail Stok
-              </h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs text-slate-600">Item</p>
-                  <p className="text-sm font-semibold text-slate-900">{stockItemName}</p>
-                </div>
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs text-slate-600">Kuantitas</p>
-                  <p className="text-sm font-semibold text-slate-900">{stockQty}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Bukti Nota */}
           {receipt && (
-            <div>
-              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
+            <div className="space-y-3 pt-4 border-t border-slate-100">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
                 Bukti Nota
-              </h3>
-              <div className="rounded-2xl bg-slate-50 p-4">
+              </span>
+              <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 p-1">
                 <ReceiptPreview
                   transactionId={transaction.id}
                   receipt={receipt}
                   isImageReceipt={isImageReceipt}
                   isPdfReceipt={isPdfReceipt}
+                  transaction={transaction}
                 />
               </div>
             </div>
           )}
-
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-200 bg-slate-50 px-6 py-4">
+        <div className="p-6 border-t border-slate-100 bg-white">
           <button
             onClick={onClose}
-            className="w-full rounded-full bg-teal-500 py-3 text-sm font-semibold text-white transition hover:bg-teal-600"
+            className="w-full py-3 bg-[#38ADA9] hover:bg-[#2c8a7d] text-white font-semibold rounded-2xl text-sm shadow-md shadow-[#38ADA9]/10 hover:shadow-[#38ADA9]/20 transition-all duration-200 active:scale-[0.98]"
           >
             Tutup
           </button>

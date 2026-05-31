@@ -41,7 +41,7 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
 
   const saldoAwalBulanIni = (() => {
     const v = getWalletBalanceAtStartOfMonth()
-    return v > 0 ? v : Number(walletSummary?.current || 0)
+    return v > 0 ? v : Number(walletSummary?.income ?? walletSummary?.current ?? 0)
   })()
 
   const totalIncome = saldoAwalBulanIni +
@@ -228,73 +228,121 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
 
       <section className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] p-4 shadow-sm">
         {(() => {
-          const totalBudget = (budgets || []).reduce((sum, b) => sum + (Number(b?.limit) || 0), 0)
-          const totalBudgetUsage = (budgets || []).reduce((sum, b) => sum + (Number(b?.usage) || 0), 0)
-          const budgetUsageRatioLocal = totalBudget > 0 ? totalBudgetUsage / totalBudget : 0
+          const getBudgetUsage = (budget) => {
+            const category = budget?.category || budget?.name || ''
+            const now = new Date()
+            const currentMonth = now.getMonth()
+            const currentYear = now.getFullYear()
 
-          const budgetByCategory = (budgets || []).reduce((acc, b) => {
-            const category = b?.category || 'Kategori'
+            const actualUsage = (transactions || [])
+              .filter((t) => {
+                const date = new Date(t.date)
+                if (Number.isNaN(date.getTime())) return false
+
+                const budgetParts = String(category).split(' - ')
+                const budgetMainCat = String(budgetParts[0] || '').toLowerCase().trim()
+                const budgetSubDetail = budgetParts[1] ? String(budgetParts[1]).toLowerCase().trim() : ''
+
+                const tType = String(t.type || '').toLowerCase().trim()
+                const tCategory = String(t.kategori || t.category || '').toLowerCase().trim()
+                const tTitle = String(t.judul || t.title || '').toLowerCase().trim()
+
+                const isKebutuhanLainnya = budgetMainCat === 'kebutuhan lainnya'
+
+                if (isKebutuhanLainnya) {
+                  return (
+                    tType === 'expense' &&
+                    tCategory === 'kebutuhan lainnya' &&
+                    tTitle === budgetSubDetail &&
+                    date.getMonth() === currentMonth &&
+                    date.getFullYear() === currentYear
+                  )
+                }
+
+                return (
+                  tType === 'expense' &&
+                  tCategory === String(category).toLowerCase().trim() &&
+                  date.getMonth() === currentMonth &&
+                  date.getFullYear() === currentYear
+                )
+              })
+              .reduce((sum, t) => sum + Number(t.jumlah_uang || t.amount || 0), 0)
+
+            const savedUsage = Number(budget?.usage) || 0
+            return Math.max(actualUsage, savedUsage)
+          }
+
+          const processedBudgets = (budgets || []).map((b) => {
             const limit = Number(b?.limit) || 0
-            if (!acc[category]) acc[category] = { limit: 0, usage: 0 }
-            acc[category].limit += limit
-            acc[category].usage += Number(b?.usage) || 0
-            return acc
-          }, {})
+            const usage = getBudgetUsage(b)
+            const ratio = limit > 0 ? usage / limit : 0
+            const category = b?.category || b?.name || 'Kategori'
+            return { ...b, category, limit, usage, ratio }
+          })
 
-          const topBudgetCategory = Object.entries(budgetByCategory)
-            .map(([category, v]) => ({
-              category,
-              ratio: v.limit > 0 ? v.usage / v.limit : 0,
-            }))
-            .sort((a, b) => b.ratio - a.ratio)[0]
+          const sortedBudgets = [...processedBudgets].sort((a, b) => b.ratio - a.ratio)
+          const topBudget = sortedBudgets[0]
+          const topRatioPercent = topBudget ? Math.round(topBudget.ratio * 100) : 0
+          const isWarning = topBudget && topBudget.ratio >= 0.9
 
-          const status =
-            totalBudget <= 0
-              ? { key: 'none', label: 'Belum ada budget', desc: 'Tambahkan budget agar ada pengingat otomatis.', color: 'slate' }
-              : budgetUsageRatioLocal <= 0.8
-                ? { key: 'safe', label: 'Pengeluaran masih aman', desc: 'Pengeluaran bulan ini masih terkendali.', color: 'emerald' }
-                : budgetUsageRatioLocal <= 1
-                  ? {
-                    key: 'near',
-                    label: 'Pengeluaran mendekati batas',
-                    desc: `Kategori '${topBudgetCategory?.category || '—'}' mulai mendekati batas budget.`,
-                    color: 'amber',
-                  }
-                  : {
-                    key: 'exceed',
-                    label: 'Budget terlampaui',
-                    desc: `Pengeluaran melebihi budget pada kategori '${topBudgetCategory?.category || '—'}'.`,
-                    color: 'rose',
-                  }
+          // Status definitions
+          let statusLabel = 'Pengeluaran masih aman'
+          let statusDesc = 'Pengeluaran bulan ini masih terkendali.'
+          let badgeText = `${topRatioPercent}%`
 
-          const badgeClass =
-            status.color === 'emerald'
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : status.color === 'amber'
-                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                : status.color === 'rose'
-                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                  : 'bg-slate-50 text-slate-700 border-slate-200'
+          if (!budgets || budgets.length === 0) {
+            statusLabel = 'Belum ada budget'
+            statusDesc = 'Tambahkan budget agar ada pengingat otomatis.'
+            badgeText = '-'
+          } else if (isWarning) {
+            statusLabel = 'Peringatan: Anggaran Hampir Habis!'
+            statusDesc = `Pengeluaran untuk ${topBudget.category} telah mencapai ${topRatioPercent}%.`
+          }
 
-          const icon =
-            status.key === 'safe' ? '✅' : status.key === 'near' ? '⚠️' : status.key === 'exceed' ? '⛔' : 'ℹ️'
+          const iconBgClass = !budgets || budgets.length === 0
+            ? 'bg-slate-100 text-slate-500'
+            : isWarning
+              ? 'bg-amber-50 text-amber-500'
+              : 'bg-green-50 text-green-500'
 
-          const badgeText = totalBudget > 0 ? `${Math.round(budgetUsageRatioLocal * 100)}%` : '-'
+          const badgeColorClass = !budgets || budgets.length === 0
+            ? 'bg-slate-50 text-slate-700 border-slate-200'
+            : isWarning
+              ? topRatioPercent >= 100
+                ? 'bg-red-50 text-red-600 border border-red-200'
+                : 'bg-amber-50 text-amber-600 border border-amber-200'
+              : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
 
           return (
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white border border-slate-200 text-[16px]">
-                  {icon}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${iconBgClass}`}>
+                  {!budgets || budgets.length === 0 ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  ) : isWarning ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] uppercase tracking-[0.24em] text-slate-500">Budget Reminder</p>
-                  <h3 className="mt-1 text-[15px] font-semibold text-slate-900 leading-tight">{status.label}</h3>
-                  <p className="mt-1 text-[11px] text-slate-600 leading-tight line-clamp-2 w-full">{status.desc}</p>
+                  <span className="text-[11px] font-semibold tracking-wider text-slate-400 uppercase block">Budget Reminder</span>
+                  <h4 className="mt-0.5 text-[14px] font-bold text-slate-800 leading-tight">
+                    {statusLabel}
+                  </h4>
+                  <p className="mt-0.5 text-xs text-slate-500 leading-tight line-clamp-2 w-full">
+                    {statusDesc}
+                  </p>
                 </div>
               </div>
 
-              <div className={`shrink-0 rounded-2xl border px-3 py-1 text-[12px] font-semibold ${badgeClass}`}>
+              <div className={`h-9 w-9 shrink-0 flex items-center justify-center rounded-full text-xs font-bold border ${badgeColorClass}`}>
                 {badgeText}
               </div>
             </div>

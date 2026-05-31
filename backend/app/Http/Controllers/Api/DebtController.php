@@ -57,13 +57,8 @@ class DebtController extends Controller
         $debts = $query->orderBy('due_date')->get();
 
         // Add computed attributes
-        $debts = $debts->map(function ($debt) {
-            return [
-                ...$debt->toArray(),
-                'remaining_amount' => $debt->remaining_amount,
-                'is_overdue' => $debt->is_overdue,
-                'days_until_due' => $debt->days_until_due,
-            ];
+        $debts = $debts->map(function ($debt) use ($userId) {
+            return $this->formatDebtWithDynamicPaid($debt, $userId);
         });
 
         return response()->json([
@@ -89,12 +84,7 @@ class DebtController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Detail hutang berhasil diambil',
-            'data' => [
-                ...$debt->toArray(),
-                'remaining_amount' => $debt->remaining_amount,
-                'is_overdue' => $debt->is_overdue,
-                'days_until_due' => $debt->days_until_due,
-            ],
+            'data' => $this->formatDebtWithDynamicPaid($debt, $request->user()->id),
         ]);
     }
 
@@ -106,7 +96,7 @@ class DebtController extends Controller
         $userId = $request->user()->id;
         
         $validated = $request->validate([
-            'wallet_id' => ['required', 'integer'],
+            'wallet_id' => ['nullable', 'integer'],
             'creditor_name' => ['required', 'string', 'max:150'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'due_date' => ['required', 'date', 'date_format:Y-m-d'],
@@ -114,14 +104,32 @@ class DebtController extends Controller
             'status' => ['nullable', 'in:active,paid,overdue'],
         ]);
 
-        // Verify wallet belongs to user
-        $wallet = Wallet::where('id', $validated['wallet_id'])
-                        ->where('user_id', $userId)
-                        ->firstOrFail();
+        // Automatically resolve default wallet if not provided or doesn't belong to user
+        $walletId = $validated['wallet_id'] ?? null;
+        if ($walletId) {
+            $walletExists = Wallet::where('id', $walletId)
+                                  ->where('user_id', $userId)
+                                  ->exists();
+            if (!$walletExists) {
+                $walletId = null;
+            }
+        }
+
+        if (!$walletId) {
+            $wallet = Wallet::where('user_id', $userId)->first();
+            if (!$wallet) {
+                $wallet = Wallet::create([
+                    'user_id' => $userId,
+                    'name' => 'Default Wallet',
+                    'balance' => 0,
+                ]);
+            }
+            $walletId = $wallet->id;
+        }
 
         $debt = Debt::create([
             'user_id' => $userId,
-            'wallet_id' => $validated['wallet_id'],
+            'wallet_id' => $walletId,
             'creditor_name' => $validated['creditor_name'],
             'amount' => (float) $validated['amount'],
             'due_date' => $validated['due_date'],
@@ -133,12 +141,7 @@ class DebtController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Hutang berhasil ditambahkan',
-            'data' => [
-                ...$debt->fresh()->toArray(),
-                'remaining_amount' => $debt->fresh()->remaining_amount,
-                'is_overdue' => $debt->fresh()->is_overdue,
-                'days_until_due' => $debt->fresh()->days_until_due,
-            ],
+            'data' => $this->formatDebtWithDynamicPaid($debt->fresh(), $userId),
         ], 201);
     }
 
@@ -169,12 +172,7 @@ class DebtController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Hutang berhasil diperbarui',
-            'data' => [
-                ...$debt->fresh()->toArray(),
-                'remaining_amount' => $debt->fresh()->remaining_amount,
-                'is_overdue' => $debt->fresh()->is_overdue,
-                'days_until_due' => $debt->fresh()->days_until_due,
-            ],
+            'data' => $this->formatDebtWithDynamicPaid($debt->fresh(), $request->user()->id),
         ]);
     }
 
@@ -197,5 +195,40 @@ class DebtController extends Controller
             'success' => true,
             'message' => 'Hutang berhasil dihapus',
         ]);
+    }
+
+    /**
+     * Helper: Format debt with dynamic transaction payment aggregation
+     */
+    protected function formatDebtWithDynamicPaid($debt, $userId)
+    {
+        $isPiutang = str_contains(strtolower($debt->creditor_name), 'piutang') || str_contains(strtolower($debt->note), 'piutang');
+        $type = $isPiutang ? 'income' : 'expense';
+
+        $dynamicPaid = \App\Models\Transaction::where('user_id', $userId)
+            ->where('type', $type)
+            ->where(function ($q) {
+                $q->whereRaw('LOWER(category) LIKE ?', ['%hutang%'])
+                  ->orWhereRaw('LOWER(category) LIKE ?', ['%piutang%']);
+            })
+            ->whereRaw('LOWER(TRIM(title)) = ?', [strtolower(trim($debt->creditor_name))])
+            ->sum('amount');
+
+        $debtPaidAmount = $dynamicPaid > 0 ? (float) $dynamicPaid : (float) $debt->paid_amount;
+        $remaining = max(0, (float) $debt->amount - $debtPaidAmount);
+
+        $status = $debt->status;
+        if ($debtPaidAmount >= (float) $debt->amount) {
+            $status = 'paid';
+        }
+
+        return [
+            ...$debt->toArray(),
+            'paid_amount' => $debtPaidAmount,
+            'remaining_amount' => $remaining,
+            'status' => $status,
+            'is_overdue' => $status !== 'paid' && $debt->due_date < now()->toDateString(),
+            'days_until_due' => now()->diffInDays($debt->due_date, false),
+        ];
     }
 }

@@ -9,7 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 class ProfilController extends Controller
 {
     /**
@@ -26,9 +28,12 @@ class ProfilController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'username' => $user->username,
                 'role' => $user->role,
                 'user_type' => $user->user_type,
                 'is_active' => $user->is_active,
+                'phone' => $user->phone ?? '',
+                'address' => $user->address ?? '',
             ]
         ]);
     }
@@ -36,55 +41,82 @@ class ProfilController extends Controller
     /**
      * Update user profile.
      */
+    
+    /**
+    * Update user profile.
+    */
+/**
+ * Update user profile.
+ */
     public function update(Request $request)
     {
-        $user = $request->user();
+        Log::info('Payload Masuk Profil:', $request->all());
+        try {
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'username' => ['required', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->id)],
-            'password' => ['nullable', 'confirmed', Password::defaults()],
-            'user_type' => ['nullable', 'in:umkm,masyarakat_umum,mahasiswa'],
-        ]);
+            $validator = Validator::make($request->all(), [
+                'name' => 'nullable|string|max:255',
+                'username' => 'required|string|max:50|alpha_dash|unique:users,username,' . $user->id,
+                'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+                'user_type' => 'nullable|string|in:umkm,masyarakat_umum,mahasiswa,masyarakat',
+                'phone' => 'nullable|string|max:20',
+                'address' => 'nullable|string',
+            ]);
 
-        $updateData = [
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'username' => $validated['username'],
-        ];
+            if ($validator->fails()) {
+                return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+            }
 
-        if (!empty($validated['password'])) {
-            $updateData['password'] = Hash::make($validated['password']);
+            if ($request->has('name')) {
+                $user->name = $request->input('name');
+            }
+            if ($request->has('username')) {
+                $user->username = $request->input('username');
+            }
+            if ($request->has('email')) {
+                $user->email = $request->input('email');
+            }
+            if ($request->has('user_type')) {
+                $user->user_type = $request->input('user_type');
+            }
+            if ($request->has('phone')) {
+                $user->phone = $request->input('phone');
+            }
+            if ($request->has('address')) {
+                $user->address = $request->input('address');
+            }
+
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profil berhasil diperbarui',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'user_type' => $user->user_type,
+                    'is_active' => $user->is_active,
+                    'phone' => $user->phone ?? '',
+                    'address' => $user->address ?? '',
+                    'avatar' => $user->avatar ?? null,
+                ]
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('CRASH TOTAL PROFIL 500: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan internal server',
+                'error_system' => $e->getMessage()
+            ], 500);
         }
-
-        if ($request->filled('user_type') && is_null($user->user_type)) {
-            $updateData['user_type'] = $validated['user_type'];
-        }
-
-        $user->update($updateData);
-
-        // Log Activity
-        ActivityLog::create([
-            'user_id' => $user->id,
-            'action' => 'Update Profile',
-            'model_type' => User::class,
-            'model_id' => $user->id,
-            'ip_address' => $request->ip(),
-            'level' => 'info',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Profil berhasil diperbarui',
-            'data' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'user_type' => $user->user_type,
-                'is_active' => $user->is_active,
-            ]
-        ]);
     }
 }

@@ -121,8 +121,37 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(token))
   const [authLoading, setAuthLoading] = useState(Boolean(token))
 
-  const [showUserType, setShowUserType] = useState(false)
-  const [userType, setUserType] = useState(null)
+  const [showUserType, setShowUserType] = useState(() => {
+    try {
+      const savedToken = window.localStorage.getItem('token')
+      if (!savedToken) return false
+
+      const savedProfile = window.localStorage.getItem('user_profile')
+      if (savedProfile) {
+        const parsed = JSON.parse(savedProfile)
+        const isAdmin = parsed.role === 'admin'
+        if (parsed.usertype || isAdmin) {
+          return false
+        }
+      }
+
+      const savedType = window.localStorage.getItem('user_profile_type')
+      if (savedType) {
+        return false
+      }
+
+      return true
+    } catch (e) {
+      return false
+    }
+  })
+  const [userType, setUserType] = useState(() => {
+    try {
+      return window.localStorage.getItem('user_profile_type') || null
+    } catch (e) {
+      return null
+    }
+  })
   const [walletInfo, setWalletInfo] = useState(null)
   const [showInitialBalance, setShowInitialBalance] = useState(false)
   // Jika token tersimpan, jangan tampilkan landing dulu (hindari flash/landing saat auto-login)
@@ -145,6 +174,7 @@ function App() {
   const [isSplashLeaving, setIsSplashLeaving] = useState(false)
   const [pageVisible, setPageVisible] = useState(!showSplash)
   const [initialBalance, setInitialBalance] = useState(0)
+  const [walletInitialBalance, setWalletInitialBalance] = useState(0)
 
   useEffect(() => {
     if (!showSplash) {
@@ -195,7 +225,23 @@ function App() {
   const [filters, setFilters] = useState({ type: 'all' })
   const [selectedUmkmCategory, setSelectedUmkmCategory] = useState('all')
   const [transactions, setTransactions] = useState([])
-  const [budgets, setBudgets] = useState([])
+  const [budgets, setBudgets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('app_budget_data')
+      return saved ? JSON.parse(saved) : []
+    } catch (e) {
+      return []
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_budget_data', JSON.stringify(budgets))
+    } catch (e) {
+      console.error('Error saving budgets to localStorage:', e)
+    }
+  }, [budgets])
+
   const [defaultReportTab, setDefaultReportTab] = useState('daily')
 
   const parseMetadata = (metadata) => {
@@ -263,14 +309,39 @@ function App() {
 
   const [savings, setSavings] = useState([])
 
-  const [userProfile, setUserProfile] = useState({
-    nama: '',
-    email: '',
-    user: '',
-    usertype: null,
-    dompet: null,
-    profileImage: '',
+  const [userProfile, setUserProfile] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem('user_profile')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (!parsed.usertype) {
+          parsed.usertype = window.localStorage.getItem('user_profile_type') || null
+        }
+        return parsed
+      }
+    } catch (e) {
+      // ignore parsing errors
+    }
+    return {
+      nama: '',
+      email: '',
+      user: '',
+      usertype: window.localStorage.getItem('user_profile_type') || null,
+      dompet: null,
+      profileImage: '',
+    }
   })
+
+  // Watch userProfile and auto-save to localStorage
+  useEffect(() => {
+    try {
+      if (userProfile && (userProfile.nama || userProfile.email || userProfile.user || userProfile.usertype)) {
+        window.localStorage.setItem('user_profile', JSON.stringify(userProfile))
+      }
+    } catch (e) {
+      console.error('Error saving userProfile to localStorage:', e)
+    }
+  }, [userProfile])
 
   const buildStorageUrl = (path) => {
     if (!path) return null
@@ -427,7 +498,6 @@ function App() {
           break
         case 'Hutang Supplier':
           nextSummary.payables += amount
-          addInventoryEntry(transaction)
           nextSummary.estimatedHpp += amount
           if (isSettled) {
             nextSummary.payables = Math.max(0, nextSummary.payables - amount)
@@ -435,6 +505,11 @@ function App() {
           }
           break
         default:
+          if (transaction.type === 'income' && !['initial', 'saldo awal'].includes(String(category).toLowerCase().trim())) {
+            nextSummary.income += amount
+          } else if (transaction.type === 'expense') {
+            nextSummary.operationalExpense += amount
+          }
           break
       }
     })
@@ -592,6 +667,7 @@ function App() {
         if (walletData?.balance !== undefined && walletData?.balance !== null) {
           const balance = Number(walletData.balance) || 0
           setInitialBalance(balance)
+          setWalletInitialBalance(balance)
 
           if (resolvedUserType === 'umkm') {
             setUmkmEWalletBalance(balance)
@@ -614,7 +690,17 @@ function App() {
           setUmkmSummary(buildUmkmSummaryFromTransactions(umkmItems))
           setDebts(allData.debts || [])
           setSavings(allData.savings || [])
-          setBudgets(allData.budgets || [])
+          try {
+            const saved = localStorage.getItem('app_budget_data')
+            const localBudgets = saved ? JSON.parse(saved) : []
+            if (localBudgets && localBudgets.length > 0) {
+              setBudgets(localBudgets)
+            } else {
+              setBudgets(allData.budgets || [])
+            }
+          } catch (e) {
+            setBudgets(allData.budgets || [])
+          }
         }
 
         setIsAuthenticated(true)
@@ -646,6 +732,9 @@ function App() {
     // JANGAN REDIRECT jika user sedang mengakses halaman admin
     if (window.location.pathname.startsWith('/admin')) return;
 
+    // Wait until authentication loading is finished before redirecting
+    if (authLoading) return;
+
     if (!isAuthenticated && currentPage !== 'login' && currentPage !== 'register') {
       if (typeof window !== 'undefined') {
         window.history.replaceState(null, '', '/login')
@@ -660,7 +749,7 @@ function App() {
       }
       setCurrentPage('dashboard')
     }
-  }, [currentPage, isAuthenticated])
+  }, [currentPage, isAuthenticated, authLoading])
 
   const syncBudgetWithTransaction = (transaction) => {
     const amount = Number(transaction.amount) || 0
@@ -747,6 +836,17 @@ function App() {
 
     setTransactions((prev) => [tempTransaction, ...prev])
     syncBudgetWithTransaction(tempTransaction)
+
+    // Optimistically update wallet balance and initialBalance
+    const amount = Number(tempTransaction.amount) || 0
+    const transactionType = tempTransaction.type
+    if (transactionType === 'income') {
+      setInitialBalance((prev) => prev + amount)
+      setWalletInfo((prev) => prev ? { ...prev, balance: Number(prev.balance) + amount } : prev)
+    } else {
+      setInitialBalance((prev) => Math.max(0, prev - amount))
+      setWalletInfo((prev) => prev ? { ...prev, balance: Math.max(0, Number(prev.balance) - amount) } : prev)
+    }
 
     try {
       const payload = {
@@ -843,7 +943,10 @@ function App() {
 
       // Update wallet info after transaction
       const walletData = await fetchWalletInfo()
-      if (walletData) setWalletInfo(walletData)
+      if (walletData) {
+        setWalletInfo(walletData)
+        setInitialBalance(Number(walletData.balance))
+      }
 
       if (isDebtCategory) {
         setReportsDefaultTab('debt')
@@ -851,6 +954,15 @@ function App() {
     } catch (e) {
       // Rollback optimistic updates
       setTransactions((prev) => prev.filter((t) => t.id !== tempId))
+
+      // Rollback wallet balance
+      if (tempTransaction.type === 'income') {
+        setInitialBalance((prev) => Math.max(0, prev - amount))
+        setWalletInfo((prev) => prev ? { ...prev, balance: Math.max(0, Number(prev.balance) - amount) } : prev)
+      } else {
+        setInitialBalance((prev) => prev + amount)
+        setWalletInfo((prev) => prev ? { ...prev, balance: Number(prev.balance) + amount } : prev)
+      }
       console.error('Failed to save transaction', {
         payload: {
           ...newTransaction,
@@ -869,6 +981,7 @@ function App() {
 
   const addUmkmTransaction = async (newTransaction) => {
     const tempId = 't-' + Date.now()
+    const rawCategory = newTransaction.category || newTransaction.businessCategory || ''
 
     // Pastikan wallet_id tidak kosong agar backend tidak error `The wallet id field is required.`
     // (walletInfo.id hanya ada jika wallet sudah ter-load saat user login)
@@ -876,7 +989,7 @@ function App() {
     const transactionMetadata = {
       ...parseMetadata(newTransaction.metadata),
       is_umkm: true,
-      businessCategory: newTransaction.businessCategory,
+      businessCategory: rawCategory,
       stockItemId: newTransaction.stockItemId || '',
       stockItemName: newTransaction.stockItemName || '',
       stockQty: newTransaction.stockQty || '',
@@ -892,7 +1005,7 @@ function App() {
       receipt: receiptToPreview(newTransaction.receipt),
       wallet_id: safeWalletId,
       isUmkm: true,
-      businessCategory: newTransaction.businessCategory,
+      businessCategory: rawCategory,
       stockItemId: newTransaction.stockItemId || transactionMetadata.stockItemId,
       stockItemName: newTransaction.stockItemName || transactionMetadata.stockItemName,
       stockQty: newTransaction.stockQty || transactionMetadata.stockQty,
@@ -906,7 +1019,7 @@ function App() {
     syncBudgetWithTransaction(tempTransaction)
 
     const amount = Number(newTransaction.amount) || 0
-    const businessCategoryLabel = String(newTransaction.businessCategory || '').trim()
+    const businessCategoryLabel = String(rawCategory || '').trim()
     const isDebtCategory = businessCategoryLabel.toLowerCase().includes('hutang') || businessCategoryLabel.toLowerCase().includes('piutang')
     const isSavingsCategory = businessCategoryLabel.toLowerCase() === 'tabungan'
     const debtTitle = String(newTransaction.title || newTransaction.note || businessCategoryLabel || 'Hutang').trim()
@@ -947,7 +1060,7 @@ function App() {
 
       const nextSummary = { ...prevSummary }
 
-      switch (newTransaction.businessCategory) {
+      switch (rawCategory) {
         case 'Penjualan':
           nextSummary.income += amount
           nextSummary.estimatedHpp += estimatedHpp
@@ -969,7 +1082,6 @@ function App() {
           break
         case 'Hutang Supplier':
           nextSummary.payables += amount
-          nextSummary.inventory = addInventoryRow()
           nextSummary.estimatedHpp += amount
           if (newTransaction.isSettled) {
             nextSummary.payables = Math.max(0, nextSummary.payables - amount)
@@ -997,7 +1109,7 @@ function App() {
         ...savedTransaction,
         type: savedTransaction.type || tempTransaction.type,
         isUmkm: true,
-        businessCategory: savedTransaction.businessCategory || newTransaction.businessCategory,
+        businessCategory: savedTransaction.businessCategory || rawCategory,
         stockItemId: savedTransaction.stockItemId || newTransaction.stockItemId,
         stockItemName: savedTransaction.stockItemName || newTransaction.stockItemName,
         stockQty: savedTransaction.stockQty || newTransaction.stockQty,
@@ -1343,21 +1455,38 @@ function App() {
   }
 
   const handleAuthenticate = async (userData = {}, isRegister = false) => {
-    const newToken = userData?.token
+    const newToken = userData?.token;
 
     if (!newToken) {
-      alert(userData?.message || 'Autentikasi gagal: token tidak ditemukan')
-      setIsAuthenticated(false)
-      return
+      alert(userData?.message || 'Autentikasi gagal: token tidak ditemukan');
+      setIsAuthenticated(false);
+      return;
     }
 
-    setToken(newToken)
+    setToken(newToken);
     try {
-      window.localStorage.setItem('token', newToken)
+      // Store JWT for future sessions
+      window.localStorage.setItem('token', newToken);
+      // Persist selected user profile type (if present) for route guard
+      const profileType = userData.user_type || userData.role;
+      if (profileType) {
+        window.localStorage.setItem('user_profile_type', profileType);
+      }
+      // Persist full user profile for synchronous init
+      const profile = {
+        nama: userData.name || '',
+        email: userData.email || '',
+        user: userData.username || '',
+        usertype: profileType || null,
+        dompet: null,
+        profileImage: userData.avatar || '',
+      };
+      window.localStorage.setItem('user_profile', JSON.stringify(profile));
     } catch (e) {
-      // ignore
+      // ignore storage errors
     }
 
+    // Merge received user info into global profile state
     if (userData.username || userData.email || userData.name || userData.role || userData.user_type) {
       setUserProfile(prev => ({
         ...prev,
@@ -1365,21 +1494,22 @@ function App() {
         user: userData.username || prev.user,
         email: userData.email || prev.email,
         usertype: userData.user_type || userData.role || prev.usertype,
-      }))
+        profileImage: userData.avatar || prev.profileImage,
+      }));
     }
 
-    setIsAuthenticated(true)
+    setIsAuthenticated(true);
 
-    // Alur:
-    // - LOGIN: jangan pakai pilih user type & jangan minta saldo awal, langsung dashboard (atau InitialBalance kalau memang belum ada wallet balance via useEffect token)
-    // - REGISTER BARU: pakai flow pilih user type -> initial balance -> dashboard
+    // Flow handling for login vs registration
     if (isRegister) {
-      setShowUserType(true)
-      setShowInitialBalance(false)
+      // After registration show the user‑type selector first
+      setShowUserType(true);
+      setShowInitialBalance(false);
     } else {
-      setShowUserType(false)
-      setShowInitialBalance(false)
-      navigateTo('dashboard')
+      // Normal login – skip user‑type selection and go straight to dashboard
+      setShowUserType(false);
+      setShowInitialBalance(false);
+      navigateTo('dashboard');
     }
   }
 
@@ -1394,32 +1524,40 @@ function App() {
           username: userProfile.user || userProfile.username,
           user_type: selectedUserType,
         })
-      })
+      });
 
       if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}))
-        alert(errJson?.message || 'Gagal menyimpan tipe pengguna')
-        return
+        const errJson = await res.json().catch(() => ({}));
+        alert(errJson?.message || 'Gagal menyimpan tipe pengguna');
+        return;
       }
 
-      const json = await res.json()
+      const json = await res.json();
+      // Update global profile and persist the chosen type
       setUserProfile(prev => ({
         ...prev,
-        usertype: json.data.user_type,
-      }))
+        usertype: json.user?.user_type ?? selectedUserType,
+      }));
+      // Store for future page loads / refreshes
+      try {
+        window.localStorage.setItem('user_profile_type', selectedUserType);
+      } catch (e) {
+        // ignore errors
+      }
     } catch (e) {
-      alert('Terjadi kesalahan koneksi saat menyimpan tipe pengguna')
-      return
+      alert('Terjadi kesalahan koneksi saat menyimpan tipe pengguna');
+      return;
     }
 
-    setUserType(selectedUserType)
-    setShowUserType(false)
-    setShowInitialBalance(true)
+    setUserType(selectedUserType);
+    setShowUserType(false);
+    setShowInitialBalance(true);
   }
 
   const handleSaveInitialBalance = async (data) => {
     const balance = Number(data?.wallet?.balance ?? data?.balance ?? 0)
     setInitialBalance(balance)
+    setWalletInitialBalance(balance)
 
     if (data?.wallet) {
       setWalletInfo(data.wallet)
@@ -1448,6 +1586,28 @@ function App() {
       }
     } catch (e) {
       console.error('Error fetching wallet after initial balance save:', e)
+    }
+
+    // Re-fetch all transaction and related data (Initial Balance transaction, etc.)
+    try {
+      const allData = await fetchAllData()
+      if (allData) {
+        setTransactions(allData.transactions || [])
+        const userTypeLower = String(userProfile?.usertype || userType || '').toLowerCase()
+        const umkmItems = userTypeLower === 'umkm'
+          ? allData.transactions
+          : allData.transactions.filter((t) => {
+            const metadata = parseMetadata(t.metadata)
+            return metaToBool(metadata.is_umkm) || t.isUmkm || t.is_umkm
+          })
+        setUmkmTransactions(umkmItems)
+        setUmkmSummary(buildUmkmSummaryFromTransactions(umkmItems))
+        setDebts(allData.debts || [])
+        setSavings(allData.savings || [])
+        setBudgets(allData.budgets || [])
+      }
+    } catch (e) {
+      console.error('Error fetching all data after initial balance save:', e)
     }
 
     navigateTo('dashboard')
@@ -1570,10 +1730,10 @@ function App() {
           userProfile?.usertype === 'mahasiswa' ? (
             <DashboardMahasiswaPage
               walletSummary={{
-                current: initialBalance,
-                income: initialBalance,
+                current: Number(walletInfo?.balance ?? initialBalance ?? 0),
+                income: walletInitialBalance,
                 expense: 0,
-                smartCashPerDay: initialBalance,
+                smartCashPerDay: Number(walletInfo?.balance ?? initialBalance ?? 0),
                 smartReductionPerDay: 0,
               }}
               transactions={mahasiswaTransactions}
@@ -1598,7 +1758,7 @@ function App() {
             <DashboardMasyarakatPage
               walletSummary={{
                 current: Number(walletInfo?.balance ?? initialBalance ?? 0),
-                income: initialBalance,
+                income: walletInitialBalance,
                 expense: 0,
                 smartCashPerDay: Number(walletInfo?.balance ?? initialBalance ?? 0),
                 smartReductionPerDay: 0,

@@ -12,10 +12,16 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
   const handleChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
-  const [password, setPassword] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [profileImage, setProfileImage] = useState(userProfile?.profileImage || '');
   const [imagePreview, setImagePreview] = useState(userProfile?.profileImage || '');
+
+  const jenisProfilValue = useMemo(() => {
+    const type = profile.usertype || userProfile?.usertype || '';
+    if (type === 'umkm') return 'UMKM';
+    if (type === 'mahasiswa') return 'Mahasiswa';
+    if (type === 'masyarakat_umum') return 'Masyarakat Umum';
+    return '-';
+  }, [profile.usertype, userProfile?.usertype]);
 
   // Fetch user profile from backend on mount
   useEffect(() => {
@@ -41,14 +47,23 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
           });
           setProfileImage(data.profileImage || '');
           setImagePreview(data.profileImage || '');
-          if (setUserProfile) setUserProfile(data);
+          if (setUserProfile) {
+            setUserProfile((prev) => ({
+              ...prev,
+              nama: data.name || prev.nama,
+              user: data.username || prev.user,
+              email: data.email || prev.email,
+              usertype: data.user_type || prev.usertype,
+              profileImage: data.profileImage || prev.profileImage,
+            }));
+          }
         }
       })
       .catch((e) => console.error('Failed to load profile', e));
   }, []);
 
 
-  
+
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0]
@@ -75,29 +90,44 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          name: profile.nama,
+          nama_lengkap: profile.nama,
           email: profile.email,
           username: profile.username,
-          ...(password ? { password, password_confirmation: passwordConfirmation } : {}),
-          // Optionally include other fields if needed:
-          // phone: profile.phone,
-          // address: profile.address,
+          telepon: profile.phone,
+          alamat: profile.address,
         }),
       });
       if (response.ok) {
         const json = await response.json();
-        // Update user profile with fresh data from backend
-        setUserProfile((prev) => ({ ...prev, ...json.data.user, profileImage }));
-        // Clear password fields
-        setPassword('');
-        setPasswordConfirmation('');
+        if (setUserProfile) {
+          const updatedUser = json.data || {};
+          setUserProfile((prev) => ({
+            ...prev,
+            nama: updatedUser.name || prev.nama,
+            user: updatedUser.username || prev.user,
+            email: updatedUser.email || prev.email,
+            usertype: updatedUser.user_type || prev.usertype,
+            profileImage: profileImage || prev.profileImage,
+          }));
+        }
         alert('Profil berhasil diperbarui!');
       } else {
-        const json = await response.json();
-        alert(json?.message || 'Gagal memperbarui profil');
+        // Parse error response safely, fallback to raw text
+        let errorMsg = `Gagal memperbarui profil (status ${response.status})`;
+        try {
+          const errJson = await response.json();
+          if (errJson.message) errorMsg = errJson.message;
+          if (errJson.errors) errorMsg = Object.values(errJson.errors).flat().join('\n');
+          if (errJson.error_detail) errorMsg = errJson.error_detail;
+        } catch (_) {
+          const errText = await response.text();
+          if (errText) errorMsg = errText;
+        }
+        alert(errorMsg);
       }
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -106,23 +136,24 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-6 rounded-3xl bg-[#38ADA9] p-6 text-white">
-        <h2 className="text-2xl font-bold">Profil Pengguna</h2>
-        <p className="text-sm text-white/80 mt-2">
-          Kelola dan perbarui informasi profil kamu
-        </p>
-      </div>
+    <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-gray-100 p-6 shadow-sm relative mt-16 mb-8">
 
-      <div className="mb-6 flex justify-center">
+      {/* Avatar/Foto Profil Absolut */}
+      <div className="absolute -top-12 left-1/2 transform -translate-x-1/2">
         <div className="relative">
-          <img
-            src={imagePreview}
-            alt=""
-            className="h-32 w-32 rounded-full object-cover border-4 border-[#F6B93B]"
-          />
-          <label className="absolute bottom-0 right-0 bg-[#F6B93B] hover:bg-[#D9CFC7] text-white rounded-full p-2 cursor-pointer transition shadow-lg">
-            <span className="text-xl">+</span>
+          {imagePreview ? (
+            <img
+              src={imagePreview}
+              alt="Avatar"
+              className="w-24 h-24 rounded-full object-cover border-4 border-white bg-gray-100 shadow-md"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-100 shadow-md flex items-center justify-center text-gray-400 font-semibold">
+              Avatar
+            </div>
+          )}
+          <label className="absolute bottom-0 right-0 bg-[#F6B93B] hover:bg-[#e0a82b] text-white rounded-full p-1.5 cursor-pointer transition shadow-md flex items-center justify-center w-7 h-7">
+            <span className="text-sm font-bold leading-none">+</span>
             <input
               type="file"
               accept="image/*"
@@ -133,99 +164,97 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 bg-white rounded-2xl p-6 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Nama Lengkap *</label>
+      {/* Info Ringkas Profile */}
+      <div className="text-center mt-12 mb-6">
+        <h3 className="text-lg font-bold text-gray-800">{profile.nama || 'Profil Pengguna'}</h3>
+        <p className="text-xs text-gray-400 mt-1">Kelola dan perbarui informasi profil kamu</p>
+      </div>
+
+      {/* Form Grid */}
+      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+          {/* Baris 1: Nama Lengkap & Username */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-gray-700">Nama Lengkap *</label>
             <input
               type="text"
               value={profile.nama}
               onChange={(e) => handleChange('nama', e.target.value)}
-              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
               required
+              className="h-11 px-4 border border-gray-200/80 bg-gray-50/60 focus:bg-white rounded-xl text-sm focus:outline-none focus:border-[#38ADA9] focus:ring-4 focus:ring-[#38ADA9]/10 transition-all duration-200 text-gray-700 placeholder-gray-400"
+              placeholder="Masukkan nama lengkap"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Username *</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-gray-700">Username *</label>
             <input
               type="text"
               value={profile.username}
               onChange={(e) => handleChange('username', e.target.value)}
-              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
               required
+              className="h-11 px-4 border border-gray-200/80 bg-gray-50/60 focus:bg-white rounded-xl text-sm focus:outline-none focus:border-[#38ADA9] focus:ring-4 focus:ring-[#38ADA9]/10 transition-all duration-200 text-gray-700 placeholder-gray-400"
+              placeholder="Masukkan username"
             />
-            <label className="block text-sm font-medium text-slate-700 mt-4">Password</label>
+          </div>
+
+          {/* Baris 2: Email & Telepon */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-gray-700">Email *</label>
             <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
+              type="email"
+              value={profile.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              required
+              className="h-11 px-4 border border-gray-200/80 bg-gray-50/60 focus:bg-white rounded-xl text-sm focus:outline-none focus:border-[#38ADA9] focus:ring-4 focus:ring-[#38ADA9]/10 transition-all duration-200 text-gray-700 placeholder-gray-400"
+              placeholder="Contoh: user@email.com"
             />
-            <label className="block text-sm font-medium text-slate-700 mt-4">Confirm Password</label>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-gray-700">Telepon</label>
             <input
-              type="password"
-              value={passwordConfirmation}
-              onChange={(e) => setPasswordConfirmation(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
+              type="tel"
+              value={profile.phone}
+              onChange={(e) => handleChange('phone', e.target.value)}
+              className="h-11 px-4 border border-gray-200/80 bg-gray-50/60 focus:bg-white rounded-xl text-sm focus:outline-none focus:border-[#38ADA9] focus:ring-4 focus:ring-[#38ADA9]/10 transition-all duration-200 text-gray-700 placeholder-gray-400"
+              placeholder="Contoh: 08123456789"
             />
+          </div>
+
+          {/* Alamat */}
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <label className="text-xs font-bold text-gray-700">Alamat</label>
+            <textarea
+              value={profile.address}
+              onChange={(e) => handleChange('address', e.target.value)}
+              rows="3"
+              className="p-4 border border-gray-200/80 bg-gray-50/60 focus:bg-white rounded-xl text-sm focus:outline-none focus:border-[#38ADA9] focus:ring-4 focus:ring-[#38ADA9]/10 transition-all duration-200 text-gray-700 placeholder-gray-400 min-h-[100px]"
+              placeholder="Masukkan alamat lengkap"
+            />
+          </div>
+
+          {/* Jenis Profil (Kunci Kolom) */}
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <label className="text-xs font-bold text-gray-700">Jenis Profil</label>
+            <input
+              type="text"
+              value={jenisProfilValue}
+              disabled
+              className="h-11 px-4 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl text-sm cursor-not-allowed select-none font-medium"
+            />
+            <span className="text-[11px] text-gray-400 mt-0.5">* Jenis profil tidak dapat diubah setelah pendaftaran.</span>
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Email *</label>
-          <input
-            type="email"
-            value={profile.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Telepon</label>
-          <input
-            type="tel"
-            value={profile.phone}
-            onChange={(e) => handleChange('phone', e.target.value)}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Alamat</label>
-          <textarea
-            value={profile.address}
-            onChange={(e) => handleChange('address', e.target.value)}
-            rows="3"
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-[#38ADA9] focus:outline-none focus:ring-[#38ADA9]/50"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Jenis Profil</label>
-          <div className="mt-1 block w-full rounded-md border border-slate-300 bg-slate-100 px-3 py-2 shadow-sm">
-            <p className="text-slate-900 font-medium">
-              {userProfile?.usertype === 'umkm' && 'UMKM'}
-              {userProfile?.usertype === 'mahasiswa' && 'Mahasiswa'}
-              {userProfile?.usertype === 'masyarakat_umum' && 'Masyarakat Umum'}
-              {!userProfile?.usertype && '-'}
-            </p>
-          </div>
-          <p className="mt-2 text-sm text-slate-500">
-            Jenis profil tidak dapat diubah setelah pendaftaran.
-          </p>
-        </div>
-
-
+        {/* Button */}
         <div className="flex gap-4 pt-4">
           <button
             type="submit"
-            className="flex-1 rounded-2xl bg-[#38ADA9] py-3 font-semibold text-white transition hover:bg-[#2e8b87]"
+            className="flex-1 rounded-xl bg-[#38ADA9] hover:bg-[#2c8a7d] py-3 font-semibold text-white shadow-sm shadow-[#38ADA9]/10 hover:shadow-md hover:shadow-[#38ADA9]/20 transition-all duration-200 transform active:scale-[0.99] text-sm"
           >
             Simpan Perubahan
           </button>
-                </div>
+        </div>
       </form>
     </div>
   )

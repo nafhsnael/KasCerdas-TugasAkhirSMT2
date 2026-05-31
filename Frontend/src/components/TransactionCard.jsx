@@ -1,56 +1,78 @@
 function TransactionCard({ transaction, onViewInvoice, onDelete, isDeleting }) {
-  return (
-    <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-base font-semibold text-slate-900">{transaction.title}</p>
-          <p className="text-sm text-slate-500">{transaction.category}</p>
+  const isPengeluaran = transaction.type === 'expense'
+  const nominal = `Rp ${transaction.amount.toLocaleString('id-ID')}`
+  const tanggal = transaction.date
+  const noteInfo = transaction.note ? ` • ${transaction.note}` : ''
 
+  return (
+    <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all">
+      
+      <div className="flex items-center gap-4">
+        {/* Indikator Pemasukan / Pengeluaran */}
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isPengeluaran ? 'bg-rose-50 text-rose-500' : 'bg-emerald-50 text-emerald-500'}`}>
+          {isPengeluaran ? (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 17l-4 4m0 0l-4-4m4 4V3" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7l4-4m0 0l4 4m-4-4v18" />
+            </svg>
+          )}
         </div>
-        <div className="flex items-center gap-3">
+        
+        {/* Detail Transaksi (Judul & Kategori & Invoice) */}
+        <div className="flex flex-col gap-0.5">
+          <h4 className="text-sm font-semibold text-slate-800 capitalize">{transaction.title}</h4>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-medium">{transaction.category}</span>
+            {transaction.invoice && (
+              <span className="text-[10px] font-mono bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded border border-slate-100/60 shrink-0">
+                {transaction.invoice}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Sisi Kanan (Nominal, Tanggal, Aksi) */}
+      <div className="flex items-center gap-6">
+        <div className="text-right flex flex-col gap-0.5">
+          <span className={`text-sm font-bold ${isPengeluaran ? 'text-rose-600' : 'text-emerald-600'}`}>
+            {isPengeluaran ? '-' : '+'} {nominal}
+          </span>
+          <span className="text-xs text-slate-400 max-w-[200px] truncate" title={`${tanggal}${noteInfo}`}>
+            {tanggal}{noteInfo}
+          </span>
+        </div>
+
+        {/* Tombol Aksi */}
+        <div className="flex items-center gap-2">
+          {transaction.invoice && (
+            <button
+              onClick={() => onViewInvoice?.(transaction)}
+              className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 font-medium rounded-lg text-xs transition-all shrink-0"
+            >
+              Lihat
+            </button>
+          )}
           {onDelete && (
             <button
               type="button"
               onClick={() => onDelete(transaction)}
               disabled={isDeleting}
-              className="text-slate-400 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition-colors disabled:cursor-not-allowed disabled:opacity-60 shrink-0"
               title={isDeleting ? 'Menghapus...' : 'Hapus transaksi'}
             >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </button>
           )}
-          <span
-            className={`rounded-2xl px-3 py-1 text-sm font-semibold ${transaction.type === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}
-          >
-            {transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
-          </span>
         </div>
       </div>
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-lg font-semibold text-slate-900">Rp {transaction.amount.toLocaleString('id-ID')}</p>
-        <p className="text-sm text-slate-500">{transaction.date} • {transaction.note}</p>
-      </div>
-      {transaction.invoice && (
-        <div className="mt-3 pt-3 border-t border-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Invoice</p>
-              <p className="text-sm text-slate-700 mt-1">{transaction.invoice}</p>
-            </div>
-            <button
-              onClick={() => onViewInvoice?.(transaction)}
-              className="rounded-2xl bg-[#38ADA9] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#2c8a7d]"
-            >
-              Lihat
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
 
 export default TransactionCard
-

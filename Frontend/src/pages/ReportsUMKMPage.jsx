@@ -458,7 +458,7 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">Laporan Laba Rugi Bulanan</h2>
+                <h2 className="text-xl font-semibold text-slate-900 mb-2">Laporan Bulanan</h2>
                 <p className="text-sm text-slate-500 mb-4">{monthsList.find((m) => m.value === selectedMonth)?.label} {currentYear}</p>
                 <p className="text-2xl font-bold text-[#38ADA9]">Total {monthlyTransactions.length} transaksi</p>
               </div>
@@ -666,7 +666,9 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
           )}
 
           <div>
-            <div className="flex items-center gap-3 mb-6 w-full">
+            <h3 className="font-bold text-slate-900 text-lg mb-3">Daftar Hutang</h3>
+
+            <div className="flex items-center gap-3 mb-5 w-full">
               {/* Bar Pencarian */}
               <div className="relative flex-1">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
@@ -703,8 +705,6 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                 </div>
               </div>
             </div>
-
-            <h3 className="font-bold text-slate-900 text-lg mb-4">Daftar Hutang</h3>
             {filteredSupplierDebts.length === 0 ? (
               <p className="text-sm text-slate-500">Tidak ada daftar hutang yang ditemukan.</p>
             ) : (
@@ -814,7 +814,7 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                         <>
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <h3 className="text-xl font-bold text-slate-900">{debt.creditor}</h3>
+                              <h3 className="text-xl font-semibold text-slate-900">{debt.creditor}</h3>
                             </div>
                             <div className="flex items-center gap-2">
                               {sisa === 0 ? (
@@ -986,7 +986,9 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
           )}
 
           <div>
-            <div className="flex items-center gap-3 mb-6 w-full">
+            <h3 className="font-bold text-slate-900 text-lg mb-3">Daftar Piutang</h3>
+
+            <div className="flex items-center gap-3 mb-5 w-full">
               {/* Bar Pencarian */}
               <div className="relative flex-1">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
@@ -1023,8 +1025,6 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                 </div>
               </div>
             </div>
-
-            <h3 className="font-bold text-slate-900 text-lg mb-4">Daftar Piutang</h3>
             {filteredCustomerPiutang.length === 0 ? (
               <p className="text-sm text-slate-500">Tidak ada daftar piutang yang ditemukan.</p>
             ) : (
@@ -1134,7 +1134,7 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                         <>
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <h3 className="text-xl font-bold text-slate-900">{debt.creditor}</h3>
+                              <h3 className="text-xl font-semibold text-slate-900">{debt.creditor}</h3>
                             </div>
                             <div className="flex items-center gap-2">
                               {sisa === 0 ? (
@@ -1301,7 +1301,9 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
             </div>
           )}
 
-          <div className="flex items-center gap-3 mb-6 w-full">
+          <h3 className="font-bold text-slate-900 text-lg mb-3">Daftar Target Tabungan</h3>
+
+          <div className="flex items-center gap-3 mb-5 w-full">
             {/* Bar Pencarian */}
             <div className="relative flex-1">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
@@ -1338,8 +1340,6 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
               </div>
             </div>
           </div>
-
-          <h3 className="font-bold text-slate-900 text-lg mb-4">Daftar Target Tabungan</h3>
 
           <div className="grid gap-4 lg:grid-cols-2">
             {filteredSavings.length === 0 ? (

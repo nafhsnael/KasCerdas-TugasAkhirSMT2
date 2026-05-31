@@ -78,68 +78,98 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
 
   const getBudgetUsage = (budget) => {
-    const category = String(budget?.category || '')
+    const category = budget?.category || budget?.name || ''
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
 
-    const usageFromTransactions = monthTransactions
-      .filter((t) => t.type === 'expense' && String(t.category || '') === category)
-      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+    const actualUsage = (transactions || [])
+      .filter((t) => {
+        const date = new Date(t.date)
+        if (Number.isNaN(date.getTime())) return false
+
+        const budgetParts = String(category).split(' - ')
+        const budgetMainCat = String(budgetParts[0] || '').toLowerCase().trim()
+        const budgetSubDetail = budgetParts[1] ? String(budgetParts[1]).toLowerCase().trim() : ''
+
+        const tType = String(t.type || '').toLowerCase().trim()
+        const tCategory = String(t.kategori || t.category || '').toLowerCase().trim()
+        const tTitle = String(t.judul || t.title || '').toLowerCase().trim()
+
+        const isKebutuhanLainnya = budgetMainCat === 'kebutuhan lainnya'
+
+        if (isKebutuhanLainnya) {
+          return (
+            tType === 'expense' &&
+            tCategory === 'kebutuhan lainnya' &&
+            tTitle === budgetSubDetail &&
+            date.getMonth() === currentMonth &&
+            date.getFullYear() === currentYear
+          )
+        }
+
+        return (
+          tType === 'expense' &&
+          tCategory === String(category).toLowerCase().trim() &&
+          date.getMonth() === currentMonth &&
+          date.getFullYear() === currentYear
+        )
+      })
+      .reduce((sum, t) => sum + Number(t.jumlah_uang || t.amount || 0), 0)
 
     const savedUsage = Number(budget?.usage) || 0
-
-    // Pakai nilai terbesar supaya reminder tetap muncul walaupun usage sudah tersimpan di state budget.
-    return Math.max(usageFromTransactions, savedUsage)
+    return Math.max(actualUsage, savedUsage)
   }
 
-  const budgetReminders = (budgets || [])
-    .map((budget) => {
-      const limit = Number(budget?.limit) || 0
-      const usage = getBudgetUsage(budget)
-      const ratio = limit > 0 ? usage / limit : 0
+  const processedBudgets = (budgets || []).map((b) => {
+    const limit = Number(b?.limit) || 0
+    const usage = getBudgetUsage(b)
+    const ratio = limit > 0 ? usage / limit : 0
+    const category = b?.category || b?.name || 'Kategori'
+    return { ...b, category, limit, usage, ratio }
+  })
 
-      return {
-        ...budget,
-        limit,
-        usage,
-        ratio,
-      }
-    })
-    // Tampilkan hanya budget yang sudah mau limit atau lewat limit.
-    .filter((budget) => budget.limit > 0 && budget.ratio >= 0.8)
-    .sort((a, b) => b.ratio - a.ratio)
-
-  const hasExceededBudget = budgetReminders.some((budget) => budget.ratio > 1)
+  const sortedBudgets = [...processedBudgets].sort((a, b) => b.ratio - a.ratio)
+  const topBudget = sortedBudgets[0]
+  const topRatioPercent = topBudget ? Math.round(topBudget.ratio * 100) : 0
+  const isWarning = topBudget && topBudget.ratio >= 0.9
 
   const budgetReminderStatus = (() => {
+    let label = 'Pengeluaran masih aman'
+    let desc = 'Pengeluaran bulan ini masih terkendali.'
+    let badge = `${topRatioPercent}%`
+
     if (!budgets || budgets.length === 0) {
       return {
-        icon: 'ℹ️',
+        key: 'none',
         label: 'Belum ada budget',
-        desc: 'Tambahkan budget agar pengingat otomatis bisa muncul.',
+        desc: 'Tambahkan budget agar ada pengingat otomatis.',
         badge: '-',
+        iconBgClass: 'bg-slate-100 text-slate-500',
         badgeClass: 'bg-slate-50 text-slate-700 border-slate-200',
       }
     }
 
-    if (budgetReminders.length === 0) {
+    if (isWarning) {
       return {
-        icon: '✅',
-        label: 'Budget masih aman',
-        desc: 'Belum ada kategori yang mendekati limit bulan ini.',
-        badge: 'Aman',
-        badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        key: 'warning',
+        label: 'Peringatan: Anggaran Hampir Habis!',
+        desc: `Pengeluaran untuk ${topBudget.category} telah mencapai ${topRatioPercent}%.`,
+        badge: `${topRatioPercent}%`,
+        iconBgClass: 'bg-amber-50 text-amber-500',
+        badgeClass: topRatioPercent >= 100
+          ? 'bg-red-50 text-red-600 border border-red-200'
+          : 'bg-amber-50 text-amber-600 border border-amber-200',
       }
     }
 
     return {
-      icon: hasExceededBudget ? '⛔' : '⚠️',
-      label: hasExceededBudget ? 'Ada budget terlampaui' : 'Ada budget hampir limit',
-      desc: hasExceededBudget 
-        ? `Kategori "${budgetReminders[0]?.category || '—'}" telah melebihi batas budget.`
-        : `Kategori "${budgetReminders[0]?.category || '—'}" mulai mendekati batas budget.`,
-      badge: `${Math.round(budgetReminders[0].ratio * 100)}%`,
-      badgeClass: hasExceededBudget
-        ? 'bg-rose-50 text-rose-700 border-rose-200'
-        : 'bg-amber-50 text-amber-700 border-amber-200',
+      key: 'safe',
+      label: label,
+      desc: desc,
+      badge: badge,
+      iconBgClass: 'bg-green-50 text-green-500',
+      badgeClass: 'bg-emerald-50 text-emerald-600 border-emerald-200',
     }
   })()
 
@@ -325,23 +355,35 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
       </section>
 
       <section className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-start gap-3">
-              <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[16px]">
-                {budgetReminderStatus.icon}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${budgetReminderStatus.iconBgClass}`}>
+                {budgetReminderStatus.key === 'none' ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : budgetReminderStatus.key === 'warning' ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] uppercase tracking-[0.24em] text-slate-500">Budget Reminder</p>
-                <h3 className="mt-1 text-[15px] font-semibold leading-tight text-slate-900">
+                <span className="text-[11px] font-semibold tracking-wider text-slate-400 uppercase block">Budget Reminder</span>
+                <h4 className="mt-0.5 text-[14px] font-bold text-slate-800 leading-tight">
                   {budgetReminderStatus.label}
-                </h3>
-                <p className="mt-1 w-full text-[11px] leading-tight text-slate-600">
+                </h4>
+                <p className="mt-0.5 text-xs text-slate-500 leading-tight line-clamp-2 w-full">
                   {budgetReminderStatus.desc}
                 </p>
               </div>
             </div>
 
-            <div className={`shrink-0 rounded-2xl border px-3 py-1 text-[12px] font-semibold ${budgetReminderStatus.badgeClass}`}>
+            <div className={`h-9 w-9 shrink-0 flex items-center justify-center rounded-full text-xs font-bold border ${budgetReminderStatus.badgeClass}`}>
               {budgetReminderStatus.badge}
             </div>
           </div>

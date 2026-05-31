@@ -15,6 +15,8 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
   const debugLog = (...args) => console.log('[BudgetPage]', ...args)
 
   const [message, setMessage] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedMonth, setSelectedMonth] = useState('')
 
   // Calculate actual usage from transactions for current month
   const now = new Date()
@@ -37,12 +39,14 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
 
         const isKebutuhanLainnya = budgetMainCat === 'kebutuhan lainnya'
 
+        const targetMonth = selectedMonth !== '' ? Number(selectedMonth) - 1 : currentMonth
+
         if (isKebutuhanLainnya) {
           return (
             tType === 'expense' &&
             tCategory === 'kebutuhan lainnya' &&
             tTitle === budgetSubDetail &&
-            date.getMonth() === currentMonth &&
+            date.getMonth() === targetMonth &&
             date.getFullYear() === currentYear
           )
         }
@@ -50,7 +54,7 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
         return (
           tType === 'expense' &&
           tCategory === String(category).toLowerCase().trim() &&
-          date.getMonth() === currentMonth &&
+          date.getMonth() === targetMonth &&
           date.getFullYear() === currentYear
         )
       })
@@ -251,15 +255,35 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
     return false
   }
 
+  // Filter budgets based on searchQuery and selectedMonth
+  const filteredBudgets = budgets.filter((b) => {
+    const category = String(b.category || b.name || '').toLowerCase()
+    const matchesSearch = category.includes(searchQuery.toLowerCase())
+
+    let matchesMonth = true
+    if (selectedMonth !== '') {
+      const targetMonthPad = String(selectedMonth).padStart(2, '0')
+      const budgetPeriod = String(b.period_month || b.periodMonth || b.date || '')
+      if (budgetPeriod) {
+        matchesMonth = budgetPeriod.includes(`-${targetMonthPad}`)
+      } else {
+        const currentMonthPad = String(now.getMonth() + 1).padStart(2, '0')
+        matchesMonth = targetMonthPad === currentMonthPad
+      }
+    }
+
+    return matchesSearch && matchesMonth
+  })
+
   // Calculate totals
-  const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0)
-  const totalUsage = budgets.reduce((sum, b) => {
+  const totalBudget = filteredBudgets.reduce((sum, b) => sum + b.limit, 0)
+  const totalUsage = filteredBudgets.reduce((sum, b) => {
     const actualUsage = getActualUsage(b.category)
     return sum + actualUsage
   }, 0)
   const totalRemaining = totalBudget - totalUsage
   const totalUsagePercent = totalBudget > 0 ? Math.round((totalUsage / totalBudget) * 100) : 0
-  const budgetsExceeded = budgets.filter((b) => {
+  const budgetsExceeded = filteredBudgets.filter((b) => {
     const actualUsage = getActualUsage(b.category)
     return b.limit > 0 ? actualUsage > b.limit : actualUsage > 0
   }).length
@@ -396,14 +420,63 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
       {/* Budget Cards Grid */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-slate-900">Kategori Budget</h2>
-        {budgets.length === 0 ? (
+
+        {/* Search & Month Filter Layout */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5 w-full">
+          {/* Bar Pencarian */}
+          <div className="relative flex-1">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <input 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari kategori budget..." 
+              className="w-full h-11 pl-9 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20 focus:border-[#38ADA9] transition-all"
+            />
+          </div>
+
+          {/* Filter Bulan */}
+          <div className="relative w-full sm:w-48">
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-full h-11 appearance-none bg-white border border-slate-200 rounded-xl px-4 pr-10 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20 focus:border-[#38ADA9] cursor-pointer transition-all"
+            >
+              <option value="">Semua Bulan</option>
+              <option value="1">Januari 2026</option>
+              <option value="2">Februari 2026</option>
+              <option value="3">Maret 2026</option>
+              <option value="4">April 2026</option>
+              <option value="5">Mei 2026</option>
+              <option value="6">Juni 2026</option>
+              <option value="7">Juli 2026</option>
+              <option value="8">Agustus 2026</option>
+              <option value="9">September 2026</option>
+              <option value="10">Oktober 2026</option>
+              <option value="11">November 2026</option>
+              <option value="12">Desember 2026</option>
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* List Budget */}
+        {filteredBudgets.length === 0 ? (
           <div className="rounded-[28px] border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-600">
-            <p className="text-lg font-medium">Kamu belum menambahkan budget</p>
-            <p className="mt-2 text-sm text-slate-500">Tambahkan budget baru agar informasi kategori muncul di sini.</p>
+            <p className="text-lg font-medium">Tidak ada budget yang ditemukan</p>
+            <p className="mt-2 text-sm text-slate-500">Coba ubah kata kunci pencarian atau filter bulan Anda.</p>
           </div>
         ) : (
           <div className="grid gap-4 xl:grid-cols-2">
-            {budgets.map((budget) => {
+            {filteredBudgets.map((budget) => {
               const actualUsage = getActualUsage(budget.category)
               return (
                 <BudgetCard key={budget.id} category={budget.category} usage={actualUsage} limit={budget.limit}>

@@ -58,15 +58,8 @@ class SavingController extends Controller
         $savings = $query->orderBy('target_date')->get();
 
         // Add computed attributes
-        $savings = $savings->map(function ($saving) {
-            return [
-                ...$saving->toArray(),
-                'remaining_amount' => $saving->remaining_amount,
-                'progress_percent' => $saving->progress_percent,
-                'days_until_target' => $saving->days_until_target,
-                'monthly_target' => $saving->monthly_target,
-                'is_completed' => $saving->is_completed,
-            ];
+        $savings = $savings->map(function ($saving) use ($userId) {
+            return $this->formatSavingWithDynamicCurrent($saving, $userId);
         });
 
         return response()->json([
@@ -92,14 +85,7 @@ class SavingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Detail target tabungan berhasil diambil',
-            'data' => [
-                ...$saving->toArray(),
-                'remaining_amount' => $saving->remaining_amount,
-                'progress_percent' => $saving->progress_percent,
-                'days_until_target' => $saving->days_until_target,
-                'monthly_target' => $saving->monthly_target,
-                'is_completed' => $saving->is_completed,
-            ],
+            'data' => $this->formatSavingWithDynamicCurrent($saving, $request->user()->id),
         ]);
     }
 
@@ -111,7 +97,7 @@ class SavingController extends Controller
         $userId = $request->user()->id;
         
         $validated = $request->validate([
-            'wallet_id' => ['required', 'integer'],
+            'wallet_id' => ['nullable', 'integer'],
             'name' => ['required', 'string', 'max:150'],
             'target_amount' => ['required', 'numeric', 'min:0.01'],
             'target_date' => ['required', 'date', 'date_format:Y-m-d'],
@@ -120,14 +106,32 @@ class SavingController extends Controller
             'current_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        // Verify wallet belongs to user
-        $wallet = Wallet::where('id', $validated['wallet_id'])
-                        ->where('user_id', $userId)
-                        ->firstOrFail();
+        // Automatically resolve default wallet if not provided or doesn't belong to user
+        $walletId = $validated['wallet_id'] ?? null;
+        if ($walletId) {
+            $walletExists = Wallet::where('id', $walletId)
+                                  ->where('user_id', $userId)
+                                  ->exists();
+            if (!$walletExists) {
+                $walletId = null;
+            }
+        }
+
+        if (!$walletId) {
+            $wallet = Wallet::where('user_id', $userId)->first();
+            if (!$wallet) {
+                $wallet = Wallet::create([
+                    'user_id' => $userId,
+                    'name' => 'Default Wallet',
+                    'balance' => 0,
+                ]);
+            }
+            $walletId = $wallet->id;
+        }
 
         $saving = Saving::create([
             'user_id' => $userId,
-            'wallet_id' => $validated['wallet_id'],
+            'wallet_id' => $walletId,
             'name' => $validated['name'],
             'target_amount' => (float) $validated['target_amount'],
             'current_amount' => (float) ($validated['current_amount'] ?? 0),
@@ -140,14 +144,7 @@ class SavingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Target tabungan berhasil ditambahkan',
-            'data' => [
-                ...$saving->fresh()->toArray(),
-                'remaining_amount' => $saving->fresh()->remaining_amount,
-                'progress_percent' => $saving->fresh()->progress_percent,
-                'days_until_target' => $saving->fresh()->days_until_target,
-                'monthly_target' => $saving->fresh()->monthly_target,
-                'is_completed' => $saving->fresh()->is_completed,
-            ],
+            'data' => $this->formatSavingWithDynamicCurrent($saving->fresh(), $userId),
         ], 201);
     }
 
@@ -179,14 +176,7 @@ class SavingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Target tabungan berhasil diperbarui',
-            'data' => [
-                ...$saving->fresh()->toArray(),
-                'remaining_amount' => $saving->fresh()->remaining_amount,
-                'progress_percent' => $saving->fresh()->progress_percent,
-                'days_until_target' => $saving->fresh()->days_until_target,
-                'monthly_target' => $saving->fresh()->monthly_target,
-                'is_completed' => $saving->fresh()->is_completed,
-            ],
+            'data' => $this->formatSavingWithDynamicCurrent($saving->fresh(), $request->user()->id),
         ]);
     }
 
@@ -289,5 +279,38 @@ class SavingController extends Controller
                 'is_completed' => $saving->fresh()->is_completed,
             ],
         ]);
+    }
+
+    /**
+     * Helper: Format saving with dynamic transaction target aggregation
+     */
+    protected function formatSavingWithDynamicCurrent($saving, $userId)
+    {
+        $dynamicCurrent = \App\Models\Transaction::where('user_id', $userId)
+            ->where('type', 'income')
+            ->where(function ($q) {
+                $q->whereRaw('LOWER(category) LIKE ?', ['%tabungan%']);
+            })
+            ->whereRaw('LOWER(TRIM(title)) = ?', [strtolower(trim($saving->name))])
+            ->sum('amount');
+
+        $savingCurrentAmount = $dynamicCurrent > 0 ? (float) $dynamicCurrent : (float) $saving->current_amount;
+        $remaining = max(0, (float) $saving->target_amount - $savingCurrentAmount);
+        
+        $status = $saving->status;
+        if ($savingCurrentAmount >= (float) $saving->target_amount) {
+            $status = 'completed';
+        }
+
+        return [
+            ...$saving->toArray(),
+            'current_amount' => $savingCurrentAmount,
+            'remaining_amount' => $remaining,
+            'status' => $status,
+            'progress_percent' => $saving->target_amount > 0 ? min(100, ($savingCurrentAmount / $saving->target_amount) * 100) : 0,
+            'days_until_target' => $saving->days_until_target,
+            'monthly_target' => $saving->days_until_target > 0 ? $remaining / max(1, ceil($saving->days_until_target / 30)) : 0,
+            'is_completed' => $savingCurrentAmount >= $saving->target_amount,
+        ];
     }
 }

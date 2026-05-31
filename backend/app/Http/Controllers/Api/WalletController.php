@@ -76,7 +76,12 @@ class WalletController extends Controller
         $wallet->save();
 
         // Minimal: initial balance is represented by a synthetic transaction so reports can use transactions later.
-        if ($created) {
+        $hasInitialTx = Transaction::where('wallet_id', $wallet->id)
+            ->whereIn('category', ['Initial', 'Saldo Awal'])
+            ->exists();
+
+        if ($created || !$hasInitialTx) {
+            $userType = $request->user()->user_type;
             Transaction::create([
                 'user_id' => $userId,
                 'wallet_id' => $wallet->id,
@@ -86,7 +91,27 @@ class WalletController extends Controller
                 'type' => 'income',
                 'amount' => (float) $validated['balance'],
                 'date' => now()->toDateString(),
+                'metadata' => [
+                    'is_umkm' => $userType === 'umkm',
+                    'is_mahasiswa' => $userType === 'mahasiswa',
+                    'is_masyarakat' => $userType === 'masyarakat' || $userType === 'masyarakat_umum',
+                ]
             ]);
+        } else {
+            // Update the existing initial transaction if it exists to match the new initial balance
+            $initialTx = Transaction::where('wallet_id', $wallet->id)
+                ->whereIn('category', ['Initial', 'Saldo Awal'])
+                ->first();
+            if ($initialTx) {
+                $userType = $request->user()->user_type;
+                $initialTx->amount = (float) $validated['balance'];
+                $initialTx->metadata = [
+                    'is_umkm' => $userType === 'umkm',
+                    'is_mahasiswa' => $userType === 'mahasiswa',
+                    'is_masyarakat' => $userType === 'masyarakat' || $userType === 'masyarakat_umum',
+                ];
+                $initialTx->save();
+            }
         }
 
         return response()->json([
