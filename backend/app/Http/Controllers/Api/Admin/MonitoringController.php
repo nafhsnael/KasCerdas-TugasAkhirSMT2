@@ -215,8 +215,13 @@ class MonitoringController extends Controller
     public function dashboard()
     {
         // Get data for dashboard charts & widgets
-        $today = Carbon::today();
+        $today = \Carbon\Carbon::today();
         $lastMonth = $today->clone()->subMonth();
+
+        $totalUsers = User::count();
+        $activeUsers = User::where('is_active', true)->count();
+        $totalTransactions = Transaction::count();
+        $transactionsToday = Transaction::whereDate('date', $today)->count();
 
         // Transactions trend (last 30 days)
         $transactionsTrend = Transaction::whereBetween('date', [$lastMonth, $today])
@@ -242,13 +247,42 @@ class MonitoringController extends Controller
             ->limit(10)
             ->get(['id', 'name', 'email', 'user_type', 'transactions_count']);
 
+        // Latest users
+        $latestUsers = User::orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get(['id', 'name', 'email', 'role', 'user_type', 'created_at']);
+
+        // Latest transactions
+        $latestTransactions = Transaction::with(['user:id,name,user_type'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get(['id', 'user_id', 'title', 'amount', 'type', 'date', 'created_at']);
+
+        // System status
+        $maintenanceStatus = Cache::get('maintenance_mode', false);
+        $errorLogsTodayCount = ActivityLog::where('level', 'error')
+            ->whereDate('created_at', $today)
+            ->count();
+
         return response()->json([
             'success' => true,
             'message' => 'Dashboard data berhasil diambil',
             'data' => [
+                'stats' => [
+                    'total_users' => $totalUsers,
+                    'active_users' => $activeUsers,
+                    'total_transactions' => $totalTransactions,
+                    'transactions_today' => $transactionsToday,
+                ],
                 'transactions_trend' => $transactionsTrend,
                 'top_categories' => $topCategories,
                 'top_users' => $topUsers,
+                'latest_users' => $latestUsers,
+                'latest_transactions' => $latestTransactions,
+                'system_status' => [
+                    'maintenance_active' => $maintenanceStatus,
+                    'error_logs_today' => $errorLogsTodayCount,
+                ]
             ]
         ]);
     }

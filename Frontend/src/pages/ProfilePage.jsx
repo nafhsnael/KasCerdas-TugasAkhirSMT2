@@ -94,11 +94,12 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          nama_lengkap: profile.nama,
+          name: profile.nama,
           email: profile.email,
           username: profile.username,
-          telepon: profile.phone,
-          alamat: profile.address,
+          phone: profile.phone,
+          address: profile.address,
+          avatar: profileImage,
         }),
       });
       if (response.ok) {
@@ -111,8 +112,12 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
             user: updatedUser.username || prev.user,
             email: updatedUser.email || prev.email,
             usertype: updatedUser.user_type || prev.usertype,
-            profileImage: profileImage || prev.profileImage,
+            profileImage: updatedUser.profileImage || profileImage || prev.profileImage,
           }));
+          if (updatedUser.profileImage) {
+            setProfileImage(updatedUser.profileImage);
+            setImagePreview(updatedUser.profileImage);
+          }
         }
         alert('Profil berhasil diperbarui!');
       } else {

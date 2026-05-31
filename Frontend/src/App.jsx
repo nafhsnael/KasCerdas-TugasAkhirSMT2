@@ -1626,9 +1626,12 @@ function App() {
     setWalletInfo(null)
     setShowUserType(false)
     setShowInitialBalance(false)
+    setUserProfile({ nama: '', user: '', email: '', usertype: null, dompet: null, profileImage: '' })
 
     try {
       window.localStorage.removeItem('token')
+      window.localStorage.removeItem('user_profile')
+      window.localStorage.removeItem('user_profile_type')
     } catch (e) {
       // ignore
     }

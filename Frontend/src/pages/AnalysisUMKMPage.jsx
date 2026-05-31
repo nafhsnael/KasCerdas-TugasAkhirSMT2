@@ -123,23 +123,7 @@ function AnalysisUMKMPage({ transactions }) {
 
   const filteredTransactions = useMemo(() => {
     const tx = Array.isArray(transactions) ? transactions : []
-    return tx.filter((t) => {
-      const inRange = isTxInRange(t, currentStart, currentEnd)
-      const type = (t?.type || '').toLowerCase()
-      const rawCat = (t?.businessCategory || t?.category || '').toLowerCase()
-
-      const isPengeluaranOperasional = rawCat.includes('pengeluaran') || rawCat.includes('operasional')
-      const isBeliBahan = rawCat.includes('beli') || rawCat.includes('bahan') || rawCat.includes('baku') || rawCat.includes('stok')
-      const isPiutang = rawCat.includes('piutang') || rawCat.includes('pelanggan')
-      const isHutang = rawCat.includes('hutang') || rawCat.includes('supplier')
-
-      const isExpenseCategory = isPengeluaranOperasional || isBeliBahan || isHutang
-
-      return (
-        inRange &&
-        ((isExpenseCategory && (type === 'expense' || type === 'pengeluaran')) || isPiutang)
-      )
-    })
+    return tx.filter((t) => isTxInRange(t, currentStart, currentEnd))
   }, [transactions, currentStart, currentEnd])
 
   return (

@@ -52,26 +52,44 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
     }
 
     try {
-      const response = await fetch('/api/update-profile', {
-        method: 'POST',
+      const token = window.localStorage.getItem('token')
+      const response = await fetch('/api/user/profil', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          ...profile,
-          profileImage: profileImage,
+          name: profile.nama,
+          email: profile.email,
+          username: profile.user,
+          phone: profile.phone,
+          address: profile.address,
+          avatar: profileImage,
         }),
       })
 
       if (response.ok) {
+        const json = await response.json()
+        const updatedUser = json.data || {}
         setUserProfile((prev) => ({
           ...prev,
-          ...profile,
-          profileImage: profileImage,
+          nama: updatedUser.name || prev.nama,
+          user: updatedUser.username || prev.user,
+          email: updatedUser.email || prev.email,
+          usertype: updatedUser.user_type || prev.usertype,
+          profileImage: updatedUser.profileImage || updatedUser.avatar || prev.profileImage,
         }))
         alert('Profil berhasil diperbarui!')
       } else {
-        alert('Gagal memperbarui profil.')
+        const errJson = await response.json().catch(() => ({}))
+        let errorMsg = errJson.message || 'Error validasi'
+        if (errJson.errors) {
+          const firstError = Object.values(errJson.errors)[0][0]
+          errorMsg = firstError
+        }
+        alert(`Gagal memperbarui profil: ${errorMsg}`)
       }
     } catch (error) {
       console.error('Error:', error)

@@ -34,6 +34,7 @@ class ProfilController extends Controller
                 'is_active' => $user->is_active,
                 'phone' => $user->phone ?? '',
                 'address' => $user->address ?? '',
+                'profileImage' => $user->avatar,
             ]
         ]);
     }
@@ -64,6 +65,7 @@ class ProfilController extends Controller
                 'user_type' => 'nullable|string|in:umkm,masyarakat_umum,mahasiswa,masyarakat',
                 'phone' => 'nullable|string|max:20',
                 'address' => 'nullable|string',
+                'avatar' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
@@ -89,12 +91,38 @@ class ProfilController extends Controller
                 $user->address = $request->input('address');
             }
 
+            if ($request->has('avatar')) {
+                $avatarData = $request->input('avatar');
+                if ($avatarData && preg_match('/^data:image\/(\w+);base64,/', $avatarData, $type)) {
+                    $base64Data = substr($avatarData, strpos($avatarData, ',') + 1);
+                    $ext = strtolower($type[1]);
+                    if (in_array($ext, ['jpg', 'jpeg', 'gif', 'png', 'webp'])) {
+                        $decoded = base64_decode($base64Data);
+                        if ($decoded !== false) {
+                            $filename = 'avatar_' . $user->id . '_' . time() . '.' . $ext;
+                            $path = public_path('avatars/' . $filename);
+                            if (!file_exists(public_path('avatars'))) {
+                                mkdir(public_path('avatars'), 0755, true);
+                            }
+                            file_put_contents($path, $decoded);
+                            
+                            // Construct absolute url to frontend
+                            $user->avatar = url('avatars/' . $filename);
+                        }
+                    }
+                } elseif (empty($avatarData)) {
+                    // Only clear avatar if the frontend sent an empty string explicitly
+                    // If it sends the existing URL, it won't match base64 regex and won't be empty, so it's kept.
+                    $user->avatar = null;
+                }
+            }
+
             $user->save();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Profil berhasil diperbarui',
-                'user' => [
+                'data' => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'username' => $user->username,
@@ -105,6 +133,7 @@ class ProfilController extends Controller
                     'phone' => $user->phone ?? '',
                     'address' => $user->address ?? '',
                     'avatar' => $user->avatar ?? null,
+                    'profileImage' => $user->avatar ?? null,
                 ]
             ], 200);
         } catch (\Throwable $e) {

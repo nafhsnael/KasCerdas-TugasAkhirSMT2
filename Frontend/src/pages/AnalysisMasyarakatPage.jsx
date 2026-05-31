@@ -119,26 +119,7 @@ function AnalysisMasyarakatPage({ transactions }) {
 
   const filteredTransactions = useMemo(() => {
     const tx = Array.isArray(transactions) ? transactions : []
-
-    return tx.filter((t) => {
-      const inRange = isTxInRange(t, currentStart, currentEnd)
-      const type = (t?.type || '').toLowerCase()
-
-      const kategoriPengeluaran = [
-        'Makan',
-        'Hutang',
-        'Transport',
-        'Belanja',
-        'Tagihan',
-        'Kebutuhan Lainnya',
-      ]
-
-      return (
-        inRange &&
-        (type === 'expense' || type === 'pengeluaran') &&
-        kategoriPengeluaran.includes(t.category)
-      )
-    })
+    return tx.filter((t) => isTxInRange(t, currentStart, currentEnd))
   }, [transactions, currentStart, currentEnd])
 
   return (

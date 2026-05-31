@@ -344,14 +344,14 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Nama Budget</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Kategori Budget</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value, operationalDetail: '' })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
               >
                 <option value="" disabled selected hidden>
-                  Contoh: Makan
+                  Pilih Kategori
                 </option>
                 {getCategoryOptions().map((option) => (
                   <option key={option.value} value={option.value} className="text-slate-900">

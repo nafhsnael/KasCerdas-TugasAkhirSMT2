@@ -331,7 +331,7 @@ function ReportsMahasiswaPage({ transactions, debts, savings, onNavigate, onAddS
           <div className="grid gap-4 xl:grid-cols-3">
             <StatCard label="Pemasukan Hari Ini" value={`Rp ${dailyIncome.toLocaleString('id-ID')}`} description={`${dailyTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`} />
             <StatCard label="Pengeluaran Hari Ini" value={`Rp ${dailyExpense.toLocaleString('id-ID')}`} description={`${dailyTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`} />
-            <StatCard label="Saldo Hari Ini" value={`Rp ${dailyBalance.toLocaleString('id-ID')}`} description={dailyBalance >= 0 ? 'Surplus ✓' : 'Defisit ✗'} />
+            <StatCard label="Saldo Hari Ini" value={`Rp ${dailyBalance.toLocaleString('id-ID')}`} description={dailyBalance > 0 ? 'Surplus ✓' : dailyBalance < 0 ? 'Defisit ✗' : 'Seimbang -'} />
           </div>
           {dailyTransactions.length > 0 && (
             <div className="rounded-[32px] border border-slate-200 bg-white p-6">
@@ -399,7 +399,7 @@ function ReportsMahasiswaPage({ transactions, debts, savings, onNavigate, onAddS
           <div className="grid gap-4 xl:grid-cols-3">
             <StatCard label="Total Pemasukan" value={`Rp ${monthlyIncome.toLocaleString('id-ID')}`} description={`${monthlyTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`} />
             <StatCard label="Total Pengeluaran" value={`Rp ${monthlyExpense.toLocaleString('id-ID')}`} description={`${monthlyTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`} />
-            <StatCard label="Saldo Bulanan" value={`Rp ${monthlyBalance.toLocaleString('id-ID')}`} description={monthlyBalance >= 0 ? 'Surplus ✓' : 'Defisit ✗'} />
+            <StatCard label="Saldo Bulanan" value={`Rp ${monthlyBalance.toLocaleString('id-ID')}`} description={monthlyBalance > 0 ? 'Surplus ✓' : monthlyBalance < 0 ? 'Defisit ✗' : 'Seimbang -'} />
           </div>
           {monthlyCategoryExpenses.length > 0 && (
             <div className="rounded-[32px] border border-slate-200 bg-white p-6">
@@ -449,7 +449,7 @@ function ReportsMahasiswaPage({ transactions, debts, savings, onNavigate, onAddS
           <div className="grid gap-4 xl:grid-cols-3">
             <StatCard label="Pemasukan Tahunan" value={`Rp ${annualIncome.toLocaleString('id-ID')}`} description={`${annualTransactions.filter((t) => t.type === 'income').length} transaksi pemasukan`} />
             <StatCard label="Pengeluaran Tahunan" value={`Rp ${annualExpense.toLocaleString('id-ID')}`} description={`${annualTransactions.filter((t) => t.type === 'expense').length} transaksi pengeluaran`} />
-            <StatCard label="Saldo Tahunan" value={`Rp ${annualBalance.toLocaleString('id-ID')}`} description={annualBalance >= 0 ? 'Surplus ✓' : 'Defisit ✗'} />
+            <StatCard label="Saldo Tahunan" value={`Rp ${annualBalance.toLocaleString('id-ID')}`} description={annualBalance > 0 ? 'Surplus ✓' : annualBalance < 0 ? 'Defisit ✗' : 'Seimbang -'} />
           </div>
           {annualCategoryExpenses.length > 0 && (
             <div className="rounded-[32px] border border-slate-200 bg-white p-6">

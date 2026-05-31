@@ -119,17 +119,7 @@ function AnalysisMahasiswaPage({ transactions }) {
 
   const filteredTransactions = useMemo(() => {
     const tx = Array.isArray(transactions) ? transactions : []
-    const kategoriPengeluaran = ['Kos', 'UKT', 'Makan', 'Hutang', 'Transportasi', 'Kebutuhan Kuliah', 'Kebutuhan Lainnya']
-
-    return tx.filter((t) => {
-      const inRange = isTxInRange(t, currentStart, currentEnd)
-      const type = (t?.type || '').toLowerCase()
-      const cat = (t?.category || '').toLowerCase()
-
-      const matchesCat = kategoriPengeluaran.some((k) => cat.includes(k.toLowerCase()))
-
-      return inRange && (type === 'expense' || type === 'pengeluaran') && matchesCat
-    })
+    return tx.filter((t) => isTxInRange(t, currentStart, currentEnd))
   }, [transactions, currentStart, currentEnd])
 
   return (
