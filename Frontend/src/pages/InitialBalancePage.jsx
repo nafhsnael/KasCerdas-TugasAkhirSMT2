@@ -6,6 +6,7 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
   const [note, setNote] = useState('')
   const [isLoading, setIsLoading] = useState(false);
   const [notif, setNotif] = useState({ open: false, type: '', message: '' });
+  const [savedData, setSavedData] = useState(null);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
 
@@ -42,14 +43,25 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
         return
       }
 
-      // Jika berhasil, kirim saldo + data wallet ke App supaya dashboard langsung sinkron
-      onSave({
+      // Jika berhasil, tampilkan notifikasi sukses kustom dan otomatis tutup/lanjutkan setelah 3 detik
+      const dataToSave = {
         balance: Number(json?.data?.balance ?? parsedBalance),
         wallet: json?.data || null,
         date,
         note,
-      })
+      };
+      setSavedData(dataToSave);
       setNotif({ open: true, type: 'success', message: 'Saldo awal berhasil disimpan!' });
+
+      setTimeout(() => {
+        setNotif(prev => {
+          if (prev.open && prev.type === 'success') {
+            onSave(dataToSave);
+            return { open: false, type: '', message: '' };
+          }
+          return prev;
+        });
+      }, 3000);
     } catch (e) {
       console.error('Error saving wallet:', e)
       setNotif({ open: true, type: 'error', message: 'Terjadi kesalahan saat menyimpan saldo awal' });
@@ -140,7 +152,12 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
             )}
             <p className="text-lg font-medium text-center">{notif.message}</p>
             <button
-              onClick={() => setNotif({ open: false, type: '', message: '' })}
+              onClick={() => {
+                setNotif({ open: false, type: '', message: '' });
+                if (notif.type === 'success' && savedData) {
+                  onSave(savedData);
+                }
+              }}
               className="w-full py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition"
             >
               Lanjutkan ke Dashboard

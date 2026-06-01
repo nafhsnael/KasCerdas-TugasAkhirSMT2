@@ -678,8 +678,8 @@ function App() {
     setShowLanding(false)
     setAuthLoading(true)
 
-    Promise.all([fetchCurrentUser(), fetchWalletInfo(), fetchAllData()])
-      .then(([authUser, walletData, allData]) => {
+    Promise.all([fetchCurrentUser(), fetchWalletInfo()])
+      .then(async ([authUser, walletData]) => {
         const isAdmin = authUser.role === 'admin'
 
         // Kalau user login Google baru, biasanya user_type masih null.
@@ -705,6 +705,15 @@ function App() {
 
           if (resolvedUserType === 'umkm') {
             setUmkmEWalletBalance(balance)
+          }
+        }
+
+        let allData = { transactions: [], debts: [], savings: [], budgets: [] }
+        if (resolvedUserType) {
+          try {
+            allData = await fetchAllData()
+          } catch (err) {
+            console.error('Error fetching all data:', err)
           }
         }
 
@@ -739,17 +748,30 @@ function App() {
 
         setIsAuthenticated(true)
 
+        const allTransactions = allData?.transactions || []
+        const hasInitialBalance = allTransactions.some((t) => {
+          const cat = String(t.category || '').toLowerCase()
+          return cat === 'initial' || cat === 'saldo awal'
+        })
+
         // INI BAGIAN PALING PENTING:
-        // Kalau user belum punya user_type, tampilkan halaman pilih tipe pengguna.
-        // Ini cocok untuk Register Google / Login Google akun baru.
-        if (!authUser.user_type && !isAdmin) {
+        // Langkah 1 & 2: Kalau user belum memilih jenis pengguna, langsung tampilkan halaman pilih jenis pengguna
+        if (!resolvedUserType && !isAdmin) {
           setShowUserType(true)
           setShowInitialBalance(false)
           setShowLanding(false)
           return
         }
 
-        // Kalau user sudah punya user_type, langsung dashboard.
+        // Langkah 3: Kalau user sudah punya jenis pengguna tapi belum input saldo awal, langsung arahkan ke input saldo awal
+        if (!hasInitialBalance && !isAdmin) {
+          setShowUserType(false)
+          setShowInitialBalance(true)
+          setShowLanding(false)
+          return
+        }
+
+        // Langkah 4: Kalau user sudah punya jenis pengguna dan sudah input saldo awal, barulah masuk dashboard
         setShowUserType(false)
         setShowInitialBalance(false)
         setShowLanding(false)
@@ -1696,7 +1718,17 @@ function App() {
       return <AdminApp />
     }
 
-    if (isAuthenticated && showUserType && !authLoading) {
+    // Tampilkan loading spinner jika proses autentikasi sedang berjalan untuk mencegah "mengintip" halaman dashboard
+    if (authLoading && isAuthenticated) {
+      return (
+        <div className="flex min-h-[60vh] flex-col items-center justify-center text-slate-500">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#38ADA9] border-t-transparent"></div>
+          <p className="mt-4 text-sm font-medium">Sedang memproses...</p>
+        </div>
+      )
+    }
+
+    if (isAuthenticated && showUserType) {
       return <UserTypePage onNext={handleUserTypeNext} />
     }
 
@@ -1774,11 +1806,11 @@ function App() {
           userProfile?.usertype === 'mahasiswa' ? (
             <DashboardMahasiswaPage
               walletSummary={{
-                current: Number(walletInfo?.balance ?? initialBalance ?? 0),
-                income: walletInitialBalance,
-                expense: 0,
-                smartCashPerDay: Number(walletInfo?.balance ?? initialBalance ?? 0),
-                smartReductionPerDay: 0,
+                current: Number(walletInfo?.saldo_e_wallet ?? walletInfo?.balance ?? initialBalance ?? 0),
+                income: Number(walletInfo?.total_pemasukan ?? 0),
+                expense: Number(walletInfo?.total_pengeluaran ?? 0),
+                smartCashPerDay: Number(walletInfo?.total_pemasukan ?? 0),
+                smartReductionPerDay: Number(walletInfo?.total_pengeluaran ?? 0),
               }}
               transactions={mahasiswaTransactions}
               budgets={budgets}
@@ -1801,11 +1833,11 @@ function App() {
           ) : ['masyarakat', 'masyarakat_umum'].includes(userProfile?.usertype) ? (
             <DashboardMasyarakatPage
               walletSummary={{
-                current: Number(walletInfo?.balance ?? initialBalance ?? 0),
-                income: walletInitialBalance,
-                expense: 0,
-                smartCashPerDay: Number(walletInfo?.balance ?? initialBalance ?? 0),
-                smartReductionPerDay: 0,
+                current: Number(walletInfo?.saldo_e_wallet ?? walletInfo?.balance ?? initialBalance ?? 0),
+                income: Number(walletInfo?.total_pemasukan ?? 0),
+                expense: Number(walletInfo?.total_pengeluaran ?? 0),
+                smartCashPerDay: Number(walletInfo?.total_pemasukan ?? 0),
+                smartReductionPerDay: Number(walletInfo?.total_pengeluaran ?? 0),
               }}
               transactions={masyarakatTransactions}
               budgets={budgets}

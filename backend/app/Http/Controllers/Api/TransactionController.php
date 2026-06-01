@@ -386,9 +386,23 @@ class TransactionController extends Controller
             $query->where('wallet_id', $validated['wallet_id']);
         }
 
-        $totalIncome = $query->replicate()->income()->sum('amount');
-        $totalExpense = $query->replicate()->expense()->sum('amount');
-        $balance = $totalIncome - $totalExpense;
+        $saldoAwal = (float) Transaction::where('user_id', $userId)
+            ->whereIn(\DB::raw('LOWER(category)'), ['initial', 'saldo awal'])
+            ->sum('amount');
+
+        $totalIncome = (float) $query->replicate()
+            ->income()
+            ->where(function($q) {
+                $q->whereNull('category')
+                  ->orWhereNotIn(\DB::raw('LOWER(category)'), ['initial', 'saldo awal']);
+            })
+            ->sum('amount');
+
+        $totalExpense = (float) $query->replicate()
+            ->expense()
+            ->sum('amount');
+
+        $balance = $saldoAwal + $totalIncome - $totalExpense;
         $transactionCount = $query->count();
 
         // Get top categories

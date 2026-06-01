@@ -13,9 +13,15 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
     event.preventDefault()
 
     if (password !== confirmPassword) {
-      alert('Password dan konfirmasi password tidak cocok')
+      if (typeof showCustomAlert === 'function') {
+        showCustomAlert('Password dan konfirmasi password tidak cocok', 'error')
+      } else {
+        alert('Password dan konfirmasi password tidak cocok')
+      }
       return
     }
+
+    setLoading(true)
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -74,7 +80,11 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
           return;
         }
 
-        alert(errorText || 'Registrasi gagal')
+        if (typeof showCustomAlert === 'function') {
+          showCustomAlert(errorText || 'Registrasi gagal', 'error')
+        } else {
+          alert(errorText || 'Registrasi gagal')
+        }
         return
       }
 
@@ -92,7 +102,11 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
         true
       )
     } catch (error) {
-      alert('Tidak bisa terhubung ke server. Pastikan backend Laravel sudah jalan.')
+      if (typeof showCustomAlert === 'function') {
+        showCustomAlert('Tidak bisa terhubung ke server. Pastikan backend Laravel sudah jalan.', 'error')
+      } else {
+        alert('Tidak bisa terhubung ke server. Pastikan backend Laravel sudah jalan.')
+      }
     } finally {
       setLoading(false)
     }

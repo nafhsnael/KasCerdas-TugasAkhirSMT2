@@ -32,6 +32,40 @@ class WalletController extends Controller
                                    ->orderByDesc('id')
                                    ->get();
 
+        // 1. Ambil nilai Saldo Awal (Initial Balance) milik user aktif
+        $saldoAwal = (float) Transaction::where('user_id', $userId)
+            ->whereIn(\DB::raw('LOWER(category)'), ['initial', 'saldo awal'])
+            ->sum('amount');
+
+        // 2. Hitung Total Transaksi Pemasukan saja (Tanpa saldo awal)
+        $totalPemasukan = (float) Transaction::where('user_id', $userId)
+            ->where('type', 'income')
+            ->where(function($q) {
+                $q->whereNull('category')
+                  ->orWhereNotIn(\DB::raw('LOWER(category)'), ['initial', 'saldo awal']);
+            })
+            ->sum('amount');
+
+        // 3. Hitung Total Transaksi Pengeluaran
+        $totalPengeluaran = (float) Transaction::where('user_id', $userId)
+            ->where('type', 'expense')
+            ->sum('amount');
+
+        // 4. Hitung Final Saldo E-Wallet sesuai rumus aturan bisnis
+        $saldoEWallet = $saldoAwal + $totalPemasukan - $totalPengeluaran;
+
+        // Sinkronisasi balance di database jika berbeda
+        if ((float) $wallet->balance !== (float) $saldoEWallet) {
+            $wallet->balance = $saldoEWallet;
+            $wallet->save();
+        }
+
+        // Sematkan hasil perhitungan kustom agar bisa dibaca langsung oleh frontend
+        $wallet->saldo_awal = $saldoAwal;
+        $wallet->total_pemasukan = $totalPemasukan;
+        $wallet->total_pengeluaran = $totalPengeluaran;
+        $wallet->saldo_e_wallet = $saldoEWallet;
+
         return response()->json([
             'success' => true,
             'message' => 'Wallet berhasil diambil',

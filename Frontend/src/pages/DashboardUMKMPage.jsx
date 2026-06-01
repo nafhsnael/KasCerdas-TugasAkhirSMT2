@@ -25,9 +25,8 @@ function DashboardUMKMPage({
 
   const rawUmkmIncome = Number(umkmSummary?.income ?? 0)
 
-  // Instruksi: "Saldo Pemasukan" di dashboard UMKM harus memasukkan saldo awal.
-  // Jadi businessIncome = income UMKM + saldo awal (tanpa mencoba heuristik double-add).
-  const businessIncome = rawUmkmIncome + initialIncome
+  // Aturan Bisnis UMKM: "Saldo Pemasukan" & "Arus Kas Usaha" HANYA boleh menjumlahkan pemasukan riil usaha dan bersih dari Saldo Awal.
+  const businessIncome = rawUmkmIncome
 
   // Untuk laba/rugi: SALDO AWAL tidak ikut masuk.
   const profitIncome = rawUmkmIncome

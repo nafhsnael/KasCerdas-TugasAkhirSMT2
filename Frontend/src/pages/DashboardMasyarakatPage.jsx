@@ -25,12 +25,6 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
     )
   })
 
-  const saldoPemasukanBulanIni = monthTransactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
-
-  const monthStart = new Date(currentYear, currentMonth, 1)
-
   const isSaldoAwalTransaction = (transaction) => {
     const cat = String(transaction.category || '').toLowerCase()
     const businessCat = String(transaction.businessCategory || '').toLowerCase()
@@ -42,32 +36,13 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
     )
   }
 
-  // Saldo awal yang dimasukkan *sebelum bulan berjalan* dihitung untuk kartu Saldo Pemasukan.
-  const saldoAwalSebelumBulanIni = (transactions || [])
-    .filter((t) => t.type === 'income')
-    .filter((t) => {
-      const d = new Date(t.date)
-      if (Number.isNaN(d.getTime())) return false
-      return isSaldoAwalTransaction(t) && d < monthStart
-    })
-    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+  const saldoPemasukan = walletSummary?.income !== undefined && walletSummary?.income !== null
+    ? Number(walletSummary.income)
+    : monthTransactions
+      .filter((t) => t.type === 'income' && !isSaldoAwalTransaction(t))
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
 
-  const hasSaldoAwalTransaction = (transactions || [])
-    .some((t) => t.type === 'income' && isSaldoAwalTransaction(t))
-
-  // Jika ada transaksi saldo awal yang jatuh di bulan berjalan, tetap ikut masuk.
-  const saldoAwalBulanIni = monthTransactions
-    .filter((t) => t.type === 'income')
-    .filter(isSaldoAwalTransaction)
-    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
-
-  // Untuk kartu "Saldo Pemasukan" kita memang tetap memasukkan transaksi "Saldo Awal".
-  // Namun, agar tidak menggandakan/ikut logika yang salah, kita pastikan "Saldo Awal" yang dijumlahkan hanya transaksi kategori saldo awal.
-  const fallbackInitialBalance = hasSaldoAwalTransaction
-    ? 0
-    : Number(walletSummary?.income ?? walletSummary?.current ?? 0)
-
-  const saldoPemasukanBulanIniTermasukSaldoAwal = saldoPemasukanBulanIni + saldoAwalSebelumBulanIni + fallbackInitialBalance
+  const saldoPemasukanBulanIniTermasukSaldoAwal = saldoPemasukan
 
 
 
@@ -175,7 +150,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
 
   // businessIncome untuk perhitungan skor/health tidak boleh menganggap saldo awal sebagai pemasukan bisnis.
   // Karena feedback: saat akun baru (hanya saldo awal), skor dan metrik seharusnya tidak terlihat seolah-olah ada pemasukan.
-  const businessIncome = saldoPemasukanBulanIni
+  const businessIncome = saldoPemasukan
 
   const businessExpense = saldoPengeluaranBulanIni
 

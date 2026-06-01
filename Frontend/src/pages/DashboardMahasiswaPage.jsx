@@ -39,35 +39,34 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
     return Number(initialTx?.amount || 0)
   }
 
-  const saldoAwalBulanIni = (() => {
-    const v = getWalletBalanceAtStartOfMonth()
-    return v > 0 ? v : Number(walletSummary?.income ?? walletSummary?.current ?? 0)
-  })()
-
-  const totalIncome = saldoAwalBulanIni +
-    transactions
+  const totalIncome = walletSummary?.income !== undefined && walletSummary?.income !== null
+    ? Number(walletSummary.income)
+    : transactions
       .filter((t) => {
         const d = new Date(t.date)
+        const cat = String(t.category || '').toLowerCase().trim()
         return (
           t.type === 'income' &&
-          mahasiswaPemasukanCategories.includes(t.category) &&
+          cat !== 'initial' &&
+          cat !== 'saldo awal' &&
           d.getMonth() === currentMonth &&
           d.getFullYear() === currentYear
         )
       })
       .reduce((sum, t) => sum + (t.amount || 0), 0)
 
-  const totalExpense = transactions
-    .filter((t) => {
-      const d = new Date(t.date)
-      return (
-        t.type === 'expense' &&
-        mahasiswaPengeluaranCategories.includes(t.category) &&
-        d.getMonth() === currentMonth &&
-        d.getFullYear() === currentYear
-      )
-    })
-    .reduce((sum, t) => sum + (t.amount || 0), 0)
+  const totalExpense = walletSummary?.expense !== undefined && walletSummary?.expense !== null && walletSummary?.expense > 0
+    ? Number(walletSummary.expense)
+    : transactions
+      .filter((t) => {
+        const d = new Date(t.date)
+        return (
+          t.type === 'expense' &&
+          d.getMonth() === currentMonth &&
+          d.getFullYear() === currentYear
+        )
+      })
+      .reduce((sum, t) => sum + (t.amount || 0), 0)
 
   const totalBudgetLimit = budgets.reduce((sum, budget) => sum + (budget.limit || 0), 0)
   const totalBudgetUsage = budgets.reduce((sum, budget) => sum + (budget.usage || 0), 0)
