@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function RegisterPage({ onSwitch, onAuthenticate }) {
+function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -35,7 +35,46 @@ function RegisterPage({ onSwitch, onAuthenticate }) {
 
       if (!res.ok || !json.success) {
         const firstError = json?.errors ? Object.values(json.errors).flat()[0] : null
-        alert(firstError || json?.message || 'Registrasi gagal')
+        const errorText = firstError || json?.message || '';
+        const lowercaseError = errorText.toLowerCase();
+
+        const isAlreadyRegistered = 
+          lowercaseError.includes('sudah terdaftar') ||
+          lowercaseError.includes('already') ||
+          lowercaseError.includes('taken') ||
+          lowercaseError.includes('sudah digunakan') ||
+          lowercaseError.includes('sudah ada') ||
+          lowercaseError.includes('sebelumnya') ||
+          lowercaseError.includes('registered') ||
+          (json?.errors && (
+            (json.errors.email && json.errors.email.some(msg => {
+              const m = msg.toLowerCase();
+              return m.includes('taken') || m.includes('ada') || m.includes('digunakan') || m.includes('sebelumnya') || m.includes('terdaftar');
+            })) ||
+            (json.errors.username && json.errors.username.some(msg => {
+              const m = msg.toLowerCase();
+              return m.includes('taken') || m.includes('ada') || m.includes('digunakan') || m.includes('sebelumnya') || m.includes('terdaftar');
+            }))
+          ));
+
+        if (isAlreadyRegistered) {
+          const msg = 'Akun ini sudah terdaftar. Silakan masuk menggunakan akun Anda.';
+          if (typeof showCustomAlert === 'function') {
+            showCustomAlert(msg, 'info', () => {
+              if (typeof onSwitch === 'function') {
+                onSwitch();
+              }
+            });
+          } else {
+            alert(msg);
+            if (typeof onSwitch === 'function') {
+              onSwitch();
+            }
+          }
+          return;
+        }
+
+        alert(errorText || 'Registrasi gagal')
         return
       }
 
@@ -60,7 +99,7 @@ function RegisterPage({ onSwitch, onAuthenticate }) {
   }
 
   const handleGoogleRegister = () => {
-    window.location.href = `${backendUrl}/auth/google/redirect`
+    window.location.href = `${backendUrl}/auth/google/redirect?flow=register`
   }
 
   return (

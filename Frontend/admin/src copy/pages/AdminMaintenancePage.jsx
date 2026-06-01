@@ -27,7 +27,7 @@ function AdminMaintenancePage() {
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json?.message || 'Gagal mengambil status maintenance')
       const data = json?.data || json
-      setIsEnabled(Boolean(data?.enabled ?? data?.is_enabled ?? data?.status ?? false))
+      setIsEnabled(Boolean(data?.maintenance_active ?? data?.enabled ?? data?.is_enabled ?? data?.status ?? false))
     } catch (e) {
       setError(e.message || 'Terjadi kesalahan')
     } finally {

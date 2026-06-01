@@ -17,7 +17,7 @@ class TransactionController extends Controller
      */
     public function index(Request $request)
     {
-        $userId = $request->user()->id;
+        $userId = $request->user()->id ?? auth()->id();
 
         $validated = $request->validate([
             'from' => ['nullable', 'date'],
@@ -348,7 +348,7 @@ class TransactionController extends Controller
      */
     public function summary(Request $request)
     {
-        $userId = $request->user()->id;
+        $userId = $request->user()->id ?? auth()->id();
 
         $validated = $request->validate([
             'from' => ['nullable', 'date'],

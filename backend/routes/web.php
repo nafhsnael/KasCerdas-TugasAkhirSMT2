@@ -15,3 +15,4 @@ Route::get('/login', function () {
 // Google OAuth routes
 Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
+Route::get('/api/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);

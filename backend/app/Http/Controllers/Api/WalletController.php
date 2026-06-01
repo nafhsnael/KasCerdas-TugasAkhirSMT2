@@ -11,7 +11,7 @@ class WalletController extends Controller
 
     public function me(Request $request)
     {
-        $userId = $request->user()->id;
+        $userId = $request->user()->id ?? auth()->id();
         
         // CRITICAL: Always filter by authenticated user
         $wallet = Wallet::where('user_id', $userId)->first();
@@ -46,7 +46,7 @@ class WalletController extends Controller
 
     public function createOrUpdate(Request $request)
     {
-        $userId = $request->user()->id;
+        $userId = $request->user()->id ?? auth()->id();
         
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
@@ -77,6 +77,7 @@ class WalletController extends Controller
 
         // Minimal: initial balance is represented by a synthetic transaction so reports can use transactions later.
         $hasInitialTx = Transaction::where('wallet_id', $wallet->id)
+            ->where('user_id', $userId)
             ->whereIn('category', ['Initial', 'Saldo Awal'])
             ->exists();
 
@@ -100,6 +101,7 @@ class WalletController extends Controller
         } else {
             // Update the existing initial transaction if it exists to match the new initial balance
             $initialTx = Transaction::where('wallet_id', $wallet->id)
+                ->where('user_id', $userId)
                 ->whereIn('category', ['Initial', 'Saldo Awal'])
                 ->first();
             if ($initialTx) {

@@ -16,8 +16,8 @@ class CheckMaintenance
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Retrieve maintenance mode flag from .env
-        $isMaintenance = env('MAINTENANCE_MODE', false);
+        // Retrieve maintenance mode flag from Cache or .env
+        $isMaintenance = Cache::get('maintenance_mode', false) || env('MAINTENANCE_MODE', false);
 
         if ($isMaintenance) {
             // Admin can bypass maintenance mode

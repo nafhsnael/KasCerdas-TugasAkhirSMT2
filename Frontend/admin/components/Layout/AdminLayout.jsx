@@ -14,20 +14,20 @@ const AdminLayout = () => {
     navigate(`/admin/${page}`);
   };
 
-  
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-slate-50 flex">
       <Sidebar 
         currentPage={currentPage} 
         onNavigate={handleNavigate} 
         onLogout={logout} 
       />
-      <div className="flex-1 ml-64 p-8">
-        <Outlet />
+      <div className="flex-1 ml-64 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-6xl mx-auto w-full">
+          <Outlet />
+        </div>
       </div>
     </div>
   );
 };
 
 export default AdminLayout;
-

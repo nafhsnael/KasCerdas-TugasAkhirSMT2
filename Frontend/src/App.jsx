@@ -121,6 +121,12 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(token))
   const [authLoading, setAuthLoading] = useState(Boolean(token))
 
+  const [alertConfig, setAlertConfig] = useState(null)
+
+  const triggerAlert = (message, type = 'info', onConfirm = null) => {
+    setAlertConfig({ message, type, onConfirm })
+  }
+
   const [showUserType, setShowUserType] = useState(() => {
     try {
       const savedToken = window.localStorage.getItem('token')
@@ -197,6 +203,34 @@ function App() {
       window.clearTimeout(hideTimer)
     }
   }, [showSplash])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const error = params.get('error')
+      if (error) {
+        let msg = 'Terjadi kesalahan login.'
+        let type = 'error'
+        if (error === 'belum_daftar_google') {
+          msg = 'Akun ini terdaftar secara manual dan belum terhubung dengan Google. Silakan masuk menggunakan username/email dan password.'
+        } else if (error === 'inactive') {
+          msg = 'Akun Anda dinonaktifkan. Silakan hubungi admin.'
+        } else if (error === 'google_email_not_found') {
+          msg = 'Email tidak ditemukan dari akun Google Anda.'
+        } else if (error === 'google_failed') {
+          msg = 'Autentikasi Google gagal.'
+        } else if (error === 'akun_sudah_terdaftar') {
+          msg = 'Akun Google ini sudah terdaftar. Silakan langsung login.'
+          type = 'info'
+        } else if (error === 'akun_belum_terdaftar') {
+          msg = 'Akun Google belum terdaftar. Silakan lakukan pendaftaran akun terlebih dahulu.'
+          type = 'info'
+        }
+        triggerAlert(msg, type)
+        window.history.replaceState(null, '', window.location.pathname)
+      }
+    }
+  }, [])
 
   const SplashScreen = ({ leaving }) => (
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-r from-teal-600 via-[#38ADA9] to-teal-400 text-white transition-opacity duration-700 ${leaving ? 'opacity-0' : 'opacity-100'}`}>
@@ -735,6 +769,13 @@ function App() {
     // Wait until authentication loading is finished before redirecting
     if (authLoading) return;
 
+    if (isAuthenticated && userProfile?.usertype === 'admin') {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/admin/dashboard';
+      }
+      return;
+    }
+
     if (!isAuthenticated && currentPage !== 'login' && currentPage !== 'register') {
       if (typeof window !== 'undefined') {
         window.history.replaceState(null, '', '/login')
@@ -1269,8 +1310,8 @@ function App() {
     try {
       const targetDebt = newDebt?.data || newDebt
       const isPiutang = String(targetDebt?.note || '').toLowerCase().includes('piutang') ||
-                        String(targetDebt?.creditor_name || targetDebt?.creditor || '').toLowerCase().includes('piutang')
-      
+        String(targetDebt?.creditor_name || targetDebt?.creditor || '').toLowerCase().includes('piutang')
+
       const targetTab = isPiutang ? 'piutang' : 'debt'
 
       if (targetDebt && targetDebt.id && !String(targetDebt.id).startsWith('d')) {
@@ -1655,7 +1696,7 @@ function App() {
       return <AdminApp />
     }
 
-    if (isAuthenticated && showUserType) {
+    if (isAuthenticated && showUserType && !authLoading) {
       return <UserTypePage onNext={handleUserTypeNext} />
     }
 
@@ -1669,7 +1710,7 @@ function App() {
 
     if (!isAuthenticated) {
       return currentPage === 'register' ? (
-        <RegisterPage onSwitch={() => navigateTo('login')} onAuthenticate={(data) => handleAuthenticate(data, true)} />
+        <RegisterPage onSwitch={() => navigateTo('login')} onAuthenticate={(data) => handleAuthenticate(data, true)} showCustomAlert={triggerAlert} />
       ) : (
         <LoginPage onSwitch={() => navigateTo('register')} onAuthenticate={(data) => handleAuthenticate(data, false)} />
       )
@@ -1848,11 +1889,47 @@ function App() {
       )}
       <div className={`flex-1 flex flex-col ${isAuthenticated && !showUserType && !showInitialBalance ? 'ml-64' : ''}`}>
         <div className="flex-1 p-4 md:p-6 lg:p-8">
-          <div className="mt-6">
+          <div className="mt-6 max-w-6xl mx-auto w-full">
             {pageComponent}
           </div>
         </div>
       </div>
+
+      {alertConfig && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
+          <div className="w-full max-w-md transform rounded-[32px] bg-white p-8 shadow-2xl transition-all border border-slate-100 scale-100">
+            <div className="flex flex-col items-center text-center space-y-5">
+              <div className={`flex h-16 w-16 items-center justify-center rounded-full ${alertConfig.type === 'error' ? 'bg-red-50 text-red-500' : 'bg-teal-50 text-teal-500'
+                }`}>
+                {alertConfig.type === 'error' ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <h3 className="text-xl font-bold text-slate-950">Pemberitahuan</h3>
+              <p className="text-slate-600 leading-relaxed font-medium">{alertConfig.message}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  const onConfirm = alertConfig.onConfirm
+                  setAlertConfig(null)
+                  if (typeof onConfirm === 'function') {
+                    onConfirm()
+                  }
+                }}
+                className="w-full rounded-3xl bg-[#38ADA9] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#2f9692] shadow-lg shadow-teal-100/50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#38ADA9]"
+              >
+                Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

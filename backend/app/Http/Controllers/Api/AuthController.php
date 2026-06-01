@@ -16,9 +16,16 @@ class AuthController extends Controller
     /**
      * Redirect user to Google login page.
      */
-    public function redirectToGoogle()
+    public function redirectToGoogle(Request $request)
     {
-        return Socialite::driver('google')->stateless()->redirect();
+        $flow = $request->query('flow', 'login');
+        session(['google_auth_flow' => $flow]);
+
+        $driver = Socialite::driver('google');
+        if (app()->environment('local')) {
+            $driver->setHttpClient(new \GuzzleHttp\Client(['verify' => false]));
+        }
+        return $driver->redirect();
     }
 
     /**
@@ -27,7 +34,14 @@ class AuthController extends Controller
     public function handleGoogleCallback(Request $request)
     {
         try {
-            $googleUser = Socialite::driver('google')->stateless()->user();
+            $flow = session('google_auth_flow', 'login');
+            session()->forget('google_auth_flow');
+
+            $driver = Socialite::driver('google');
+            if (app()->environment('local')) {
+                $driver->setHttpClient(new \GuzzleHttp\Client(['verify' => false]));
+            }
+            $googleUser = $driver->user();
 
             $googleId = $googleUser->getId();
             $googleName = $googleUser->getName();
@@ -41,6 +55,47 @@ class AuthController extends Controller
             $user = User::where('google_id', $googleId)
                 ->orWhere('email', $googleEmail)
                 ->first();
+
+            // Kondisi 1: KETIKA DAFTAR (Akun Sudah Pernah Terdaftar)
+            if ($flow === 'register' && $user) {
+                ActivityLog::create([
+                    'action' => 'Google Register Blocked (Account Already Exists)',
+                    'ip_address' => $request->ip(),
+                    'level' => 'warning',
+                    'data' => [
+                        'email' => $googleEmail,
+                    ],
+                ]);
+
+                return redirect()->away($this->frontendUrl() . '/login?error=akun_sudah_terdaftar');
+            }
+
+            // Kondisi 2: KETIKA LOGIN (Akun Belum Pernah Terdaftar)
+            if ($flow === 'login' && !$user) {
+                ActivityLog::create([
+                    'action' => 'Google Login Blocked (Account Not Found)',
+                    'ip_address' => $request->ip(),
+                    'level' => 'warning',
+                    'data' => [
+                        'email' => $googleEmail,
+                    ],
+                ]);
+
+                return redirect()->away($this->frontendUrl() . '/register?error=akun_belum_terdaftar');
+            }
+
+            if ($user && !$user->google_id) {
+                ActivityLog::create([
+                    'action' => 'Google Login Blocked (Manual Account Exist)',
+                    'ip_address' => $request->ip(),
+                    'level' => 'warning',
+                    'data' => [
+                        'email' => $googleEmail,
+                    ],
+                ]);
+
+                return redirect()->away($this->frontendUrl() . '/login?error=belum_daftar_google');
+            }
 
             if (!$user) {
                 $user = User::create([
@@ -97,6 +152,8 @@ class AuthController extends Controller
                 return redirect()->away($this->frontendUrl() . '/login?error=inactive');
             }
 
+            \Illuminate\Support\Facades\Auth::login($user, true);
+
             $token = $user->createToken('kas-cerdas')->plainTextToken;
 
             ActivityLog::create([
@@ -131,6 +188,16 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+        if ($request->filled('email')) {
+            $existingUser = User::where('email', $request->input('email'))->first();
+            if ($existingUser && $existingUser->google_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email ini sudah terdaftar menggunakan Google. Silakan masuk menggunakan Google.',
+                ], 422);
+            }
+        }
+
         $validated = $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
@@ -195,6 +262,13 @@ class AuthController extends Controller
         $loginField = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
         $user = User::where($loginField, $loginInput)->first();
+
+        if ($user && $user->google_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun ini terdaftar menggunakan Google. Silakan masuk menggunakan Google.',
+            ], 422);
+        }
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             ActivityLog::create([

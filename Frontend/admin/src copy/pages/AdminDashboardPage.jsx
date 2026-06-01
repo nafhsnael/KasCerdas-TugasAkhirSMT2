@@ -76,44 +76,6 @@ function AdminDashboardPage() {
             <StatCard label="Transaksi Hari Ini" value={transactionsToday} description="Masuk hari ini" />
           </div>
 
-          {/* Row 2: Grafik */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="mb-4 text-sm font-semibold text-slate-900">Grafik Pemasukan vs Pengeluaran (30 Hari Terakhir)</h2>
-            <div className="flex h-48 items-end gap-2 overflow-x-auto pb-2">
-              {transactionsTrend.map((t, idx) => {
-                const maxVal = Math.max(...transactionsTrend.map(x => Math.max(x.income, x.expense)), 1)
-                const incomeHeight = (t.income / maxVal) * 100
-                const expenseHeight = (t.expense / maxVal) * 100
-                return (
-                  <div key={idx} className="group relative flex min-w-[24px] flex-col items-center gap-1">
-                    <div className="flex h-32 w-full items-end gap-[2px]">
-                      <div className="w-1/2 rounded-t-sm bg-emerald-400" style={{ height: `${incomeHeight}%` }}></div>
-                      <div className="w-1/2 rounded-t-sm bg-rose-400" style={{ height: `${expenseHeight}%` }}></div>
-                    </div>
-                    <div className="w-full truncate text-center text-[10px] text-slate-400">
-                      {new Date(t.date).getDate()}
-                    </div>
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full z-10 mb-2 hidden whitespace-nowrap rounded bg-slate-800 px-2 py-1 text-xs text-white shadow-lg group-hover:block">
-                      <div>{t.date}</div>
-                      <div className="text-emerald-400">Pemasukan: Rp {Number(t.income).toLocaleString('id-ID')}</div>
-                      <div className="text-rose-400">Pengeluaran: Rp {Number(t.expense).toLocaleString('id-ID')}</div>
-                    </div>
-                  </div>
-                )
-              })}
-              {transactionsTrend.length === 0 && (
-                <div className="my-auto w-full text-center text-sm text-slate-500">Belum ada data transaksi bulan ini.</div>
-              )}
-            </div>
-            {/* Legend */}
-            {transactionsTrend.length > 0 && (
-              <div className="mt-4 flex items-center justify-center gap-4 text-xs font-medium text-slate-600">
-                <div className="flex items-center gap-1.5"><div className="h-3 w-3 rounded-sm bg-emerald-400"></div> Pemasukan</div>
-                <div className="flex items-center gap-1.5"><div className="h-3 w-3 rounded-sm bg-rose-400"></div> Pengeluaran</div>
-              </div>
-            )}
-          </div>
 
           {/* Row 3: User Terbaru & Transaksi Terbaru */}
           <div className="grid gap-4 md:grid-cols-2">

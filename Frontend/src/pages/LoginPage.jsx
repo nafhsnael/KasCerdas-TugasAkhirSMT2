@@ -47,7 +47,7 @@ function LoginPage({ onSwitch, onAuthenticate }) {
   }
 
   const handleGoogleLogin = () => {
-    window.location.href = `${backendUrl}/auth/google/redirect`
+    window.location.href = `${backendUrl}/auth/google/redirect?flow=login`
   }
 
   return (

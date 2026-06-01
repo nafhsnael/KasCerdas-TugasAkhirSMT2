@@ -430,18 +430,18 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </span>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari kategori budget..." 
+              placeholder="Cari kategori budget..."
               className="w-full h-11 pl-9 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20 focus:border-[#38ADA9] transition-all"
             />
           </div>
 
           {/* Filter Bulan */}
           <div className="relative w-full sm:w-48">
-            <select 
+            <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
               className="w-full h-11 appearance-none bg-white border border-slate-200 rounded-xl px-4 pr-10 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#38ADA9]/20 focus:border-[#38ADA9] cursor-pointer transition-all"
