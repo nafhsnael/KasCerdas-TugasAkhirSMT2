@@ -6,11 +6,10 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
 
 const menuItems = [
     { id: 'dashboard', label: 'Dashboard'},
-    { id: 'users', label: 'Users'},
+    { id: 'users', label: 'Kelola Data Pengguna'},
     { id: 'reports', label: 'Reports' },
     { id: 'maintenance', label: 'Maintenance' },
     { id: 'database', label: 'Database' },
-    { id: 'profile', label: 'Profile' },
   ]
 
   return (

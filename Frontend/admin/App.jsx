@@ -8,7 +8,6 @@ import DashboardPage from './pages/Dashboard/DashboardPage';
 import UsersPage from './pages/Users/UsersPage';
 import ReportsPage from './pages/Reports/ReportsPage';
 import MaintenancePage from './pages/Maintenance/MaintenancePage';
-import ProfilePage from './pages/Profile/ProfilePage';
 import DatabasePage from './pages/Database/DatabasePage';
 
 // Components
@@ -38,7 +37,6 @@ function App() {
             <Route path="users" element={<UsersPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="maintenance" element={<MaintenancePage />} />
-            <Route path="profile" element={<ProfilePage />} />
             <Route path="database" element={<DatabasePage />} />
           </Route>
 

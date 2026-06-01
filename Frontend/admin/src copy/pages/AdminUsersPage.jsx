@@ -142,7 +142,7 @@ function AdminUsersPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Users (Admin)</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Kelola Data Pengguna</h1>
         <p className="mt-1 text-sm text-slate-500">Kelola user: lihat, edit, suspend/nonaktifkan, atau delete.</p>
       </div>
 

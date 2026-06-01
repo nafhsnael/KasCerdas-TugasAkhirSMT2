@@ -14,18 +14,12 @@ const AdminLayout = () => {
     navigate(`/admin/${page}`);
   };
 
-  const userProfile = {
-    nama: user?.name || 'Admin',
-    user: user?.username || 'admin',
-    profileImage: user?.profile_image || '/logo.png', // Fallback
-  };
-
+  
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar 
         currentPage={currentPage} 
         onNavigate={handleNavigate} 
-        userProfile={userProfile} 
         onLogout={logout} 
       />
       <div className="flex-1 ml-64 p-8">
