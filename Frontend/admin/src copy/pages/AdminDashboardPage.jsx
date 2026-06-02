@@ -1,3 +1,4 @@
+// AdminDashboardPage - Tata letak dashboard admin yang rapi dan elegan
 import { useEffect, useState } from 'react'
 
 function StatCard({ label, value, description }) {
