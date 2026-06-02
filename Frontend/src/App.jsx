@@ -874,7 +874,7 @@ function App() {
 
     const walletId = walletInfo?.id || newTransaction?.wallet_id
     if (!walletId) {
-      alert('Dompet belum tersedia. Silakan muat ulang aplikasi atau masuk ulang terlebih dahulu.')
+      triggerAlert('Dompet belum tersedia. Silakan muat ulang aplikasi atau masuk ulang terlebih dahulu.', 'error')
       return
     }
 
@@ -1382,7 +1382,7 @@ function App() {
       setDebts((prev) => prev.map((debt) => (debt.id === id ? normalized : debt)))
       return normalized
     } catch (e) {
-      alert('Gagal memperbarui hutang: ' + (e.message || 'Error tidak diketahui'))
+      triggerAlert('Gagal memperbarui hutang: ' + (e.message || 'Error tidak diketahui'), 'error')
       throw e
     }
   }
@@ -1392,7 +1392,7 @@ function App() {
       await debtAPI.delete(id)
       setDebts((prev) => prev.filter((debt) => debt.id !== id))
     } catch (e) {
-      alert('Gagal menghapus hutang: ' + (e.message || 'Error tidak diketahui'))
+      triggerAlert('Gagal menghapus hutang: ' + (e.message || 'Error tidak diketahui'), 'error')
       throw e
     }
   }
@@ -1417,7 +1417,7 @@ function App() {
       }
       setSavings((prev) => [...prev, normalized])
     } catch (e) {
-      alert('Gagal menyimpan tabungan: ' + (e.message || 'Error tidak diketahui'))
+      triggerAlert('Gagal menyimpan tabungan: ' + (e.message || 'Error tidak diketahui'), 'error')
     }
   }
 
@@ -1441,7 +1441,7 @@ function App() {
       setSavings((prev) => prev.map((saving) => (saving.id === id ? normalized : saving)))
       return normalized
     } catch (e) {
-      alert('Gagal memperbarui tabungan: ' + (e.message || 'Error tidak diketahui'))
+      triggerAlert('Gagal memperbarui tabungan: ' + (e.message || 'Error tidak diketahui'), 'error')
       throw e
     }
   }
@@ -1451,7 +1451,7 @@ function App() {
       await savingAPI.delete(id)
       setSavings((prev) => prev.filter((saving) => saving.id !== id))
     } catch (e) {
-      alert('Gagal menghapus tabungan: ' + (e.message || 'Error tidak diketahui'))
+      triggerAlert('Gagal menghapus tabungan: ' + (e.message || 'Error tidak diketahui'), 'error')
       throw e
     }
   }
@@ -1517,7 +1517,7 @@ function App() {
     const newToken = userData?.token;
 
     if (!newToken) {
-      alert(userData?.message || 'Autentikasi gagal: token tidak ditemukan');
+      triggerAlert(userData?.message || 'Autentikasi gagal: token tidak ditemukan', 'error');
       setIsAuthenticated(false);
       return;
     }
@@ -1587,7 +1587,7 @@ function App() {
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        alert(errJson?.message || 'Gagal menyimpan tipe pengguna');
+        triggerAlert(errJson?.message || 'Gagal menyimpan tipe pengguna', 'error');
         return;
       }
 
@@ -1604,7 +1604,7 @@ function App() {
         // ignore errors
       }
     } catch (e) {
-      alert('Terjadi kesalahan koneksi saat menyimpan tipe pengguna');
+      triggerAlert('Terjadi kesalahan koneksi saat menyimpan tipe pengguna', 'error');
       return;
     }
 
