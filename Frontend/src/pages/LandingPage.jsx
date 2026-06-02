@@ -153,7 +153,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
             {features.map((feature, idx) => (
               <div
                 key={idx}
-                className="p-6 rounded-lg border border-slate-200 hover:shadow-lg transition bg-slate-50"
+                className="p-8 rounded-lg border border-slate-200 hover:shadow-lg transition bg-slate-50"
               >
                 {feature.icon}
                 <h3 className="text-xl font-semibold text-slate-900 mb-3 tracking-tight leading-snug">{feature.title}</h3>
