@@ -156,8 +156,8 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
                 className="p-6 rounded-lg border border-slate-200 hover:shadow-lg transition bg-slate-50"
               >
                 {feature.icon}
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">{feature.title}</h3>
-                <p className="text-slate-600">{feature.description}</p>
+                <h3 className="text-xl font-semibold text-slate-900 mb-3 tracking-tight leading-snug">{feature.title}</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
