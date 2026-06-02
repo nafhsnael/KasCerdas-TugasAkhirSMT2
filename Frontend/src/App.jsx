@@ -1917,7 +1917,7 @@ function App() {
       )}
       <div className={`flex-1 flex flex-col ${isAuthenticated && !showUserType && !showInitialBalance ? 'ml-64' : ''}`}>
         <div className="flex-1 p-4 md:p-6 lg:p-8">
-          <div className="mt-6 max-w-6xl mx-auto w-full">
+          <div key={currentPage} className="mt-6 max-w-6xl mx-auto w-full animate-page-fade">
             {pageComponent}
           </div>
         </div>
