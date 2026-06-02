@@ -118,9 +118,9 @@ function MasyarakatMonthlyCashflowTableCard({ transactions, periodLabel, compact
               </div>
             </div>
 
-            <div className="mt-4">
-              <div className={`text-xl font-semibold ${c.valueClass}`}>{c.value}</div>
-              <div className="mt-2 text-sm text-slate-500">{c.label}</div>
+            <div className="mt-4 min-w-0">
+              <div className={`text-lg font-bold sm:text-xl lg:text-xs xl:text-sm 2xl:text-base truncate ${c.valueClass}`} title={c.value}>{c.value}</div>
+              <div className="mt-2 text-xs text-slate-500 truncate" title={c.label}>{c.label}</div>
             </div>
           </div>
         ))}

@@ -2,7 +2,21 @@ function TransactionCard({ transaction, onViewInvoice, onDelete, isDeleting }) {
   const isPengeluaran = transaction.type === 'expense'
   const nominal = `Rp ${transaction.amount.toLocaleString('id-ID')}`
   const tanggal = transaction.date
-  const noteInfo = transaction.note ? ` • ${transaction.note}` : ''
+
+  const displayTitle = String(transaction.title || '').trim().toLowerCase() === 'initial balance' || String(transaction.title || '').trim().toLowerCase() === 'initial'
+    ? 'Saldo Awal'
+    : transaction.title
+
+  const displayCategory = String(transaction.category || '').trim().toLowerCase() === 'initial' || String(transaction.category || '').trim().toLowerCase() === 'initial balance'
+    ? 'Saldo Awal'
+    : transaction.category
+
+  const cleanNote = String(transaction.note || '').trim()
+  const displayNote = cleanNote.toLowerCase() === 'initial' || cleanNote.toLowerCase() === 'initial balance'
+    ? 'Saldo Awal'
+    : transaction.note
+
+  const noteInfo = displayNote ? ` • ${displayNote}` : ''
 
   return (
     <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all">
@@ -23,9 +37,9 @@ function TransactionCard({ transaction, onViewInvoice, onDelete, isDeleting }) {
         
         {/* Detail Transaksi (Judul & Kategori & Invoice) */}
         <div className="flex flex-col gap-0.5">
-          <h4 className="text-sm font-semibold text-slate-800 capitalize">{transaction.title}</h4>
+          <h4 className="text-sm font-semibold text-slate-800 capitalize">{displayTitle}</h4>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 font-medium">{transaction.category}</span>
+            <span className="text-xs text-slate-400 font-medium">{displayCategory}</span>
             {transaction.invoice && (
               <span className="text-[10px] font-mono bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded border border-slate-100/60 shrink-0">
                 {transaction.invoice}

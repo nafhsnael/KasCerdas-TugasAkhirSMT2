@@ -322,7 +322,7 @@ function ReportsMahasiswaPage({ transactions, debts, savings, onNavigate, onAddS
       </div>
 
       {activeTab === 'daily' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-page-fade">
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
             <h2 className="text-xl font-semibold text-slate-900 mb-2">Laporan Hari Ini</h2>
             <p className="text-sm text-slate-500 mb-4">{now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -368,7 +368,7 @@ function ReportsMahasiswaPage({ transactions, debts, savings, onNavigate, onAddS
       )}
 
       {activeTab === 'monthly' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-page-fade">
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -418,7 +418,7 @@ function ReportsMahasiswaPage({ transactions, debts, savings, onNavigate, onAddS
       )}
 
       {activeTab === 'annual' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-page-fade">
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -468,7 +468,7 @@ function ReportsMahasiswaPage({ transactions, debts, savings, onNavigate, onAddS
       )}
 
       {activeTab === 'debt' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-page-fade">
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -791,7 +791,7 @@ function ReportsMahasiswaPage({ transactions, debts, savings, onNavigate, onAddS
       )}
 
       {activeTab === 'savings' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-page-fade">
           <div className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-[#38ADA9]/10 to-transparent p-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
