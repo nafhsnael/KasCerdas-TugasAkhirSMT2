@@ -12,7 +12,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
         </svg>
       ),
       title: 'Kelola Keuangan',
-      description: 'Catat semua transaksi keuangan Anda dengan mudah dan terorganisir',
+      description: 'Pencatatan seluruh transaksi keuangan secara terorganisasi, sistematis, dan praktis.',
     },
     {
       icon: (
@@ -21,7 +21,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
         </svg>
       ),
       title: 'Analisis Mendalam',
-      description: 'Lihat laporan dan analisis terperinci tentang pengeluaran dan pemasukan Anda',
+      description: 'Visualisasi analisis laporan pengeluaran serta pemasukan secara komprehensif demi mendukung keputusan finansial Anda.',
     },
     {
       icon: (
@@ -32,7 +32,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
         </svg>
       ),
       title: 'Budgeting Cerdas',
-      description: 'Atur budget untuk setiap kategori dan pantau pengeluaran Anda secara real-time',
+      description: 'Perencanaan anggaran per kategori secara disiplin guna mengontrol pengeluaran secara waktu nyata (real-time).',
     },
     {
       icon: (
@@ -41,7 +41,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
         </svg>
       ),
       title: 'Akses Mudah',
-      description: 'Kelola keuangan Anda kapan saja, di mana saja melalui aplikasi web',
+      description: 'Pengelolaan keuangan secara fleksibel kapan saja dan di mana saja melalui platform web yang responsif.',
     },
   ]
 
