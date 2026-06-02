@@ -1,3 +1,4 @@
+// Sidebar - Animasi kemunculan elemen dan efek tombol interaktif panel admin
 import { useState } from 'react'
 import logoImg from '../../../src/image/logo.jpg'
 
