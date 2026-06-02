@@ -246,8 +246,8 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
 
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-[32px] bg-gradient-to-r from-[#2e8b87] via-[#38ADA9] to-[#4fb7b2] p-6 text-white shadow-xl">
+    <div className="space-y-8 animate-fade-in-up">
+      <section className="rounded-[32px] bg-gradient-to-r from-[#2e8b87] via-[#38ADA9] to-[#4fb7b2] p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-100/80">Selamat Datang</p>
@@ -265,20 +265,20 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
+        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200/60 hover:shadow-md hover:border-slate-300 transition-all duration-300">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
           <h2 className="mt-4 text-4xl font-semibold text-slate-900">Rp {smartCashPerDay.toLocaleString('id-ID')}</h2>
           <p className="mt-3 text-sm text-slate-500">Pemasukan per bulan</p>
         </div>
 
-        <div className="rounded-[32px] bg-[#F6B93B] p-6 shadow-sm border border-[#e6a53f] text-white">
+        <div className="rounded-[32px] bg-[#F6B93B] p-6 shadow-sm border border-[#e6a53f]/80 hover:shadow-md hover:scale-[1.01] transition-all duration-300 text-white">
           <p className="text-sm uppercase tracking-[0.24em] text-white/90">Saldo Pengeluaran</p>
           <h2 className="mt-4 text-4xl font-semibold">Rp {smartReductionPerDay.toLocaleString('id-ID')}</h2>
           <p className="mt-3 text-sm text-white/90">Pengeluaran per bulan</p>
         </div>
       </section>
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Financial Health Score</p>
@@ -320,7 +320,7 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {healthAspects.map((aspect) => (
-              <div key={aspect.label} className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div key={aspect.label} className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">{aspect.label}</p>
@@ -337,7 +337,7 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
       </section>
 
       {isUmkm && (
-        <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
           <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">UMKM</p>
@@ -353,33 +353,33 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 hover:shadow-md transition-all duration-300">
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Arus Kas Usaha</p>
               <p className="mt-3 text-3xl font-semibold text-slate-900">Rp {businessIncome.toLocaleString('id-ID')}</p>
               <p className="mt-2 text-sm text-slate-600">Pemasukan usaha</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <div className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                   <p className="text-sm text-slate-500">Pengeluaran Operasional</p>
                   <p className="mt-2 text-lg font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</p>
                 </div>
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <div className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                   <p className="text-sm text-slate-500">HPP Diperkirakan</p>
                   <p className="mt-2 text-lg font-semibold text-slate-900">Rp {costOfGoodsSold.toLocaleString('id-ID')}</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 hover:shadow-md transition-all duration-300">
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Laba Rugi Otomatis</p>
               <p className="mt-3 text-3xl font-semibold text-slate-900">Rp {profitLoss.toLocaleString('id-ID')}</p>
               <p className="mt-2 text-sm text-slate-600">Pendapatan dikurangi HPP dan biaya operasional</p>
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 hover:shadow-md transition-all duration-300">
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Stok Barang</p>
               <div className="mt-3 space-y-3">
                 {inventoryItems.map((item) => (
-                  <div key={item.name} className="rounded-2xl bg-white p-4 shadow-sm">
+                  <div key={item.name} className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="flex items-center justify-between gap-4">
                       <p className="font-semibold text-slate-900">{item.name}</p>
                       <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.stock <= item.reorderLevel ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
@@ -395,14 +395,14 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
               )}
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 hover:shadow-md transition-all duration-300">
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Hutang & Piutang</p>
               <div className="mt-3 space-y-3">
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <div className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                   <p className="text-sm text-slate-500">Total Hutang</p>
                   <p className="mt-2 text-xl font-semibold text-slate-900">Rp {totalPayables.toLocaleString('id-ID')}</p>
                 </div>
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <div className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                   <p className="text-sm text-slate-500">Total Piutang</p>
                   <p className="mt-2 text-xl font-semibold text-slate-900">Rp {totalReceivables.toLocaleString('id-ID')}</p>
                 </div>
@@ -412,7 +412,7 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
         </section>
       )}
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Aksi Cepat</p>
@@ -424,7 +424,7 @@ function DashboardPage({ walletSummary, transactions, budgets, walletInfo, userP
             <button
               key={action.label}
               onClick={() => onQuickAction?.(action.businessCategory)}
-              className="group flex items-center gap-3 rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-[#38ADA9] hover:bg-[#f5fffd]"
+              className="group flex items-center gap-3 rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-all duration-300 hover:border-[#38ADA9] hover:bg-[#f5fffd] hover:scale-105 active:scale-95 hover:shadow-md"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f6f3] text-2xl text-[#2e8b87]">
                 {action.icon}

@@ -148,8 +148,8 @@ function DashboardUMKMPage({
 
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-[32px] bg-gradient-to-r from-[#2e8b87] via-[#38ADA9] to-[#4fb7b2] p-6 text-white shadow-xl">
+    <div className="space-y-8 animate-fade-in-up">
+      <section className="rounded-[32px] bg-gradient-to-r from-[#2e8b87] via-[#38ADA9] to-[#4fb7b2] p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-100/80">Selamat Datang di Dashboard UMKM</p>
@@ -170,7 +170,7 @@ function DashboardUMKMPage({
       </section>
 
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">UMKM</p>
@@ -187,7 +187,7 @@ function DashboardUMKMPage({
 
 
           {/* Saldo Pemasukan */}
-          <div className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#f0fdf4] to-[#dcfce7] p-4 lg:col-span-1">
+          <div className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#f0fdf4] to-[#dcfce7] p-4 lg:col-span-1 hover:shadow-md transition-all duration-300">
 
 
           
@@ -197,14 +197,14 @@ function DashboardUMKMPage({
           </div>
 
           {/* Saldo Pengeluaran */}
-          <div className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#fef2f2] to-[#fee2e2] p-4">
+          <div className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#fef2f2] to-[#fee2e2] p-4 hover:shadow-md transition-all duration-300">
             <p className="text-[13px] uppercase tracking-[0.24em] text-slate-500">Saldo Pengeluaran</p>
             <p className="mt-2 text-xl font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</p>
             <p className="mt-1 text-[11px] text-slate-600 leading-tight">Total pengeluaran per bulan (bulan berjalan).</p>
           </div>
 
           {/* Financial Score Health */}
-          <div className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#fffbf0] to-[#fef3c7] p-4">
+          <div className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#fffbf0] to-[#fef3c7] p-4 hover:shadow-md transition-all duration-300">
             <p className="text-[13px] uppercase tracking-[0.24em] text-slate-500">Financial Score</p>
             <p className="mt-2 text-xl font-semibold" style={{ color: '#F6B93B' }}>{Math.round(financialScore)}%</p>
             <p className="mt-1 text-[11px] text-slate-600">Kesehatan keuangan bisnis</p>
@@ -220,7 +220,7 @@ function DashboardUMKMPage({
           </div>
 
           {/* Budget Reminder */}
-          <div className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] p-4 lg:col-span-4">
+          <div className="rounded-[22px] border border-slate-200 bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] p-4 lg:col-span-4 hover:shadow-md transition-all duration-300">
             {(() => {
               const getBudgetUsage = (budget) => {
                 const category = budget?.category || budget?.name || ''
@@ -347,23 +347,23 @@ function DashboardUMKMPage({
 
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 hover:shadow-md transition-all duration-300">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Arus Kas Usaha</p>
             <p className="mt-3 text-3xl font-semibold text-slate-900">Rp {businessIncome.toLocaleString('id-ID')}</p>
             <p className="mt-2 text-sm text-slate-600">Pemasukan usaha</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
+              <div className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                 <p className="text-sm text-slate-500">Keluar Operasional</p>
                 <p className="mt-2 text-lg font-semibold text-rose-600">Rp {businessExpense.toLocaleString('id-ID')}</p>
               </div>
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
+              <div className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                 <p className="text-sm text-slate-500">HPP Diperkirakan</p>
                 <p className="mt-2 text-lg font-semibold text-slate-900">Rp {costOfGoodsSold.toLocaleString('id-ID')}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 hover:shadow-md transition-all duration-300">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Laba Rugi Otomatis</p>
             <p className="mt-3 text-3xl font-semibold text-slate-900">Rp {profitLoss.toLocaleString('id-ID')}</p>
             <p className="mt-2 text-sm text-slate-600">Pendapatan dikurangi HPP dan biaya operasional</p>
@@ -372,26 +372,26 @@ function DashboardUMKMPage({
 
 
 
-          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 hover:shadow-md transition-all duration-300">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Utang & Piutang</p>
             <div className="mt-3 space-y-3">
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
+              <div className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                 <p className="text-sm text-slate-500">Total Utang</p>
                 <p className="mt-2 text-xl font-semibold text-slate-900">Rp {totalPayables.toLocaleString('id-ID')}</p>
               </div>
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
+              <div className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                 <p className="text-sm text-slate-500">Total Piutang</p>
                 <p className="mt-2 text-xl font-semibold text-slate-900">Rp {totalReceivables.toLocaleString('id-ID')}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 hover:shadow-md transition-all duration-300">
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">stok bahan baku / barang</p>
             <div className="mt-3 space-y-3">
               {inventoryItems.length > 0 ? (
                 inventoryItems.map((item, index) => (
-                  <div key={item.id ?? item.transactionId ?? `${item.name}-${index}`} className="rounded-2xl bg-white p-4 shadow-sm">
+                  <div key={item.id ?? item.transactionId ?? `${item.name}-${index}`} className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="flex items-center justify-between gap-4">
                       <p className="font-semibold text-slate-900">{item.name}</p>
                       <span
@@ -411,7 +411,7 @@ function DashboardUMKMPage({
                   </div>
                 ))
               ) : (
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <div className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                   <p className="text-sm text-slate-500">Belum ada item stok.</p>
                 </div>
               )}
@@ -423,7 +423,7 @@ function DashboardUMKMPage({
 
 
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Aksi Cepat</p>
@@ -437,7 +437,7 @@ function DashboardUMKMPage({
             <button
               key={action.label}
               onClick={() => onQuickAction?.(action.category)}
-              className="group flex min-h-[88px] items-center gap-3 rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-[#38ADA9] hover:bg-[#f5fffd]"
+              className="group flex min-h-[88px] items-center gap-3 rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-all duration-300 hover:border-[#38ADA9] hover:bg-[#f5fffd] hover:scale-105 active:scale-95 hover:shadow-md"
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e6f6f3] text-2xl text-[#2e8b87]">
                 {action.icon}

@@ -358,8 +358,8 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
   const progressOffset = circleCircumference * (1 - overallScore / 100)
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-[32px] bg-gradient-to-r from-[#2e8b87] via-[#38ADA9] to-[#4fb7b2] p-6 text-white shadow-xl">
+    <div className="space-y-8 animate-fade-in-up">
+      <section className="rounded-[32px] bg-gradient-to-r from-[#2e8b87] via-[#38ADA9] to-[#4fb7b2] p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-100/80">Selamat Datang</p>
@@ -379,7 +379,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200">
+        <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-200/60 hover:shadow-md hover:border-slate-300 transition-all duration-300">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Saldo Pemasukan</p>
@@ -392,9 +392,9 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
           </div>
         </div>
 
-        <div className="rounded-[32px] bg-[#F6B93B] p-6 text-white shadow-sm border border-[#e6a53f]">
+        <div className="rounded-[32px] bg-[#F6B93B] p-6 text-white shadow-sm border border-[#e6a53f]/80 hover:shadow-md hover:scale-[1.01] transition-all duration-300">
           <p className="text-sm uppercase tracking-[0.24em] text-white/80">Saldo Pengeluaran</p>
-          <h2 className="mt-4 text-4xl font-semibold text-white/80">
+          <h2 className="mt-4 text-4xl font-semibold text-white">
             Rp {saldoPengeluaranBulanIni.toLocaleString('id-ID')}
           </h2>
           <p className="mt-3 text-sm text-white/80">Total pengeluaran per bulan</p>
@@ -436,7 +436,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
           </div>
       </section>
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Financial Health Score</p>
@@ -482,7 +482,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
 
           <div className="grid gap-4 sm:grid-cols-2">
             {healthAspects.map((aspect) => (
-              <div key={aspect.label} className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div key={aspect.label} className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">{aspect.label}</p>
@@ -499,7 +499,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
       </section>
 
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Aksi Cepat</p>
@@ -512,7 +512,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
               key={action.category}
               type="button"
               onClick={() => onQuickAction?.(action.category)}
-              className="group flex items-center gap-3 rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-[#38ADA9] hover:bg-[#f5fffd]"
+              className="group flex items-center gap-3 rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-all duration-300 hover:border-[#38ADA9] hover:bg-[#f5fffd] hover:scale-105 active:scale-95 hover:shadow-md"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f6f3] text-2xl text-[#2e8b87]">
                 {action.icon}
