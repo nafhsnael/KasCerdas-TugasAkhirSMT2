@@ -21,6 +21,7 @@ class AuthController extends Controller
         $flow = $request->query('flow', 'login');
         session(['google_auth_flow' => $flow]);
 
+        /** @var \Laravel\Socialite\Two\GoogleProvider $driver */
         $driver = Socialite::driver('google');
         if (app()->environment('local')) {
             $driver->setHttpClient(new \GuzzleHttp\Client(['verify' => false]));
@@ -37,6 +38,7 @@ class AuthController extends Controller
             $flow = session('google_auth_flow', 'login');
             session()->forget('google_auth_flow');
 
+            /** @var \Laravel\Socialite\Two\GoogleProvider $driver */
             $driver = Socialite::driver('google');
             if (app()->environment('local')) {
                 $driver->setHttpClient(new \GuzzleHttp\Client(['verify' => false]));
@@ -200,7 +202,7 @@ class AuthController extends Controller
 
         $validated = $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
+            'username' => ['required', 'string', 'max:50', 'unique:users,username'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'user_type' => ['nullable', 'in:umkm,masyarakat_umum,mahasiswa'],

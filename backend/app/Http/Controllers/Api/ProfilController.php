@@ -60,7 +60,7 @@ class ProfilController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'name' => 'nullable|string|max:255',
-                'username' => 'required|string|max:50|alpha_dash|unique:users,username,' . $user->id,
+                'username' => 'required|string|max:50|unique:users,username,' . $user->id,
                 'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
                 'user_type' => 'nullable|string|in:umkm,masyarakat_umum,mahasiswa,masyarakat',
                 'phone' => 'nullable|string|max:20',
