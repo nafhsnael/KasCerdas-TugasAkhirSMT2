@@ -94,14 +94,19 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
       </div>
 
       {showLogoutConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Konfirmasi Logout</h3>
-            <p className="text-gray-600 mb-6">Beneran logout?</p>
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm animate-page-fade">
+          <div className="bg-white rounded-[28px] p-8 max-w-sm w-full mx-4 shadow-2xl border border-slate-100 animate-page-fade text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-500 mb-4">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Konfirmasi Keluar</h3>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">Apakah Anda yakin ingin keluar dari akun Anda?</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="flex-1 px-4 py-3 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors duration-200"
               >
                 Batal
               </button>
@@ -110,7 +115,7 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
                   setShowLogoutConfirm(false)
                   onLogout()
                 }}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                className="flex-1 px-4 py-3 bg-[#E74C3C] hover:bg-[#c0392b] text-white text-sm font-semibold rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
               >
                 Logout
               </button>
