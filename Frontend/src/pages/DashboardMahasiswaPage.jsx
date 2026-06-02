@@ -175,19 +175,107 @@ function DashboardMahasiswaPage({ walletSummary, transactions, budgets, walletIn
   // Aksi Cepat harus berada DI BAWAH Financial Health Score
   const quickActions = [
     // Pemasukan cepat
-    { label: 'Beasiswa', category: 'Beasiswa', icon: '🎓' },
-    { label: 'Tabungan', category: 'Tabungan', icon: '🏦' },
-    { label: 'Uang Saku', category: 'Uang Saku', icon: '🪙' },
-    { label: 'Penghasilan Kerja Paruh Waktu', category: 'Penghasilan Kerja Paruh Waktu', icon: '💼' },
+    {
+      label: 'Beasiswa',
+      category: 'Beasiswa',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3L2 8l10 5 10-5-10-5zM6 10v6a6 6 0 0012 0v-6M21.5 8v6"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Tabungan',
+      category: 'Tabungan',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Uang Saku',
+      category: 'Uang Saku',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Penghasilan Kerja Paruh Waktu',
+      category: 'Penghasilan Kerja Paruh Waktu',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      )
+    },
     // Pengeluaran cepat
-    { label: 'Kos', category: 'Kos', icon: '🏠' },
-    { label: 'UKT', category: 'UKT', icon: '📚' },
-    { label: 'Makan', category: 'Makan', icon: '🍜' },
-    { label: 'Transportasi', category: 'Transportasi', icon: '🚌' },
-    { label: 'Kebutuhan Kuliah', category: 'Kebutuhan Kuliah', icon: '✏️' },
-    { label: 'Kebutuhan Lainnya', category: 'Kebutuhan Lainnya', icon: '🧩' },
+    {
+      label: 'Kos',
+      category: 'Kos',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+      )
+    },
+    {
+      label: 'UKT',
+      category: 'UKT',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Makan',
+      category: 'Makan',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 10a9 9 0 0018 0M3 10V9a2 2 0 012-2h14a2 2 0 012 2v1M9 3v2M12 3v2M15 3v2"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Transportasi',
+      category: 'Transportasi',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 17h0M16 17h0M4 9h16M4 13h16M3 6a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6zm3 14a1 1 0 100-2 1 1 0 000 2zm12 0a1 1 0 100-2 1 1 0 000 2z"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Kebutuhan Kuliah',
+      category: 'Kebutuhan Kuliah',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Kebutuhan Lainnya',
+      category: 'Kebutuhan Lainnya',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/>
+        </svg>
+      )
+    },
     // Tambahan kategori hutang untuk akses cepat
-    { label: 'Hutang', category: 'Hutang', icon: '💳' },
+    {
+      label: 'Hutang',
+      category: 'Hutang',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+        </svg>
+      )
+    },
   ]
 
 

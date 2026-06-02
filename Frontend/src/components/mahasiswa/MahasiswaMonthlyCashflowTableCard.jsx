@@ -46,35 +46,55 @@ function MahasiswaMonthlyCashflowTableCard({ transactions, periodLabel, compact 
       value: formatRp(stats.incomeAvg),
       valueClass: 'text-emerald-700',
       bgClass: 'bg-emerald-50',
-      icon: '↟',
+      icon: (
+        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+        </svg>
+      ),
     },
     {
       label: 'Rata-rata pengeluaran',
       value: formatRp(stats.expenseAvg),
       valueClass: 'text-rose-600',
       bgClass: 'bg-rose-50',
-      icon: '↡',
+      icon: (
+        <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+        </svg>
+      ),
     },
     {
       label: 'Rata-rata arus kas bersih',
       value: formatRp(stats.netCashFlow),
       valueClass: isNegative ? 'text-rose-600' : 'text-[#2563EB]',
       bgClass: 'bg-blue-50',
-      icon: '↸',
+      icon: (
+        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m9 0L12 21m0 0l-4.5-4.5M12 21V7.5" />
+        </svg>
+      ),
     },
     {
       label: 'Arus kas tertinggi',
       value: formatRp(stats.highestNet),
       valueClass: stats.highestNet < 0 ? 'text-rose-600' : 'text-emerald-700',
       bgClass: 'bg-indigo-50',
-      icon: '↝',
+      icon: (
+        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+        </svg>
+      ),
     },
     {
       label: 'Arus kas terendah',
       value: formatRp(stats.lowestNet),
       valueClass: 'text-rose-600',
       bgClass: 'bg-rose-50',
-      icon: '↯',
+      icon: (
+        <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6L9 12.75l4.306-4.307a11.95 11.95 0 015.814 5.519l2.74 1.22m0 0l-5.94 2.28m5.94-2.28l-2.28-5.941" />
+        </svg>
+      ),
     },
   ]
 
@@ -94,7 +114,7 @@ function MahasiswaMonthlyCashflowTableCard({ transactions, periodLabel, compact 
           >
             <div className="flex items-start justify-between">
               <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${c.bgClass} ${c.iconClass}`}>
-                <span className="text-[18px] font-semibold leading-none">{c.icon}</span>
+                {c.icon}
               </div>
             </div>
 

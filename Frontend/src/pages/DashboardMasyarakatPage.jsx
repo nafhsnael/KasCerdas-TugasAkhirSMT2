@@ -1,15 +1,87 @@
 function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletInfo, userProfile, onQuickAction }) {
   // Kategori ini disamakan dengan kategori di TransactionsMasyarakatPage.jsx
   const quickActions = [
-    { label: 'Penghasilan Kerja', category: 'Penghasilan Kerja', icon: '💼' },
-    { label: 'Uang Saku', category: 'Uang Saku', icon: '🪙' },
-    { label: 'Tabungan', category: 'Tabungan', icon: '🏦' },
-    { label: 'Makan', category: 'Makan', icon: '🍜' },
-    { label: 'Hutang', category: 'Hutang', icon: '💳' },
-    { label: 'Transport', category: 'Transport', icon: '🚌' },
-    { label: 'Belanja', category: 'Belanja', icon: '🛍️' },
-    { label: 'Tagihan', category: 'Tagihan', icon: '📄' },
-    { label: 'Kebutuhan Lainnya', category: 'Kebutuhan Lainnya', icon: '🧩' },
+    {
+      label: 'Penghasilan Kerja',
+      category: 'Penghasilan Kerja',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Uang Saku',
+      category: 'Uang Saku',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Tabungan',
+      category: 'Tabungan',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Makan',
+      category: 'Makan',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 10a9 9 0 0018 0M3 10V9a2 2 0 012-2h14a2 2 0 012 2v1M9 3v2M12 3v2M15 3v2"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Hutang',
+      category: 'Hutang',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Transport',
+      category: 'Transport',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 17h0M16 17h0M4 9h16M4 13h16M3 6a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6zm3 14a1 1 0 100-2 1 1 0 000 2zm12 0a1 1 0 100-2 1 1 0 000 2z"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Belanja',
+      category: 'Belanja',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Tagihan',
+      category: 'Tagihan',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      )
+    },
+    {
+      label: 'Kebutuhan Lainnya',
+      category: 'Kebutuhan Lainnya',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/>
+        </svg>
+      )
+    },
   ]
 
   const now = new Date()
