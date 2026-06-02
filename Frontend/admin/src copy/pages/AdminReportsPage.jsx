@@ -15,6 +15,7 @@ function formatDate(dateString) {
 }
 
 function AdminReportsPage() {
+  const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [summary, setSummary] = useState(null)
@@ -49,7 +50,7 @@ function AdminReportsPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/admin/monitoring', {
+      const res = await fetch(`${backendUrl}/api/admin/monitoring`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -68,7 +69,7 @@ function AdminReportsPage() {
 
   const loadUsersList = async () => {
     try {
-      const res = await fetch('/api/admin/users?per_page=1000', {
+      const res = await fetch(`${backendUrl}/api/admin/users?per_page=1000`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -95,7 +96,7 @@ function AdminReportsPage() {
       if (transactionType) params.append('type', transactionType)
       if (transactionSearch) params.append('search', transactionSearch)
 
-      const res = await fetch(`/api/admin/monitoring/transactions?${params.toString()}`, {
+      const res = await fetch(`${backendUrl}/api/admin/monitoring/transactions?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 function AdminMaintenancePage() {
+  const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [isEnabled, setIsEnabled] = useState(false)
@@ -17,7 +18,7 @@ function AdminMaintenancePage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/admin/maintenance', {
+      const res = await fetch(`${backendUrl}/api/admin/maintenance`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +44,7 @@ function AdminMaintenancePage() {
   const enable = async () => {
     setError('')
     try {
-      const res = await fetch('/api/admin/maintenance', {
+      const res = await fetch(`${backendUrl}/api/admin/maintenance`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,7 +63,7 @@ function AdminMaintenancePage() {
   const disable = async () => {
     setError('')
     try {
-      const res = await fetch('/api/admin/maintenance', {
+      const res = await fetch(`${backendUrl}/api/admin/maintenance`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

@@ -3,10 +3,7 @@
  * Handles all API calls to the backend with proper headers and error handling
  */
 
-const API_BASE_URL =
-  (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_URL) ||
-  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
-  'http://localhost:8000/api';
+const API_BASE_URL = 'https://backend-kascerdas-production.up.railway.app/api';
 
 /**
  * Generic fetch wrapper with authentication

@@ -5,6 +5,7 @@ function formatMoney(n) {
 }
 
 function AdminUsersPage() {
+  const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [users, setUsers] = useState([])
@@ -39,7 +40,7 @@ function AdminUsersPage() {
         if (isActive !== '') params.append('is_active', isActive)
       }
 
-      const url = `/api/admin/users?${params.toString()}`
+      const url = `${backendUrl}/api/admin/users?${params.toString()}`
 
       const res = await fetch(url, {
         method: 'GET',
@@ -88,7 +89,7 @@ function AdminUsersPage() {
     if (!window.confirm(`Yakin ingin ${user.is_active ? 'suspend' : 'aktifkan'} user ${user.name}?`)) return
     
     try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
+      const res = await fetch(`${backendUrl}/api/admin/users/${user.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +116,7 @@ function AdminUsersPage() {
   const handleSaveEdit = async (e) => {
     e.preventDefault()
     try {
-      const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+      const res = await fetch(`${backendUrl}/api/admin/users/${editingUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

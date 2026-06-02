@@ -34,7 +34,7 @@ import { transactionAPI, budgetAPI, debtAPI, savingAPI } from './utils/api'
 // Import Admin App kamu agar bisa dipanggil
 import AdminApp from '../admin/App'
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
 
 const readInitialToken = () => {
   if (typeof window === 'undefined') return null
@@ -387,13 +387,8 @@ function App() {
     const cleanPath = value.replace(/^\/+/, '')
     const storagePath = cleanPath.startsWith('storage/') ? cleanPath : `storage/${cleanPath}`
 
-    const envBackendUrl = import.meta.env?.VITE_BACKEND_URL || ''
-    const envApiUrl = import.meta.env?.VITE_API_URL || ''
-    const apiOrigin = envApiUrl ? envApiUrl.replace(/\/api\/?$/, '') : ''
-    const isViteLocal = typeof window !== 'undefined' && /^517\d$/.test(window.location.port)
-    const backendOrigin = envBackendUrl || apiOrigin || (isViteLocal ? 'http://localhost:8000' : '')
-
-    return backendOrigin ? `${backendOrigin}/${storagePath}` : `/${storagePath}`
+    const backendOrigin = 'https://backend-kascerdas-production.up.railway.app'
+    return `${backendOrigin}/${storagePath}`
   }
 
   const receiptToPreview = (receipt) => {

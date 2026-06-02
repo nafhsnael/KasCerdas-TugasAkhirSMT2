@@ -8,7 +8,7 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
   const [notif, setNotif] = useState({ open: false, type: '', message: '' });
   const [savedData, setSavedData] = useState(null);
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+  const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
 
   const handleSubmit = async (event) => {
     event.preventDefault()

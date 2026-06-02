@@ -21,8 +21,9 @@ function AdminDashboardPage() {
       try {
         setLoading(true)
         setError('')
+        const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
         const token = window.localStorage.getItem('token')
-        const res = await fetch('/api/admin/monitoring/dashboard', {
+        const res = await fetch(`${backendUrl}/api/admin/monitoring/dashboard`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 
 function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
+  const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
   const [profile, setProfile] = useState({
     nama: '',
     email: '',
@@ -53,7 +54,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
 
     try {
       const token = window.localStorage.getItem('token')
-      const response = await fetch('/api/user/profil', {
+      const response = await fetch(`${backendUrl}/api/user/profil`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

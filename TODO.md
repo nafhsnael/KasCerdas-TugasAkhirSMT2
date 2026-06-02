@@ -8,9 +8,10 @@
 
 ## Step 2 — Fix output: saldo awal masuk ke arus kas usaha & saldo pemasukan
 - [ ] Identifikasi komponen/variabel yang digunakan untuk kartu "Arus Kas Usaha" dan "Saldo Pemasukan".
-- [ ] Pastikan kategori "Saldo Awal" (transaksi) masuk ke `businessIncome` (arus kas/pemasukan usaha) sampai benar-benar terlihat di output UI.
+- [ ] Pastikan kategori "Saldo Awal" (transaksi) masuk ke `businessIncome` (arus kas/pemasukan u
+- [ ] Jalankan build / lint (jika ada) atau minimal menjalankan aplikasi untuk memastikan output berubah sesuai permintaan.
+
+saha) sampai benar-benar terlihat di output UI.
 - [ ] Pastikan perubahan ini tidak mempengaruhi laba rugi (kalau memang diminta: saldo awal tidak ikut laba rugi).
 
 ## Step 3 — Validate
-- [ ] Jalankan build / lint (jika ada) atau minimal menjalankan aplikasi untuk memastikan output berubah sesuai permintaan.
-

@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 
 function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
+  const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
   const [profile, setProfile] = useState({
     nama: '',
     email: '',
@@ -26,7 +27,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
   // Fetch user profile from backend on mount
   useEffect(() => {
     const token = window.localStorage.getItem('token');
-    fetch('/api/user/profil', {
+    fetch(`${backendUrl}/api/user/profil`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -86,7 +87,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
     }
     const token = window.localStorage.getItem('token');
     try {
-      const response = await fetch('/api/user/profil', {
+      const response = await fetch(`${backendUrl}/api/user/profil`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

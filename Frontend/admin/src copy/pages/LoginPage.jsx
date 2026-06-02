@@ -3,11 +3,13 @@ import { useState } from 'react'
 function LoginPage({ onSwitch, onAuthenticate }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  
+  const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
 
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(`${backendUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),

@@ -1,24 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 
 const getBackendOrigin = () => {
-  const envBackendUrl = import.meta.env?.VITE_BACKEND_URL || ''
-  const envApiUrl = import.meta.env?.VITE_API_URL || ''
-  const apiOrigin = envApiUrl ? envApiUrl.replace(/\/api\/?$/, '') : ''
-
-  if (envBackendUrl) return envBackendUrl.replace(/\/$/, '')
-  if (apiOrigin) return apiOrigin.replace(/\/$/, '')
-
-  if (typeof window !== 'undefined' && /^517\d$/.test(window.location.port)) {
-    return 'http://localhost:8000'
-  }
-
-  return ''
+  return 'https://backend-kascerdas-production.up.railway.app'
 }
 
 const getApiBaseUrl = () => {
-  const envApiUrl = import.meta.env?.VITE_API_URL || ''
-  if (envApiUrl) return envApiUrl.replace(/\/$/, '')
-  return '/api'
+  return 'https://backend-kascerdas-production.up.railway.app/api'
 }
 
 const buildReceiptUrl = (value) => {

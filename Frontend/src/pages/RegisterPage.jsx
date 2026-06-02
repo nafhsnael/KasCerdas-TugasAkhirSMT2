@@ -7,7 +7,7 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+  const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -23,7 +23,7 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
 
     setLoading(true)
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(`${backendUrl}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

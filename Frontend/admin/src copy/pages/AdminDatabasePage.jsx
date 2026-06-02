@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 
 function DatabasePage() {
+  const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [tables, setTables] = useState([])
@@ -20,7 +21,7 @@ function DatabasePage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/admin/monitoring/database/tables', {
+      const res = await fetch(`${backendUrl}/api/admin/monitoring/database/tables`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -41,7 +42,7 @@ function DatabasePage() {
     setLoadingTable(true)
     setSelectedTable(tableName)
     try {
-      const res = await fetch(`/api/admin/monitoring/database/tables/${tableName}`, {
+      const res = await fetch(`${backendUrl}/api/admin/monitoring/database/tables/${tableName}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

@@ -9,6 +9,7 @@ import React, {
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const backendUrl = 'https://backend-kascerdas-production.up.railway.app';
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -37,7 +38,7 @@ export function AuthProvider({ children }) {
       isAuthenticated,
       isAdmin,
       login: async (username, password) => {
-        const res = await fetch("/api/auth/login", {
+        const res = await fetch(`${backendUrl}/api/auth/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -66,7 +67,7 @@ export function AuthProvider({ children }) {
       logout: async () => {
         const token = localStorage.getItem("token");
         if (token) {
-          await fetch("/api/auth/logout", {
+          await fetch(`${backendUrl}/api/auth/logout`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
