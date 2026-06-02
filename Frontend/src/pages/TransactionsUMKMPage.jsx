@@ -317,8 +317,8 @@ function TransactionsUMKMPage({
   }
 
   return (
-    <div className="space-y-8">
-      <section className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+    <div className="space-y-8 animate-fade-in-up">
+      <section className="bg-white rounded-[32px] border border-slate-200/60 p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="mb-6 pb-6 border-b border-gray-50">
           <span className="text-sm uppercase tracking-widest font-normal text-slate-400/90">TRANSAKSI UMKM</span>
           <h3 className="text-lg font-bold text-gray-800 mt-1">Kelola Arus Kas, Stok, dan Kredit Usaha</h3>
@@ -476,7 +476,7 @@ function TransactionsUMKMPage({
                 <span>{successMessage}</span>
               </div>
             )}
-            <button type="submit" className="w-full py-3 bg-[#38ADA9] hover:bg-[#2c8a7d] text-white font-semibold rounded-xl text-sm shadow-sm shadow-[#38ADA9]/10 hover:shadow-md hover:shadow-[#38ADA9]/20 transition-all duration-200 transform active:scale-[0.99]">
+            <button type="submit" className="w-full py-3 bg-[#38ADA9] hover:bg-[#2c8a7d] text-white font-semibold rounded-xl text-sm shadow-sm shadow-[#38ADA9]/10 hover:shadow-md hover:shadow-[#38ADA9]/20 transition-all duration-300 hover:scale-105 active:scale-95 transform">
               Simpan Transaksi
             </button>
           </div>
@@ -484,7 +484,7 @@ function TransactionsUMKMPage({
         </form>
       </section>
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi UMKM</p>

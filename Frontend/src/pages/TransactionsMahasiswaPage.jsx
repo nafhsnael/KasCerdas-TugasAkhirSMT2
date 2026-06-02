@@ -260,8 +260,8 @@ function TransactionsMahasiswaPage({
   }
 
   return (
-    <div className="space-y-8">
-      <section className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+    <div className="space-y-8 animate-fade-in-up">
+      <section className="bg-white rounded-[32px] border border-slate-200/60 p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-50">
           <div>
             <span className="text-sm uppercase tracking-widest font-normal text-slate-400/90">TRANSAKSI MAHASISWA</span>
@@ -288,6 +288,11 @@ function TransactionsMahasiswaPage({
           </div>
         </div>
 
+        {toastMessage && (
+            <div className="mb-4 rounded-xl bg-red-50 border border-red-200 p-4 text-red-800 text-sm font-medium flex items-center gap-2">
+              <span>{toastMessage}</span>
+            </div>
+          )}
         <form className="grid gap-5 lg:grid-cols-2" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold uppercase tracking-normal text-slate-700">Judul Transaksi</label>
@@ -384,14 +389,14 @@ function TransactionsMahasiswaPage({
                 <span>{successMessage}</span>
               </div>
             )}
-            <button className="w-full py-3 bg-[#38ADA9] hover:bg-[#2c8a7d] text-white font-semibold rounded-xl text-sm shadow-sm shadow-[#38ADA9]/10 hover:shadow-md hover:shadow-[#38ADA9]/20 transition-all duration-200 transform active:scale-[0.99]">
+            <button className="w-full py-3 bg-[#38ADA9] hover:bg-[#2c8a7d] text-white font-semibold rounded-xl text-sm shadow-sm shadow-[#38ADA9]/10 hover:shadow-md hover:shadow-[#38ADA9]/20 transition-all duration-300 hover:scale-105 active:scale-95 transform">
               Simpan Transaksi
             </button>
           </div>
         </form>
       </section>
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Riwayat Transaksi Mahasiswa</p>

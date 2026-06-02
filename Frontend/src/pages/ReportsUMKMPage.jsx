@@ -412,8 +412,8 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
   ];
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="space-y-6 animate-fade-in-up">
+      <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Manajemen Keuangan</p>
         <h1 className="text-3xl font-semibold text-slate-900">Laporan</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-500">
@@ -421,13 +421,13 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
         </p>
       </section>
 
-      <div className="flex gap-2 border-b border-slate-200 overflow-x-auto">
+      <div className="flex gap-2 border-b border-slate-200 overflow-x-auto pb-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id
-              ? 'border-[#38ADA9] text-[#38ADA9]'
+            className={`px-4 py-3 font-medium text-sm border-b-2 whitespace-nowrap transition-all duration-300 hover:scale-105 active:scale-95 ${activeTab === tab.id
+              ? 'border-[#38ADA9] text-[#38ADA9] font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
           >
