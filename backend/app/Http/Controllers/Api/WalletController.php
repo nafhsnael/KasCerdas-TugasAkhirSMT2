@@ -120,8 +120,8 @@ class WalletController extends Controller
             Transaction::create([
                 'user_id' => $userId,
                 'wallet_id' => $wallet->id,
-                'title' => 'Initial Balance',
-                'category' => 'Initial',
+                'title' => 'Saldo Awal',
+                'category' => 'Saldo Awal',
                 'note' => 'Saldo awal',
                 'type' => 'income',
                 'amount' => (float) $validated['balance'],
