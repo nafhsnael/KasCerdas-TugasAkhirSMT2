@@ -308,9 +308,9 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
   }).length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
         <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Pengaturan Keuangan</p>
         <h1 className="text-3xl font-semibold text-slate-900">Budget</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-500">
@@ -320,25 +320,25 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
 
       {/* Summary Cards */}
       <div className="grid gap-4 xl:grid-cols-4">
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-[28px] border border-slate-200/60 bg-white p-5 shadow-sm hover:shadow-md transition-all duration-300">
           <p className="text-sm uppercase tracking-[0.12em] text-slate-500">Total Budget</p>
           <h3 className="mt-2 text-2xl font-semibold text-slate-900">Rp {totalBudget.toLocaleString('id-ID')}</h3>
           <p className="mt-2 text-xs text-slate-500">{budgets.length} kategori aktif</p>
         </div>
 
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-[28px] border border-slate-200/60 bg-white p-5 shadow-sm hover:shadow-md transition-all duration-300">
           <p className="text-sm uppercase tracking-[0.12em] text-slate-500">Terpakai</p>
           <h3 className="mt-2 text-2xl font-semibold text-slate-900">Rp {totalUsage.toLocaleString('id-ID')}</h3>
           <p className="mt-2 text-xs text-slate-500">{totalUsagePercent}% dari total</p>
         </div>
 
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-[28px] border border-slate-200/60 bg-white p-5 shadow-sm hover:shadow-md transition-all duration-300">
           <p className="text-sm uppercase tracking-[0.12em] text-slate-500">Sisa Budget</p>
           <h3 className="mt-2 text-2xl font-semibold text-emerald-600">Rp {totalRemaining.toLocaleString('id-ID')}</h3>
           <p className="mt-2 text-xs text-slate-500">Masih tersedia</p>
         </div>
 
-        <div className={`rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm ${budgetsExceeded > 0 ? 'ring-2 ring-rose-300' : ''}`}>
+        <div className={`rounded-[28px] border border-slate-200/60 bg-white p-5 shadow-sm hover:shadow-md transition-all duration-300 ${budgetsExceeded > 0 ? 'ring-2 ring-rose-300' : ''}`}>
           <p className="text-sm uppercase tracking-[0.12em] text-slate-500">Status</p>
           <h3 className={`mt-2 text-2xl font-semibold ${budgetsExceeded > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
             {budgetsExceeded > 0 ? `${budgetsExceeded} Terlampaui` : 'Terkontrol'}
@@ -410,14 +410,14 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
-                className="flex-1 rounded-lg bg-[#38ADA9] px-4 py-2 font-medium text-white hover:bg-[#2e8b87] transition"
+                className="flex-1 rounded-lg bg-[#38ADA9] px-4 py-2 font-medium text-white hover:bg-[#2e8b87] hover:scale-105 active:scale-95 transition-all duration-300"
               >
                 {editingId ? 'Perbarui Budget' : 'Tambah Budget'}
               </button>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 rounded-lg bg-slate-200 px-4 py-2 font-medium text-slate-900 hover:bg-slate-300 transition"
+                className="flex-1 rounded-lg bg-slate-200 px-4 py-2 font-medium text-slate-900 hover:bg-slate-300 hover:scale-105 active:scale-95 transition-all duration-300"
               >
                 Batal
               </button>
@@ -430,7 +430,7 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
       {!showForm && (
         <button
           onClick={handleAddBudget}
-          className="w-full rounded-[28px] border-2 border-dashed border-[#38ADA9] bg-[#38ADA9]/5 px-4 py-4 font-medium text-[#38ADA9] hover:bg-[#38ADA9]/10 transition"
+          className="w-full rounded-[28px] border-2 border-dashed border-[#38ADA9] bg-[#38ADA9]/5 px-4 py-4 font-medium text-[#38ADA9] hover:bg-[#38ADA9]/10 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 shadow-sm"
         >
           + Tambah Budget Baru
         </button>

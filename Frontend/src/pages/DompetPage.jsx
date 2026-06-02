@@ -36,9 +36,9 @@ function DompetPage({ onNext }) {
   }
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="mx-auto max-w-lg animate-fade-in-up">
       {/* Header */}
-      <div className="mb-6 rounded-3xl bg-[#38ADA9] p-6 text-white shadow-md">
+      <div className="mb-6 rounded-3xl bg-[#38ADA9] p-6 text-white shadow-md hover:shadow-lg transition-all duration-300">
         <h2 className="text-xl font-bold">Pilih Jenis Dompet</h2>
         <p className="text-sm text-white/80">
           Tentukan penggunaan dompet utama kamu
@@ -51,7 +51,7 @@ function DompetPage({ onNext }) {
           <div
             key={item.id}
             onClick={() => setSelected(item.id)}
-            className={`cursor-pointer rounded-2xl border p-5 transition-all duration-200 ${
+            className={`cursor-pointer rounded-2xl border p-5 transition-all duration-300 hover:shadow-md ${
               selected === item.id
                 ? 'border-[#38ADA9] bg-[#38ADA9]/5 ring-2 ring-[#38ADA9]/20 scale-[1.02]'
                 : 'border-slate-200 bg-white hover:border-[#38ADA9]/50 hover:scale-[1.01]'
@@ -70,7 +70,7 @@ function DompetPage({ onNext }) {
       {/* Button */}
       <button
         onClick={handleSubmit}
-        className="mt-6 w-full rounded-2xl bg-[#38ADA9] py-3.5 font-semibold text-white shadow-md transition hover:bg-[#2e8b87]"
+        className="mt-6 w-full rounded-2xl bg-[#38ADA9] py-3.5 font-semibold text-white shadow-md transition-all duration-300 hover:bg-[#2e8b87] hover:scale-105 active:scale-95 transform"
       >
         Lanjutkan
       </button>

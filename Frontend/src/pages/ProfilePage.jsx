@@ -159,7 +159,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-gray-100 p-6 shadow-sm relative mt-16 mb-8">
+    <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-md transition-all duration-300 relative mt-16 mb-8 animate-fade-in-up">
 
       {/* Avatar/Foto Profil Absolut */}
       <div className="absolute -top-12 left-1/2 transform -translate-x-1/2">
@@ -273,7 +273,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
         <div className="flex gap-4 pt-4">
           <button
             type="submit"
-            className="flex-1 rounded-xl bg-[#38ADA9] hover:bg-[#2c8a7d] py-3 font-semibold text-white shadow-sm shadow-[#38ADA9]/10 hover:shadow-md hover:shadow-[#38ADA9]/20 transition-all duration-200 transform active:scale-[0.99] text-sm"
+            className="flex-1 rounded-xl bg-[#38ADA9] hover:bg-[#2c8a7d] py-3 font-semibold text-white shadow-sm shadow-[#38ADA9]/10 hover:shadow-md hover:shadow-[#38ADA9]/20 transition-all duration-300 hover:scale-105 active:scale-95 transform text-sm"
           >
             Simpan Perubahan
           </button>
