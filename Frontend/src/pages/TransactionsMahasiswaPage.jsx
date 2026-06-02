@@ -39,6 +39,7 @@ function TransactionsMahasiswaPage({
 }) {
   const [deletingId, setDeletingId] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
+  const [toastMessage, setToastMessage] = useState('')
 
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
