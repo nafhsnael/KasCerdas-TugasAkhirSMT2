@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import logoImg from '../../../src/image/logo.jpg'
 
 function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
-const menuItems = [
+  const menuItems = [
     { id: 'dashboard', label: 'Dashboard'},
     { id: 'users', label: 'Kelola Data Pengguna'},
     { id: 'reports', label: 'Reports' },
@@ -21,7 +22,7 @@ const menuItems = [
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-white p-1 flex items-center justify-center">
               <img
-                src="/logo.png"
+                src={logoImg}
                 alt="KasCerdas"
                 className="h-8 w-8 object-contain"
               />

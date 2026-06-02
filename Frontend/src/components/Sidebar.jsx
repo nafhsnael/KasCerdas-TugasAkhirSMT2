@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import logoImg from '../image/logo.jpg'
 
 function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
   const [isExpanded, setIsExpanded] = useState(true)
@@ -22,7 +23,7 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-white p-1 flex items-center justify-center">
               <img
-                src="/image/logo.jpg"
+                src={logoImg}
                 alt="KasCerdas"
                 className="h-8 w-8 object-contain"
               />

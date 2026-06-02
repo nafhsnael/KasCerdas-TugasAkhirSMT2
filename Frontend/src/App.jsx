@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import logoImg from './image/logo.jpg'
 
 import Sidebar from './components/Sidebar'
 import LoginPage from './pages/LoginPage'
@@ -237,7 +238,7 @@ function App() {
       <div className={`mx-auto text-center transition-transform duration-700 ${leaving ? 'scale-75 -translate-y-12' : 'scale-100 translate-y-0'}`}>
         <div className={`mx-auto h-36 w-36 overflow-hidden rounded-full border-2 border-white/30 bg-white/30 p-4 flex items-center justify-center ${leaving ? 'logo-fly' : ''}`}>
           <img
-            src="/logo.png"
+            src={logoImg}
             alt="KasCerdas"
             className={`h-full w-full object-contain transition-all duration-700 ${leaving ? 'opacity-0 -translate-y-4 scale-75' : 'opacity-100 translate-y-0 scale-100'} animate-bounce`}
           />

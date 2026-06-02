@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import logoImg from '../../../../src/image/logo.jpg'
 
 export default function LandingPage({ onLoginClick, onRegisterClick }) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -33,7 +34,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="KasCerdas" className="h-8 w-8" />
+              <img src={logoImg} alt="KasCerdas" className="h-8 w-8" />
               <span className="text-xl font-bold text-teal-600">KasCerdas</span>
             </div>
 
