@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import logoImg from '../image/logo.jpg'
+import logoImg from '../../../../src/image/logo.jpg'
 
 export default function LandingPage({ onLoginClick, onRegisterClick }) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -12,7 +12,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
         </svg>
       ),
       title: 'Kelola Keuangan',
-      description: 'Catat semua transaksi keuangan Anda dengan mudah dan terorganisir',
+      description: 'Pencatatan seluruh transaksi keuangan secara terorganisasi, sistematis, dan praktis.',
     },
     {
       icon: (
@@ -21,7 +21,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
         </svg>
       ),
       title: 'Analisis Mendalam',
-      description: 'Lihat laporan dan analisis terperinci tentang pengeluaran dan pemasukan Anda',
+      description: 'Visualisasi analisis laporan pengeluaran serta pemasukan secara komprehensif demi mendukung keputusan finansial Anda.',
     },
     {
       icon: (
@@ -32,7 +32,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
         </svg>
       ),
       title: 'Budgeting Cerdas',
-      description: 'Atur budget untuk setiap kategori dan pantau pengeluaran Anda secara real-time',
+      description: 'Perencanaan anggaran per kategori secara disiplin guna mengontrol pengeluaran secara waktu nyata (real-time).',
     },
     {
       icon: (
@@ -41,7 +41,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
         </svg>
       ),
       title: 'Akses Mudah',
-      description: 'Kelola keuangan Anda kapan saja, di mana saja melalui aplikasi web',
+      description: 'Pengelolaan keuangan secara fleksibel kapan saja dan di mana saja melalui platform web yang responsif.',
     },
   ]
 
@@ -153,11 +153,11 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
             {features.map((feature, idx) => (
               <div
                 key={idx}
-                className="p-6 rounded-lg border border-slate-200 hover:shadow-lg transition bg-slate-50"
+                className="p-8 rounded-lg border border-slate-200 hover:shadow-lg transition bg-slate-50"
               >
                 {feature.icon}
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">{feature.title}</h3>
-                <p className="text-slate-600">{feature.description}</p>
+                <h3 className="text-xl font-semibold text-slate-900 mb-3 tracking-tight leading-snug">{feature.title}</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>

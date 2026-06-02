@@ -6,22 +6,40 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
 
   const features = [
     {
-      icon: '💰',
+      icon: (
+        <svg className="w-10 h-10 text-teal-600 mb-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+      ),
       title: 'Kelola Keuangan',
       description: 'Catat semua transaksi keuangan Anda dengan mudah dan terorganisir',
     },
     {
-      icon: '📊',
+      icon: (
+        <svg className="w-10 h-10 text-teal-600 mb-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
       title: 'Analisis Mendalam',
       description: 'Lihat laporan dan analisis terperinci tentang pengeluaran dan pemasukan Anda',
     },
     {
-      icon: '🎯',
+      icon: (
+        <svg className="w-10 h-10 text-teal-600 mb-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="6" />
+          <circle cx="12" cy="12" r="2" />
+        </svg>
+      ),
       title: 'Budgeting Cerdas',
       description: 'Atur budget untuk setiap kategori dan pantau pengeluaran Anda secara real-time',
     },
     {
-      icon: '📱',
+      icon: (
+        <svg className="w-10 h-10 text-teal-600 mb-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+      ),
       title: 'Akses Mudah',
       description: 'Kelola keuangan Anda kapan saja, di mana saja melalui aplikasi web',
     },
@@ -137,7 +155,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
                 key={idx}
                 className="p-6 rounded-lg border border-slate-200 hover:shadow-lg transition bg-slate-50"
               >
-                <div className="text-4xl mb-4">{feature.icon}</div>
+                {feature.icon}
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">{feature.title}</h3>
                 <p className="text-slate-600">{feature.description}</p>
               </div>
