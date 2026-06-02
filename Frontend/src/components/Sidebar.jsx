@@ -22,7 +22,7 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-white p-1 flex items-center justify-center">
               <img
-                src="/logo.png"
+                src="/image/logo.jpg"
                 alt="KasCerdas"
                 className="h-8 w-8 object-contain"
               />
