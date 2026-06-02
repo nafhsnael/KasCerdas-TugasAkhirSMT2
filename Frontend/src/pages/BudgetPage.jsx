@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import BudgetCard from '../components/BudgetCard'
+import CustomModal from '../components/CustomModal'
 
 function BudgetPage({ transactions, budgets, setBudgets, userType }) {
   const [formData, setFormData] = useState({
@@ -17,6 +18,24 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
   const [message, setMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMonth, setSelectedMonth] = useState('')
+
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: null,
+  })
+
+  const showDangerConfirm = (message, onConfirm, title = 'Konfirmasi Hapus') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'danger',
+      onConfirm,
+    })
+  }
 
   // Calculate actual usage from transactions for current month
   const now = new Date()
@@ -195,11 +214,11 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
   }
 
   const handleDeleteBudget = (id) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus budget ini?')) {
+    showDangerConfirm('Apakah Anda yakin ingin menghapus budget ini?', () => {
       setBudgets((currentBudgets) => currentBudgets.filter((b) => b.id !== id))
       setMessage('Budget berhasil dihapus!')
       setTimeout(() => setMessage(''), 3000)
-    }
+    })
   }
 
   const handleCancel = () => {
@@ -503,6 +522,14 @@ function BudgetPage({ transactions, budgets, setBudgets, userType }) {
       </div>
 
 
+      <CustomModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={modalConfig.onConfirm}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

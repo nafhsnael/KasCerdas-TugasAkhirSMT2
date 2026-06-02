@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import CustomModal from '../components/CustomModal'
 
 function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
   const [email, setEmail] = useState('')
@@ -6,6 +7,20 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+  })
+
+  const showAlert = (message, title = 'Pemberitahuan') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+    })
+  }
 
   const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
 
@@ -16,7 +31,7 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
       if (typeof showCustomAlert === 'function') {
         showCustomAlert('Password dan konfirmasi password tidak cocok', 'error')
       } else {
-        alert('Password dan konfirmasi password tidak cocok')
+        showAlert('Password dan konfirmasi password tidak cocok', 'Validasi Gagal')
       }
       return
     }
@@ -72,10 +87,13 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
               }
             });
           } else {
-            alert(msg);
-            if (typeof onSwitch === 'function') {
-              onSwitch();
-            }
+            showAlert(msg, 'Sudah Terdaftar');
+            // Sedikit delay sebelum switch
+            setTimeout(() => {
+              if (typeof onSwitch === 'function') {
+                onSwitch();
+              }
+            }, 2000);
           }
           return;
         }
@@ -83,7 +101,7 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
         if (typeof showCustomAlert === 'function') {
           showCustomAlert(errorText || 'Registrasi gagal', 'error')
         } else {
-          alert(errorText || 'Registrasi gagal')
+          showAlert(errorText || 'Registrasi gagal', 'Gagal Registrasi')
         }
         return
       }
@@ -105,7 +123,7 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
       if (typeof showCustomAlert === 'function') {
         showCustomAlert('Tidak bisa terhubung ke server. Pastikan backend Laravel sudah jalan.', 'error')
       } else {
-        alert('Tidak bisa terhubung ke server. Pastikan backend Laravel sudah jalan.')
+        showAlert('Tidak bisa terhubung ke server. Pastikan backend Laravel sudah jalan.', 'Koneksi Gagal')
       }
     } finally {
       setLoading(false)
@@ -233,6 +251,13 @@ function RegisterPage({ onSwitch, onAuthenticate, showCustomAlert }) {
           </form>
         </div>
       </div>
+
+      <CustomModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

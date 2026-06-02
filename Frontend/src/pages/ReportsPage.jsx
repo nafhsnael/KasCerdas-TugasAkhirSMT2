@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import StatCard from '../components/StatCard'
 import { debtAPI, savingAPI } from '../utils/api'
+import CustomModal from '../components/CustomModal'
 
 function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) {
   const [selectedDebt, setSelectedDebt] = useState(null);
@@ -11,6 +12,22 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
   const [addForm, setAddForm] = useState({ name: '', amount: '' })
   const [debtForm, setDebtForm] = useState({ creditor: '', amount: '', dueDate: '' })
   const [saveMessage, setSaveMessage] = useState('')
+
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+  })
+
+  const showAlert = (message, title = 'Pemberitahuan') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'info',
+    })
+  }
 
   useEffect(() => {
     if (!saveMessage) return
@@ -283,15 +300,15 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
                   const dueDate = debtForm.dueDate
 
                   if (!creditor) {
-                    alert('Judul hutang wajib diisi')
+                    showAlert('Judul hutang wajib diisi', 'Validasi Gagal')
                     return
                   }
                   if (!amount || Number.isNaN(amount) || amount <= 0) {
-                    alert('Jumlah hutang harus lebih dari 0')
+                    showAlert('Jumlah hutang harus lebih dari 0', 'Validasi Gagal')
                     return
                   }
                   if (!dueDate) {
-                    alert('Jatuh tempo wajib diisi')
+                    showAlert('Jatuh tempo wajib diisi', 'Validasi Gagal')
                     return
                   }
 
@@ -313,7 +330,7 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
                     setDebtForm({ creditor: '', amount: '', dueDate: '' })
                     setSaveMessage('Daftar hutang baru berhasil ditambahkan!')
                   } catch (error) {
-                    alert(error?.message || 'Gagal menambahkan daftar hutang baru')
+                    showAlert(error?.message || 'Gagal menambahkan daftar hutang baru', 'Kesalahan')
                   }
                 }}
               >
@@ -488,11 +505,11 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
                   const target = parseFloat(addForm.amount)
 
                   if (!name) {
-                    alert('Nama tabungan wajib diisi')
+                    showAlert('Nama tabungan wajib diisi', 'Validasi Gagal')
                     return
                   }
                   if (!target || Number.isNaN(target) || target <= 0) {
-                    alert('Jumlah (Rp) harus lebih dari 0')
+                    showAlert('Jumlah (Rp) harus lebih dari 0', 'Validasi Gagal')
                     return
                   }
 
@@ -524,7 +541,7 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
                     setAddForm({ name: '', amount: '' })
                     setSaveMessage('Target tabungan berhasil ditambahkan!')
                   } catch (error) {
-                    alert(error?.message || 'Gagal menambah target tabungan')
+                    showAlert(error?.message || 'Gagal menambah target tabungan', 'Kesalahan')
                   }
                 }}
               >
@@ -595,6 +612,13 @@ function ReportsPage({ transactions, debts, savings, onAddSavings, onAddDebt }) 
           </div>
         </div>
       )}
+      <CustomModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

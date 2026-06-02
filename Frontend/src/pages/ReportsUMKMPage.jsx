@@ -1,9 +1,38 @@
 import { useMemo, useState, useEffect } from 'react'
 import StatCard from '../components/StatCard'
 import { debtAPI } from '../utils/api'
+import CustomModal from '../components/CustomModal'
 
 function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSavings, onEditSavings, onDeleteSavings, onAddDebt, onEditDebt, onDeleteDebt, defaultTab = 'daily', setDefaultTab }) {
   const [activeTab, setActiveTab] = useState(defaultTab)
+
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: null,
+  })
+
+  const showAlert = (message, title = 'Pemberitahuan') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'info',
+      onConfirm: null,
+    })
+  }
+
+  const showDangerConfirm = (message, onConfirm, title = 'Konfirmasi Hapus') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'danger',
+      onConfirm,
+    })
+  }
 
   useEffect(() => {
     if (defaultTab && defaultTab !== activeTab) {
@@ -588,15 +617,15 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                 const dueDate = debtForm.dueDate
 
                 if (!creditor) {
-                  alert('Judul hutang wajib diisi')
+                  showAlert('Judul hutang wajib diisi', 'Validasi Gagal')
                   return
                 }
                 if (!amount || Number.isNaN(amount) || amount <= 0) {
-                  alert('Jumlah hutang harus lebih dari 0')
+                  showAlert('Jumlah hutang harus lebih dari 0', 'Validasi Gagal')
                   return
                 }
                 if (!dueDate) {
-                  alert('Jatuh tempo wajib diisi')
+                  showAlert('Jatuh tempo wajib diisi', 'Validasi Gagal')
                   return
                 }
 
@@ -615,7 +644,7 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                   setIsAddingDebt(false)
                   setDebtForm({ creditor: '', amount: '', dueDate: '' })
                 } catch (error) {
-                  alert(error?.message || 'Gagal menambahkan daftar hutang baru')
+                  showAlert(error?.message || 'Gagal menambahkan daftar hutang baru', 'Kesalahan')
                 }
               }}>
                 <div>
@@ -669,7 +698,6 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
             <h3 className="font-bold text-slate-900 text-lg mb-3">Daftar Hutang</h3>
 
             <div className="flex items-center gap-3 mb-5 w-full">
-              {/* Bar Pencarian */}
               <div className="relative flex-1">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -685,7 +713,6 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                 />
               </div>
 
-              {/* Dropdown Filter Bulan */}
               <div className="relative w-48 min-w-[180px]">
                 <select 
                   value={debtFilterMonth}
@@ -732,18 +759,18 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                             const dueDate = editDebtForm.dueDate
                             const status = editDebtForm.status
 
-                            if (!creditor) {
-                              alert('Kreditur wajib diisi')
-                              return
-                            }
-                            if (!amount || Number.isNaN(amount) || amount <= 0) {
-                              alert('Jumlah harus lebih dari 0')
-                              return
-                            }
-                            if (!dueDate) {
-                              alert('Tanggal wajib diisi')
-                              return
-                            }
+                             if (!creditor) {
+                               showAlert('Judul hutang wajib diisi', 'Validasi Gagal')
+                               return
+                             }
+                             if (!amount || Number.isNaN(amount) || amount <= 0) {
+                               showAlert('Jumlah hutang harus lebih dari 0', 'Validasi Gagal')
+                               return
+                             }
+                             if (!dueDate) {
+                               showAlert('Jatuh tempo wajib diisi', 'Validasi Gagal')
+                               return
+                             }
 
                             try {
                               await onEditDebt(debt.id, { creditor, amount, dueDate, status, note: debt.note })
@@ -849,13 +876,14 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                             </button>
                             <button
                               type="button"
-                              onClick={async () => {
-                                if (!window.confirm('Yakin ingin menghapus hutang ini?')) return
-                                try {
-                                  await onDeleteDebt(debt.id)
-                                } catch (err) {
-                                  return
-                                }
+                              onClick={() => {
+                                showDangerConfirm('Yakin ingin menghapus hutang ini?', async () => {
+                                  try {
+                                    await onDeleteDebt(debt.id)
+                                  } catch (err) {
+                                    // handled
+                                  }
+                                })
                               }}
                               className="rounded-3xl bg-red-100 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-200"
                             >
@@ -908,15 +936,15 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                 const dueDate = piutangForm.dueDate
 
                 if (!customer) {
-                  alert('Nama pelanggan wajib diisi')
+                  showAlert('Nama pelanggan wajib diisi', 'Validasi Gagal')
                   return
                 }
                 if (!amount || Number.isNaN(amount) || amount <= 0) {
-                  alert('Jumlah piutang harus lebih dari 0')
+                  showAlert('Jumlah piutang harus lebih dari 0', 'Validasi Gagal')
                   return
                 }
                 if (!dueDate) {
-                  alert('Jatuh tempo wajib diisi')
+                  showAlert('Jatuh tempo wajib diisi', 'Validasi Gagal')
                   return
                 }
 
@@ -935,7 +963,7 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                   setIsAddingPiutang(false)
                   setPiutangForm({ customer: '', amount: '', dueDate: '' })
                 } catch (error) {
-                  alert(error?.message || 'Gagal menambahkan daftar piutang baru')
+                  showAlert(error?.message || 'Gagal menambahkan daftar piutang baru', 'Kesalahan')
                 }
               }}>
                 <div>
@@ -989,7 +1017,6 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
             <h3 className="font-bold text-slate-900 text-lg mb-3">Daftar Piutang</h3>
 
             <div className="flex items-center gap-3 mb-5 w-full">
-              {/* Bar Pencarian */}
               <div className="relative flex-1">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1005,7 +1032,6 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                 />
               </div>
 
-              {/* Dropdown Filter Bulan */}
               <div className="relative w-48 min-w-[180px]">
                 <select 
                   value={piutangFilterMonth}
@@ -1053,15 +1079,15 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                             const status = editDebtForm.status
 
                             if (!creditor) {
-                              alert('Nama pelanggan wajib diisi')
+                              showAlert('Nama pelanggan wajib diisi', 'Validasi Gagal')
                               return
                             }
                             if (!amount || Number.isNaN(amount) || amount <= 0) {
-                              alert('Jumlah harus lebih dari 0')
+                              showAlert('Jumlah harus lebih dari 0', 'Validasi Gagal')
                               return
                             }
                             if (!dueDate) {
-                              alert('Tanggal wajib diisi')
+                              showAlert('Tanggal wajib diisi', 'Validasi Gagal')
                               return
                             }
 
@@ -1169,13 +1195,14 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                             </button>
                             <button
                               type="button"
-                              onClick={async () => {
-                                if (!window.confirm('Yakin ingin menghapus piutang ini?')) return
-                                try {
-                                  await onDeleteDebt(debt.id)
-                                } catch (err) {
-                                  return
-                                }
+                              onClick={() => {
+                                showDangerConfirm('Yakin ingin menghapus piutang ini?', async () => {
+                                  try {
+                                    await onDeleteDebt(debt.id)
+                                  } catch (err) {
+                                    // handled
+                                  }
+                                })
                               }}
                               className="rounded-3xl bg-red-100 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-200"
                             >
@@ -1230,11 +1257,11 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                   const target = parseFloat(addForm.amount)
 
                   if (!name) {
-                    alert('Nama tabungan wajib diisi')
+                    showAlert('Nama tabungan wajib diisi', 'Validasi Gagal')
                     return
                   }
                   if (!target || Number.isNaN(target) || target <= 0) {
-                    alert('Jumlah (Rp) harus lebih dari 0')
+                    showAlert('Jumlah (Rp) harus lebih dari 0', 'Validasi Gagal')
                     return
                   }
 
@@ -1250,8 +1277,8 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                     setIsAddingSaving(false)
                     setAddForm({ name: '', amount: '' })
                   } catch (err) {
-                    alert(err?.message || 'Gagal menambah target tabungan')
-                    return
+                     showAlert(err?.message || 'Gagal menambah target tabungan', 'Kesalahan')
+                     return
                   }
                 }}
               >
@@ -1304,7 +1331,6 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
           <h3 className="font-bold text-slate-900 text-lg mb-3">Daftar Target Tabungan</h3>
 
           <div className="flex items-center gap-3 mb-5 w-full">
-            {/* Bar Pencarian */}
             <div className="relative flex-1">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1320,7 +1346,6 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
               />
             </div>
 
-            {/* Dropdown Filter Bulan */}
             <div className="relative w-48 min-w-[180px]">
               <select 
                 value={savingFilterMonth}
@@ -1354,14 +1379,14 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                       const name = String(editForm.name || '').trim()
                       const target = parseFloat(editForm.amount)
 
-                      if (!name) {
-                        alert('Nama tabungan wajib diisi')
-                        return
-                      }
-                      if (!target || Number.isNaN(target) || target <= 0) {
-                        alert('Jumlah target harus lebih dari 0')
-                        return
-                      }
+                     if (!name) {
+                       showAlert('Nama tabungan wajib diisi', 'Validasi Gagal')
+                       return
+                     }
+                     if (!target || Number.isNaN(target) || target <= 0) {
+                       showAlert('Jumlah (Rp) harus lebih dari 0', 'Validasi Gagal')
+                       return
+                     }
 
                       try {
                         await onEditSavings(saving.id, { name, target })
@@ -1411,15 +1436,16 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                       </button>
                       <button
                         type="button"
-                        onClick={async () => {
-                          if (!window.confirm('Yakin ingin menghapus target tabungan ini?')) return
-                          try {
-                            await onDeleteSavings(saving.id)
-                            cancelEditingSaving()
-                          } catch (err) {
-                            return
-                          }
-                        }}
+                        onClick={() => {
+                           showDangerConfirm('Yakin ingin menghapus target tabungan ini?', async () => {
+                             try {
+                               await onDeleteSavings(saving.id)
+                               cancelEditingSaving()
+                             } catch (err) {
+                               // handled
+                             }
+                           })
+                         }}
                         className="rounded-3xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
                       >
                         Hapus
@@ -1452,13 +1478,14 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
                       </button>
                       <button
                         type="button"
-                        onClick={async () => {
-                          if (!window.confirm('Yakin ingin menghapus target tabungan ini?')) return
-                          try {
-                            await onDeleteSavings(saving.id)
-                          } catch (err) {
-                            return
-                          }
+                        onClick={() => {
+                          showDangerConfirm('Yakin ingin menghapus target tabungan ini?', async () => {
+                            try {
+                              await onDeleteSavings(saving.id)
+                            } catch (err) {
+                              // handled
+                            }
+                          })
                         }}
                         className="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
                       >
@@ -1472,6 +1499,14 @@ function ReportsUMKMPage({ transactions, debts, savings, onNavigate, onAddSaving
           </div>
         </div>
       )}
+      <CustomModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={modalConfig.onConfirm}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

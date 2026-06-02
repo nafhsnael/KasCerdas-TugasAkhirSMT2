@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import CustomModal from '../components/CustomModal'
 
 function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
   const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
@@ -15,6 +16,22 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
   };
   const [profileImage, setProfileImage] = useState(userProfile?.profileImage || '');
   const [imagePreview, setImagePreview] = useState(userProfile?.profileImage || '');
+
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+  })
+
+  const showAlert = (message, title = 'Pemberitahuan') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'info',
+    })
+  }
 
   const jenisProfilValue = useMemo(() => {
     const type = profile.usertype || userProfile?.usertype || '';
@@ -82,7 +99,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!profile.nama || !profile.email || !profile.username) {
-      alert('Mohon isi field Nama, Email, dan Username');
+      showAlert('Mohon isi field Nama, Email, dan Username', 'Validasi Gagal');
       return;
     }
     const token = window.localStorage.getItem('token');
@@ -120,7 +137,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
             setImagePreview(updatedUser.profileImage);
           }
         }
-        alert('Profil berhasil diperbarui!');
+        showAlert('Profil berhasil diperbarui!', 'Berhasil');
       } else {
         // Parse error response safely, fallback to raw text
         let errorMsg = `Gagal memperbarui profil (status ${response.status})`;
@@ -133,11 +150,11 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
           const errText = await response.text();
           if (errText) errorMsg = errText;
         }
-        alert(errorMsg);
+        showAlert(errorMsg, 'Gagal');
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Terjadi kesalahan saat menyimpan');
+      showAlert('Terjadi kesalahan saat menyimpan', 'Kesalahan');
     }
   }
 
@@ -262,6 +279,14 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
           </button>
         </div>
       </form>
+
+      <CustomModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

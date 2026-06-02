@@ -1,7 +1,13 @@
 import { useState } from 'react'
+import CustomModal from '../components/CustomModal'
 
 function DompetPage({ onNext }) {
   const [selected, setSelected] = useState(null)
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+  })
 
   const options = [
     {
@@ -18,7 +24,11 @@ function DompetPage({ onNext }) {
 
   const handleSubmit = () => {
     if (!selected) {
-      alert('Pilih dompet dulu ya!')
+      setModalConfig({
+        isOpen: true,
+        title: 'Pemberitahuan',
+        message: 'Pilih dompet dulu ya!',
+      })
       return
     }
 
@@ -64,6 +74,13 @@ function DompetPage({ onNext }) {
       >
         Lanjutkan
       </button>
+
+      <CustomModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

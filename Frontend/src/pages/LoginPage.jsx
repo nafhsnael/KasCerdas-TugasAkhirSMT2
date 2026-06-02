@@ -1,9 +1,23 @@
 import { useState } from 'react'
+import CustomModal from '../components/CustomModal'
 
 function LoginPage({ onSwitch, onAuthenticate }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+  })
+
+  const showAlert = (message, title = 'Pemberitahuan') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+    })
+  }
 
   const backendUrl = 'https://backend-kascerdas-production.up.railway.app'
 
@@ -25,7 +39,7 @@ function LoginPage({ onSwitch, onAuthenticate }) {
 
       if (!res.ok || !json.success) {
         const firstError = json?.errors ? Object.values(json.errors).flat()[0] : null
-        alert(firstError || json?.message || 'Login gagal')
+        showAlert(firstError || json?.message || 'Login gagal', 'Gagal Masuk')
         return
       }
 
@@ -40,7 +54,7 @@ function LoginPage({ onSwitch, onAuthenticate }) {
         avatar: json.data.user.avatar,
       })
     } catch (error) {
-      alert('Tidak bisa terhubung ke server. Pastikan backend Laravel sudah jalan.')
+      showAlert('Tidak bisa terhubung ke server. Pastikan backend Laravel sudah jalan.', 'Koneksi Gagal')
     } finally {
       setLoading(false)
     }
@@ -137,6 +151,13 @@ function LoginPage({ onSwitch, onAuthenticate }) {
           </form>
         </div>
       </div>
+
+      <CustomModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

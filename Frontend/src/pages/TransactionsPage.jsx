@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
+import CustomModal from '../components/CustomModal'
 
 const defaultCategories = ['Makan', 'Hutang','Transport', 'Belanja', 'Tagihan', 'Kebutuhan Lainnya']
 
@@ -25,6 +26,23 @@ function TransactionsPage({
     type: 'expense',
     receipt: null,
   })
+  const [fileInputKey, setFileInputKey] = useState(0)
+
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+  })
+
+  const showAlert = (message, title = 'Pemberitahuan') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'info',
+    })
+  }
 
   const mahasiswaIncomeCategories = ['Uang Saku/Kiriman', 'Beasiswa', 'Penghasilan Kerja Paruh Waktu']
   const mahasiswaExpenseCategories = ['UKT', 'Buku/Alat Tulis', 'Makan','Hutang', 'Kos', 'Transportasi']
@@ -92,14 +110,14 @@ function TransactionsPage({
     const maxSize = 5 * 1024 * 1024 // 5MB, sama dengan validasi backend Laravel
 
     if (!allowedTypes.includes(file.type)) {
-      alert('Format file harus JPG, JPEG, PNG, atau PDF')
+      showAlert('Format file harus JPG, JPEG, PNG, atau PDF', 'Format Tidak Didukung')
       e.target.value = ''
       setForm((prev) => ({ ...prev, receipt: null }))
       return
     }
 
     if (file.size > maxSize) {
-      alert('Ukuran file maksimal 5MB')
+      showAlert('Ukuran file maksimal 5MB', 'Ukuran Terlalu Besar')
       e.target.value = ''
       setForm((prev) => ({ ...prev, receipt: null }))
       return
@@ -138,7 +156,7 @@ function TransactionsPage({
   const handleSubmit = (event) => {
     event.preventDefault()
     if (!form.title || !form.amount || !form.date) {
-      alert('Mohon isi semua field yang wajib (Judul, Jumlah, Tanggal)')
+      showAlert('Mohon isi semua field yang wajib (Judul, Jumlah, Tanggal)', 'Validasi Gagal')
       return
     }
     const newTransaction = {
@@ -152,7 +170,7 @@ function TransactionsPage({
       receipt: form.receipt,
     }
     onAddTransaction(newTransaction)
-    alert('Transaksi baru berhasil ditambahkan!')
+    showAlert('Transaksi baru berhasil ditambahkan!', 'Berhasil')
     setForm({ title: '', amount: '', category: 'Makan', date: '', note: '', type: 'expense', receipt: null })
   }
 
@@ -362,6 +380,14 @@ function TransactionsPage({
         isOpen={isInvoiceModalOpen}
         transaction={selectedInvoice}
         onClose={handleCloseInvoiceModal}
+      />
+
+      <CustomModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>
   )

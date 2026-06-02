@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import TransactionCard from '../components/TransactionCard'
 import InvoiceModal from '../components/InvoiceModal'
+import CustomModal from '../components/CustomModal'
 
 import { transactionAPI } from '../utils/api'
 
@@ -31,30 +32,53 @@ function TransactionsUMKMPage({
   const [fieldErrors, setFieldErrors] = useState({})
   const [toastMessage, setToastMessage] = useState('')
 
-  const deleteTransaction = async (transaction) => {
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: null,
+  })
+
+  const showAlert = (message, title = 'Pemberitahuan') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'info',
+      onConfirm: null,
+    })
+  }
+
+  const showDangerConfirm = (message, onConfirm, title = 'Konfirmasi Hapus') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'danger',
+      onConfirm,
+    })
+  }
+
+  const deleteTransaction = (transaction) => {
     if (!transaction?.id) {
-      alert('Transaksi ini tidak bisa dihapus (data belum tersinkron ke server)')
+      showAlert('Transaksi ini tidak bisa dihapus (data belum tersinkron ke server)', 'Pemberitahuan')
       return
     }
 
-    const ok = window.confirm('Hapus transaksi ini?')
-    if (!ok) return
-
-    try {
-      setDeletingId(transaction.id)
-      
-      // Jika ID diawali dengan 't', ini adalah ID lokal sementara yang belum tersimpan di backend.
-      // Kita tidak perlu memanggil API delete di backend.
-      if (!String(transaction.id).startsWith('t')) {
-        await transactionAPI.delete(transaction.id)
+    showDangerConfirm('Apakah Anda yakin ingin menghapus transaksi ini?', async () => {
+      try {
+        setDeletingId(transaction.id)
+        if (!String(transaction.id).startsWith('t')) {
+          await transactionAPI.delete(transaction.id)
+        }
+        window.location.reload()
+      } catch (e) {
+        showAlert(e?.message || 'Gagal menghapus transaksi', 'Kesalahan')
+      } finally {
+        setDeletingId(null)
       }
-      
-      window.location.reload()
-    } catch (e) {
-      alert(e?.message || 'Gagal menghapus transaksi')
-    } finally {
-      setDeletingId(null)
-    }
+    })
   }
 
 
@@ -192,14 +216,14 @@ function TransactionsUMKMPage({
     const maxSize = 5 * 1024 * 1024 // 5MB, sama dengan validasi backend Laravel
 
     if (!allowedTypes.includes(file.type)) {
-      alert('Format file harus JPG, JPEG, PNG, atau PDF')
+      showAlert('Format file harus JPG, JPEG, PNG, atau PDF', 'Format Tidak Didukung')
       e.target.value = ''
       setForm((prev) => ({ ...prev, receipt: null }))
       return
     }
 
     if (file.size > maxSize) {
-      alert('Ukuran file maksimal 5MB')
+      showAlert('Ukuran file maksimal 5MB', 'Ukuran Terlalu Besar')
       e.target.value = ''
       setForm((prev) => ({ ...prev, receipt: null }))
       return
@@ -551,6 +575,15 @@ function TransactionsUMKMPage({
           setIsInvoiceModalOpen(false)
           setSelectedInvoice(null)
         }}
+      />
+
+      <CustomModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={modalConfig.onConfirm}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>
   )
