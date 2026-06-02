@@ -285,7 +285,7 @@ function AdminUsersPage() {
 
       {/* Edit Modal */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="mb-4 text-lg font-bold text-slate-900">Edit User</h2>
             <form onSubmit={handleSaveEdit} className="space-y-4">
