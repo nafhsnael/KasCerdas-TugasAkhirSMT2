@@ -35,19 +35,65 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-8 rounded shadow-md">
-        <h2 className="text-2xl font-bold mb-6 text-center text-teal-600">Admin KasCerdas</h2>
-        <div className="mb-4">
-          <input type="text" placeholder="Username Admin" className="w-full p-2 border rounded" 
-            value={username} onChange={(e) => setUsername(e.target.value)} required />
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md rounded-[32px] bg-white p-8 shadow-xl shadow-slate-200/50 border border-slate-100 animate-fade-in-up">
+        <div className="text-center mb-8">
+          <p className="text-xs uppercase tracking-[0.25em] text-[#38ADA9] font-semibold mb-1">
+            Panel Administrator
+          </p>
+          <h2 className="text-2xl font-bold text-slate-900">
+            KasCerdas Admin
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Masuk untuk mengelola sistem dan data pengguna
+          </p>
         </div>
-        <div className="mb-6">
-          <input type="password" placeholder="Password" className="w-full p-2 border rounded" 
-            value={password} onChange={(e) => setPassword(e.target.value)} required />
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Username Admin / Email
+            </label>
+            <input
+              type="text"
+              placeholder="masukkan username admin"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 shadow-sm outline-none focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 transition-all duration-200 text-sm"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Password
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 shadow-sm outline-none focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 transition-all duration-200 text-sm"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full rounded-3xl bg-[#38ADA9] py-3 font-semibold text-white shadow-lg shadow-teal-600/10 hover:bg-[#2f9692] hover:scale-105 active:scale-95 transition-all duration-300 text-sm"
+          >
+            Login Admin
+          </button>
+        </form>
+
+        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <p className="text-xs text-slate-400 font-medium leading-relaxed">
+            Akun Admin Default:<br />
+            <span className="text-[#38ADA9] font-semibold">admin@kascerdas.com</span> atau username <span className="text-[#38ADA9] font-semibold">admin</span><br />
+            dengan password <span className="text-[#38ADA9] font-semibold">password</span>
+          </p>
         </div>
-        <button type="submit" className="w-full bg-teal-600 text-white p-2 rounded hover:bg-teal-700 transition">Login Admin</button>
-      </form>
+      </div>
     </div>
   );
 };

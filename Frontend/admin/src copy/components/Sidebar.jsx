@@ -67,14 +67,14 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 active:scale-95 ${
               currentPage === item.id
-                ? 'bg-white/20 text-white'
+                ? 'bg-white/20 text-white shadow-sm'
                 : 'text-white/80 hover:bg-white/10'
             }`}
           >
             <span className="text-xl">{item.icon}</span>
-            {isExpanded && <span>{item.label}</span>}
+            {isExpanded && <span className="text-sm">{item.label}</span>}
           </button>
         ))}
       </nav>
@@ -83,24 +83,24 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
       <div className="p-4 border-t border-white/20">
         <button
           onClick={() => setShowLogoutConfirm(true)}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-white/80 hover:bg-white/10 transition ${
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-white/80 hover:bg-white/10 hover:scale-105 active:scale-95 transition-all duration-300 ${
             !isExpanded && 'justify-center'
           }`}
         >
           <span className="text-xl"></span>
-          {isExpanded && <span>Logout</span>}
+          {isExpanded && <span className="text-sm">Logout</span>}
         </button>
       </div>
 
       {showLogoutConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Konfirmasi Logout</h3>
-            <p className="text-gray-600 mb-6">Beneran logout?</p>
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm animate-page-fade">
+          <div className="bg-white rounded-[28px] p-6 max-w-sm w-full mx-4 shadow-xl border border-slate-100 animate-fade-in-up">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Konfirmasi Logout</h3>
+            <p className="text-sm text-gray-500 mb-6">Apakah Anda yakin ingin keluar dari panel admin?</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all duration-200"
               >
                 Batal
               </button>
@@ -109,7 +109,7 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
                   setShowLogoutConfirm(false)
                   onLogout()
                 }}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                className="flex-1 px-4 py-2.5 bg-[#E74C3C] text-white rounded-2xl text-sm font-semibold hover:bg-red-600 hover:scale-105 active:scale-95 transition-all duration-200"
               >
                 Logout
               </button>
