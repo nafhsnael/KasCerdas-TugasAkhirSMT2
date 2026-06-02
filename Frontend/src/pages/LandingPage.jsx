@@ -173,7 +173,13 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="p-8 bg-white rounded-lg shadow-md border-t-4 border-teal-600">
-              <div className="text-5xl mb-4">🎓</div>
+              <div className="mb-4">
+                <svg className="w-12 h-12 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 14v7" />
+                </svg>
+              </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">Mahasiswa</h3>
               <p className="text-slate-600">
                 Kelola uang saku, pantau pengeluaran, dan pelajari pengelolaan keuangan pribadi dengan baik.
@@ -181,7 +187,11 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
             </div>
 
             <div className="p-8 bg-white rounded-lg shadow-md border-t-4 border-teal-600">
-              <div className="text-5xl mb-4">🏪</div>
+              <div className="mb-4">
+                <svg className="w-12 h-12 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">UMKM</h3>
               <p className="text-slate-600">
                 Pantau arus kas bisnis, kelola inventory, piutang, dan analisis performa penjualan Anda.
@@ -189,7 +199,11 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
             </div>
 
             <div className="p-8 bg-white rounded-lg shadow-md border-t-4 border-teal-600">
-              <div className="text-5xl mb-4">👥</div>
+              <div className="mb-4">
+                <svg className="w-12 h-12 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">Masyarakat Umum</h3>
               <p className="text-slate-600">
                 Catat pengeluaran, buat budget keluarga, dan rencanakan masa depan keuangan yang lebih baik.
