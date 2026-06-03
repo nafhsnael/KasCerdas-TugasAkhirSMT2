@@ -368,80 +368,149 @@ function AdminUsersPage() {
 
       {/* Edit Modal */}
       {editingUser && createPortal(
-        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
-          <div className="w-full max-w-md rounded-[28px] bg-white p-7 shadow-2xl">
-            <h2 className="mb-5 text-lg font-bold text-slate-900">Edit Pengguna</h2>
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-fade-in-up">
+          <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl relative overflow-hidden border border-slate-100/80">
+            {/* Decorative Top Accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#38ADA9] via-[#48c4be] to-[#38ADA9]"></div>
+            
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setEditingUser(null)}
+              className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 rounded-full p-1.5 hover:bg-slate-50 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 className="mb-6 text-xl font-bold text-slate-800 tracking-tight">Edit Pengguna</h2>
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Nama</label>
-                <input
-                  required
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 transition-all duration-200"
-                />
+                <label className="text-xs uppercase text-slate-500 font-semibold tracking-wider mb-1.5 block">NAMA</label>
+                <div className="relative flex items-center">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                  </div>
+                  <input
+                    required
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full border border-gray-200 rounded-xl pl-11 pr-4 py-2.5 text-gray-800 bg-transparent focus:outline-none focus:border-[#38ADA9] focus:ring-1 focus:ring-[#38ADA9] transition-colors"
+                  />
+                </div>
               </div>
+              
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Email</label>
-                <input
-                  required
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 transition-all duration-200"
-                />
+                <label className="text-xs uppercase text-slate-500 font-semibold tracking-wider mb-1.5 block">EMAIL</label>
+                <div className="relative flex items-center">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                    </svg>
+                  </div>
+                  <input
+                    required
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full border border-gray-200 rounded-xl pl-11 pr-4 py-2.5 text-gray-800 bg-transparent focus:outline-none focus:border-[#38ADA9] focus:ring-1 focus:ring-[#38ADA9] transition-colors"
+                  />
+                </div>
               </div>
+
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Role</label>
-                <select
-                  required
-                  value={editForm.role}
-                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 transition-all duration-200"
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              {editForm.role === 'user' && (
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Tipe Pengguna</label>
+                <label className="text-xs uppercase text-slate-500 font-semibold tracking-wider mb-1.5 block">ROLE</label>
+                <div className="relative flex items-center">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.617 3.093A8.966 8.966 0 0112 21a8.966 8.966 0 01-7.383-5.907A3.002 3.002 0 013 12c0-1.268.63-2.39 1.617-3.093A8.956 8.956 0 0112 3c2.9 0 5.56 1.372 7.283 3.518A3.002 3.002 0 0121 12z" />
+                    </svg>
+                  </div>
                   <select
                     required
-                    value={editForm.user_type}
-                    onChange={(e) => setEditForm({ ...editForm, user_type: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 transition-all duration-200"
+                    value={editForm.role}
+                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                    className="w-full appearance-none border border-gray-200 rounded-xl pl-11 pr-10 py-2.5 text-gray-800 bg-transparent focus:outline-none focus:border-[#38ADA9] focus:ring-1 focus:ring-[#38ADA9] transition-colors cursor-pointer"
                   >
-                    <option value="" disabled>Pilih Tipe</option>
-                    <option value="umkm">UMKM</option>
-                    <option value="masyarakat_umum">Masyarakat Umum</option>
-                    <option value="mahasiswa">Mahasiswa</option>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
                   </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {editForm.role === 'user' && (
+                <div>
+                  <label className="text-xs uppercase text-slate-500 font-semibold tracking-wider mb-1.5 block">TIPE PENGGUNA</label>
+                  <div className="relative flex items-center">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                      <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 .621-.504 1.125-1.125 1.125H4.875c-.621 0-1.125-.504-1.125-1.125v-4.25m16.5 0a2.25 2.25 0 00-1.883-2.212c-1.385-.233-2.828-.35-4.301-.35-1.472 0-2.916.117-4.302.35a2.25 2.25 0 00-1.882 2.212m16.5 0c-.397-.07-.797-.134-1.2-.193m-15.3 0c.397-.07.797-.134 1.2-.193m3.6-3.375a3.375 3.375 0 00-.195-.1c-1.378-.232-2.77-.348-4.17-.348a17.92 17.92 0 00-3.07.263 3.375 3.375 0 00-2.86 3.19C3.175 11.517 3 12.243 3 13h18c0-.757-.175-1.483-.418-2.19a3.375 3.375 0 00-2.86-3.19 17.92 17.92 0 00-3.07-.263c-1.4 0-2.792.116-4.17.348a3.37 3.37 0 00-.195.1z" />
+                      </svg>
+                    </div>
+                    <select
+                      required
+                      value={editForm.user_type}
+                      onChange={(e) => setEditForm({ ...editForm, user_type: e.target.value })}
+                      className="w-full appearance-none border border-gray-200 rounded-xl pl-11 pr-10 py-2.5 text-gray-800 bg-transparent focus:outline-none focus:border-[#38ADA9] focus:ring-1 focus:ring-[#38ADA9] transition-colors cursor-pointer"
+                    >
+                      <option value="" disabled>Pilih Tipe</option>
+                      <option value="umkm">UMKM</option>
+                      <option value="masyarakat_umum">Masyarakat Umum</option>
+                      <option value="mahasiswa">Mahasiswa</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none">
+                      <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               )}
+
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Status</label>
-                <select
-                  required
-                  value={editForm.is_active ? '1' : '0'}
-                  onChange={(e) => setEditForm({ ...editForm, is_active: e.target.value === '1' })}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-[#38ADA9] focus:ring-2 focus:ring-[#38ADA9]/20 transition-all duration-200"
-                >
-                  <option value="1">Aktif</option>
-                  <option value="0">Nonaktif</option>
-                </select>
+                <label className="text-xs uppercase text-slate-500 font-semibold tracking-wider mb-1.5 block">STATUS</label>
+                <div className="relative flex items-center">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <select
+                    required
+                    value={editForm.is_active ? '1' : '0'}
+                    onChange={(e) => setEditForm({ ...editForm, is_active: e.target.value === '1' })}
+                    className="w-full appearance-none border border-gray-200 rounded-xl pl-11 pr-10 py-2.5 text-gray-800 bg-transparent focus:outline-none focus:border-[#38ADA9] focus:ring-1 focus:ring-[#38ADA9] transition-colors cursor-pointer"
+                  >
+                    <option value="1">Aktif</option>
+                    <option value="0">Nonaktif</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
-              <div className="mt-6 flex justify-end gap-3 pt-2">
+
+              <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
-                  className="rounded-2xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all duration-300"
+                  className="px-6 py-2 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="rounded-2xl bg-[#38ADA9] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-300"
+                  className="px-6 py-2 bg-[#38ADA9] hover:bg-[#2c8a7d] text-white font-medium rounded-xl transition-colors"
                 >
                   Simpan
                 </button>
