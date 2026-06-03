@@ -324,7 +324,7 @@ function AdminUsersPage() {
 
       {/* Confirm Suspend/Activate Modal (replaces window.confirm) */}
       {confirmModal.show && confirmModal.user && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
           <div className="w-full max-w-sm rounded-[28px] bg-white p-7 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${confirmModal.user.is_active ? 'bg-rose-100' : 'bg-emerald-100'}`}>
@@ -365,7 +365,7 @@ function AdminUsersPage() {
 
       {/* Edit Modal */}
       {editingUser && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
           <div className="w-full max-w-md rounded-[28px] bg-white p-7 shadow-2xl">
             <h2 className="mb-5 text-lg font-bold text-slate-900">Edit Pengguna</h2>
             <form onSubmit={handleSaveEdit} className="space-y-4">

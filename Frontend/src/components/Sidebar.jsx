@@ -94,7 +94,7 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
       </div>
 
       {showLogoutConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm animate-page-fade">
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-page-fade">
           <div className="bg-white rounded-[28px] p-8 max-w-sm w-full mx-4 shadow-2xl border border-slate-100 animate-page-fade text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-500 mb-4">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

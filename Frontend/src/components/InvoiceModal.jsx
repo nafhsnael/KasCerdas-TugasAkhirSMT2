@@ -251,7 +251,7 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
   const isPdfReceipt = /application\/pdf/i.test(receiptText) || /\.pdf(\?|#|$)/i.test(receiptText)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all duration-300">
+    <div className="!fixed !inset-0 !w-screen !h-screen !z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all duration-300">
       <div className="relative w-full max-w-md overflow-hidden rounded-[28px] bg-white shadow-2xl border border-slate-50 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white">
