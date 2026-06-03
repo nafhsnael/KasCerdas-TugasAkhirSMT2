@@ -41,12 +41,13 @@ const readInitialToken = () => {
   if (typeof window === 'undefined') return null
 
   const params = new URLSearchParams(window.location.search)
-  const isGoogleCallback = window.location.pathname === '/auth/google/callback'
+  const path = window.location.pathname.toLowerCase().replace(/\/$/, '')
+  const isGoogleCallback = path === '/auth/google/callback'
   const googleToken = isGoogleCallback ? params.get('token') : null
 
   if (googleToken) {
     window.localStorage.setItem('token', googleToken)
-    window.history.replaceState(null, '', '/')
+    window.history.replaceState(null, '', '/dashboard')
     return googleToken
   }
 
@@ -98,7 +99,7 @@ const pathToPage = (path) => {
 }
 
 const pageToPath = (page) => {
-  if (page === 'dashboard') return '/'
+  if (page === 'dashboard') return '/dashboard'
   return `/${page}`
 }
 
@@ -372,6 +373,20 @@ function App() {
     try {
       if (userProfile && (userProfile.nama || userProfile.email || userProfile.user || userProfile.usertype)) {
         window.localStorage.setItem('user_profile', JSON.stringify(userProfile))
+
+        // Synchronize with auth_user for admin context
+        const savedAuthUser = window.localStorage.getItem('auth_user')
+        let authUserObj = savedAuthUser ? JSON.parse(savedAuthUser) : {}
+        authUserObj = {
+          ...authUserObj,
+          name: userProfile.nama,
+          username: userProfile.user,
+          email: userProfile.email,
+          user_type: userProfile.usertype,
+          role: userProfile.usertype === 'admin' ? 'admin' : (authUserObj.role || 'user'),
+          avatar: userProfile.profileImage || authUserObj.avatar || '',
+        }
+        window.localStorage.setItem('auth_user', JSON.stringify(authUserObj))
       }
     } catch (e) {
       console.error('Error saving userProfile to localStorage:', e)
@@ -682,15 +697,33 @@ function App() {
         // Jadi jangan pakai role "user" sebagai usertype.
         const resolvedUserType = authUser.user_type || (isAdmin ? 'admin' : null)
 
-        setUserProfile((prev) => ({
-          ...prev,
-          nama: authUser.name || prev.nama,
-          user: authUser.username || prev.user,
-          email: authUser.email || prev.email,
-          usertype: resolvedUserType,
-          dompet: walletData?.name || (isAdmin ? 'Admin Wallet' : prev.dompet),
-          profileImage: authUser.avatar || prev.profileImage,
-        }))
+        setUserProfile((prev) => {
+          const nextProfile = {
+            ...prev,
+            nama: authUser.name || prev.nama,
+            user: authUser.username || prev.user,
+            email: authUser.email || prev.email,
+            usertype: resolvedUserType,
+            dompet: walletData?.name || (isAdmin ? 'Admin Wallet' : prev.dompet),
+            profileImage: buildStorageUrl(authUser.avatar) || prev.profileImage,
+          }
+          // Direct sync to localStorage to prevent refresh/loading race conditions
+          const authUserObj = {
+            id: authUser.id,
+            name: authUser.name,
+            username: authUser.username,
+            email: authUser.email,
+            role: authUser.role,
+            user_type: authUser.user_type,
+            avatar: authUser.avatar || '',
+          }
+          window.localStorage.setItem('auth_user', JSON.stringify(authUserObj))
+          window.localStorage.setItem('user_profile', JSON.stringify(nextProfile))
+          if (resolvedUserType) {
+            window.localStorage.setItem('user_profile_type', resolvedUserType)
+          }
+          return nextProfile
+        })
 
         setWalletInfo(walletData)
 
@@ -802,9 +835,9 @@ function App() {
       return
     }
 
-    if (isAuthenticated && (currentPage === 'login' || currentPage === 'register')) {
+    if (isAuthenticated && (currentPage === 'login' || currentPage === 'register' || (currentPage === 'dashboard' && window.location.pathname === '/'))) {
       if (typeof window !== 'undefined') {
-        window.history.replaceState(null, '', '/')
+        window.history.replaceState(null, '', '/dashboard')
       }
       setCurrentPage('dashboard')
     }
@@ -1538,9 +1571,21 @@ function App() {
         user: userData.username || '',
         usertype: profileType || null,
         dompet: null,
-        profileImage: userData.avatar || '',
+        profileImage: buildStorageUrl(userData.avatar) || '',
       };
       window.localStorage.setItem('user_profile', JSON.stringify(profile));
+
+      // Also set auth_user for AdminRoute compatibility
+      const authUserObj = {
+        id: userData.id,
+        name: userData.name,
+        username: userData.username,
+        email: userData.email,
+        role: userData.role || profileType,
+        user_type: profileType,
+        avatar: userData.avatar || '',
+      };
+      window.localStorage.setItem('auth_user', JSON.stringify(authUserObj));
     } catch (e) {
       // ignore storage errors
     }
@@ -1553,7 +1598,7 @@ function App() {
         user: userData.username || prev.user,
         email: userData.email || prev.email,
         usertype: userData.user_type || userData.role || prev.usertype,
-        profileImage: userData.avatar || prev.profileImage,
+        profileImage: buildStorageUrl(userData.avatar) || prev.profileImage,
       }));
     }
 
@@ -1595,7 +1640,7 @@ function App() {
       // Update global profile and persist the chosen type
       setUserProfile(prev => ({
         ...prev,
-        usertype: json.user?.user_type ?? selectedUserType,
+        usertype: json.data?.user_type ?? selectedUserType,
       }));
       // Store for future page loads / refreshes
       try {
@@ -1907,7 +1952,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      {isAuthenticated && !showUserType && !showInitialBalance && (
+      {isAuthenticated && !showUserType && !showInitialBalance && !window.location.pathname.startsWith('/admin') && (
         <Sidebar
           currentPage={currentPage}
           onNavigate={(page) => navigateTo(page)}
@@ -1915,7 +1960,7 @@ function App() {
           onLogout={handleLogout}
         />
       )}
-      <div className={`flex-1 flex flex-col ${isAuthenticated && !showUserType && !showInitialBalance ? 'ml-64' : ''}`}>
+      <div className={`flex-1 flex flex-col ${isAuthenticated && !showUserType && !showInitialBalance && !window.location.pathname.startsWith('/admin') ? 'ml-64' : ''}`}>
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div key={currentPage} className="mt-6 max-w-6xl mx-auto w-full animate-page-fade">
             {pageComponent}
