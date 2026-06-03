@@ -21,7 +21,7 @@ const AdminLayout = () => {
         onNavigate={handleNavigate} 
         onLogout={logout} 
       />
-      <div className="flex-1 ml-64 p-4 md:p-6 lg:p-8 pt-10 sm:pt-12 lg:pt-14 w-full max-w-full">
+      <div className="!w-full !max-w-none flex-1 ml-64 p-4 md:p-6 lg:p-8 pt-14 sm:pt-18 lg:pt-22">
         <Outlet />
       </div>
     </div>
