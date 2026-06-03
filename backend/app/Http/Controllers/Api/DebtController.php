@@ -227,7 +227,7 @@ class DebtController extends Controller
             'paid_amount' => $debtPaidAmount,
             'remaining_amount' => $remaining,
             'status' => $status,
-            'is_overdue' => $status !== 'paid' && $debt->due_date < now()->toDateString(),
+            'is_overdue' => $status !== 'paid' && $debt->due_date && $debt->due_date->lt(now()->startOfDay()),
             'days_until_due' => now()->diffInDays($debt->due_date, false),
         ];
     }

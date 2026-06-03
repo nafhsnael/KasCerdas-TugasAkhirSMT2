@@ -57,7 +57,7 @@ class Debt extends Model
      */
     public function getIsOverdueAttribute(): bool
     {
-        return $this->status !== 'paid' && $this->due_date < now()->toDateString();
+        return $this->status !== 'paid' && $this->due_date && $this->due_date->lt(now()->startOfDay());
     }
 
     /**
