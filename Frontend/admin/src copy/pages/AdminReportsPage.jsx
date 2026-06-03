@@ -308,9 +308,8 @@ function AdminReportsPage() {
           </div>
         )}
 
-        {/* Transactions Table */}
-        <div className="rounded-2xl border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="w-full rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto w-full">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <tr>

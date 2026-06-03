@@ -245,8 +245,8 @@ function AdminUsersPage() {
           </div>
         </div>
       ) : (
-        <div className="rounded-[32px] border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-          <div className="overflow-auto max-h-[600px]">
+        <div className="w-full rounded-[32px] border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+          <div className="overflow-x-auto max-h-[600px] w-full">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50/80 sticky top-0 z-10 shadow-[0_1px_0_rgba(203,213,225,1)]">
                 <tr>
