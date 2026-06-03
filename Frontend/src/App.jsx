@@ -78,9 +78,8 @@ const formatDateToYMD = (value) => {
 
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
-
 const routeToPage = {
-  '': 'dashboard',
+  '': 'landing',
   login: 'login',
   register: 'register',
   transactions: 'transactions',
@@ -90,7 +89,6 @@ const routeToPage = {
   reports: 'reports',
   budget: 'budget',
 }
-
 const pathToPage = (path) => {
   const trimmed = path.replace(/^\/+|\/+$/g, '')
   // Jika alamat diawali dengan 'admin', biarkan Router Admin yang menangani
@@ -829,7 +827,9 @@ function App() {
       return;
     }
 
-    if (!isAuthenticated && currentPage !== 'login' && currentPage !== 'register') {
+    const PROTECTED_PAGES = ['dashboard', 'transactions', 'analysis', 'profile', 'reports', 'budget'];
+
+    if (!isAuthenticated && PROTECTED_PAGES.includes(currentPage)) {
       if (typeof window !== 'undefined') {
         window.history.replaceState(null, '', '/login')
       }
@@ -837,7 +837,7 @@ function App() {
       return
     }
 
-    if (isAuthenticated && (currentPage === 'login' || currentPage === 'register' || (currentPage === 'dashboard' && window.location.pathname === '/'))) {
+    if (isAuthenticated && (currentPage === 'login' || currentPage === 'register' || currentPage === 'landing' || window.location.pathname === '/')) {
       if (typeof window !== 'undefined') {
         window.history.replaceState(null, '', '/dashboard')
       }
@@ -1778,11 +1778,9 @@ function App() {
     if (showInitialBalance) {
       return <InitialBalancePage onSave={handleSaveInitialBalance} initialBalance={initialBalance} />
     }
-
-    if (!isAuthenticated && showLanding) {
+    if (!isAuthenticated && showLanding && currentPage === 'landing') {
       return <LandingPage onLoginClick={handleLandingLogin} onRegisterClick={handleLandingRegister} />
     }
-
     if (!isAuthenticated) {
       return currentPage === 'register' ? (
         <RegisterPage onSwitch={() => navigateTo('login')} onAuthenticate={(data) => handleAuthenticate(data, true)} showCustomAlert={triggerAlert} />
