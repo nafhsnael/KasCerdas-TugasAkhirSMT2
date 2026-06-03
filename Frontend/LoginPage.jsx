@@ -86,14 +86,6 @@ const LoginPage = () => {
             Login Admin
           </button>
         </form>
-
-        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-          <p className="text-xs text-slate-400 font-medium leading-relaxed">
-            Akun Admin Default:<br />
-            <span className="text-[#38ADA9] font-semibold">admin@kascerdas.com</span> atau username <span className="text-[#38ADA9] font-semibold">admin</span><br />
-            dengan password <span className="text-[#38ADA9] font-semibold">password</span>
-          </p>
-        </div>
       </div>
     </div>
   );
