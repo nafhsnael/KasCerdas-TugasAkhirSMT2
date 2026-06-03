@@ -121,10 +121,25 @@ function AnalysisPage({ transactions }) {
     [selectedPeriod]
   )
 
-  const filteredTransactions = useMemo(() => {
+  const isInitialBalanceTx = (t) => {
+    const title = String(t?.title || '').trim().toLowerCase()
+    const category = String(t?.category || '').trim().toLowerCase()
+    const note = String(t?.note || '').trim().toLowerCase()
+    return (
+      title === 'initial' || title === 'initial balance' || title === 'saldo awal' ||
+      category === 'initial' || category === 'initial balance' || category === 'saldo awal' ||
+      note === 'initial' || note === 'initial balance' || note === 'saldo awal'
+    )
+  }
+
+  const cleanTransactions = useMemo(() => {
     const tx = Array.isArray(transactions) ? transactions : []
-    return tx.filter((t) => isTxInRange(t, currentStart, currentEnd))
-  }, [transactions, currentStart, currentEnd])
+    return tx.filter((t) => !isInitialBalanceTx(t))
+  }, [transactions])
+
+  const filteredTransactions = useMemo(() => {
+    return cleanTransactions.filter((t) => isTxInRange(t, currentStart, currentEnd))
+  }, [cleanTransactions, currentStart, currentEnd])
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -225,7 +240,7 @@ function AnalysisPage({ transactions }) {
           <section className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-6">
               <PeriodDevelopmentCard
-                transactions={transactions}
+                transactions={cleanTransactions}
                 periodLabel={label}
                 currentStart={currentStart}
                 currentEnd={currentEnd}
