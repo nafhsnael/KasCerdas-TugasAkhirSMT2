@@ -326,10 +326,13 @@ function AdminUsersPage() {
 
       {/* Confirm Suspend/Activate Modal (replaces window.confirm) */}
       {confirmModal.show && confirmModal.user && createPortal(
-        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
-          <div className="w-full max-w-sm rounded-[28px] bg-white p-7 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${confirmModal.user.is_active ? 'bg-rose-100' : 'bg-emerald-100'}`}>
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-fade-in-up">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl relative overflow-hidden border border-slate-100/80">
+            {/* Status-colored Top Accent line */}
+            <div className={`absolute top-0 left-0 right-0 h-1.5 ${confirmModal.user.is_active ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
+
+            <div className="flex items-center gap-3 mb-4 mt-2">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${confirmModal.user.is_active ? 'bg-rose-50' : 'bg-emerald-50'}`}>
                 {confirmModal.user.is_active ? (
                   <svg className="w-5 h-5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
@@ -342,20 +345,20 @@ function AdminUsersPage() {
               </div>
               <h3 className="text-lg font-bold text-slate-900">Konfirmasi</h3>
             </div>
-            <p className="text-sm text-slate-600 mb-6">
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
               Yakin ingin <strong>{confirmModal.user.is_active ? 'suspend' : 'aktifkan'}</strong> user <strong>{confirmModal.user.name}</strong>?
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setConfirmModal({ show: false, user: null })}
-                className="rounded-2xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all duration-300"
+                className="px-5 py-2 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm font-medium"
               >
                 Batal
               </button>
               <button
                 onClick={confirmToggleSuspend}
-                className={`rounded-2xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-300 ${
-                  confirmModal.user.is_active ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                className={`px-5 py-2 text-sm font-semibold text-white rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ${
+                  confirmModal.user.is_active ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/10' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/10'
                 }`}
               >
                 {confirmModal.user.is_active ? 'Suspend' : 'Aktifkan'}
