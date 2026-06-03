@@ -31,7 +31,18 @@ function PeriodDevelopmentCard({
   }
 
   const currentPeriod = useMemo(() => {
-    const tx = Array.isArray(transactions) ? transactions : []
+    const isInitialBalanceTx = (t) => {
+      const title = String(t?.title || '').trim().toLowerCase()
+      const category = String(t?.category || '').trim().toLowerCase()
+      const note = String(t?.note || '').trim().toLowerCase()
+      return (
+        title === 'initial' || title === 'initial balance' || title === 'saldo awal' ||
+        category === 'initial' || category === 'initial balance' || category === 'saldo awal' ||
+        note === 'initial' || note === 'initial balance' || note === 'saldo awal'
+      )
+    }
+
+    const tx = (Array.isArray(transactions) ? transactions : []).filter((t) => !isInitialBalanceTx(t))
 
     // Jika range disediakan, pakai range tersebut.
     if (currentStart && currentEnd && previousStart && previousEnd) {
