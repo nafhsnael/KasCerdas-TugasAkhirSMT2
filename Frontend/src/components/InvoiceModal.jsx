@@ -293,7 +293,7 @@ function InvoiceModal({ isOpen, transaction, onClose, userType }) {
           <div>
             <h3 className="text-lg font-bold text-gray-600">Detail Invoice</h3>
             {transaction.invoice && (
-              <span className="inline-block mt-1 px-2.5 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">
+              <span className="inline-block mt-1 px-2.5 py-0.5 bg-gray-50 text-blue-600 rounded-full text-xs font-medium">
                 {transaction.invoice}
               </span>
             )}
