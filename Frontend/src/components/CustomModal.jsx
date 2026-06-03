@@ -1,10 +1,11 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 export default function CustomModal({ isOpen, onClose, title, message, onConfirm, type = 'info' }) {
   if (!isOpen) return null;
 
-  return (
-    <div className="!fixed !inset-0 !w-screen !h-screen !z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-page-fade">
+  return createPortal(
+    <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-page-fade">
       <div className="bg-white rounded-[28px] p-8 max-w-sm w-full mx-4 shadow-2xl border border-slate-100 animate-page-fade text-center">
         {type === 'confirm' ? (
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-500 mb-4">
@@ -63,6 +64,7 @@ export default function CustomModal({ isOpen, onClose, title, message, onConfirm
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,5 +1,7 @@
 // Sidebar - Animasi kemunculan elemen dan efek tombol interaktif panel admin
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
+
 import logoImg from '../../../src/image/logo.jpg'
 
 function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
@@ -93,8 +95,8 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
         </button>
       </div>
 
-      {showLogoutConfirm && (
-        <div className="!fixed !inset-0 !w-screen !h-screen !z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-page-fade">
+      {showLogoutConfirm && createPortal(
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-page-fade">
           <div className="bg-white rounded-[28px] p-6 max-w-sm w-full mx-4 shadow-xl border border-slate-100 animate-fade-in-up">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Konfirmasi Logout</h3>
             <p className="text-sm text-gray-500 mb-6">Apakah Anda yakin ingin keluar dari panel admin?</p>
@@ -116,7 +118,8 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

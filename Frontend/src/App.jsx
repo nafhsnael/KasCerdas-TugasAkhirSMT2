@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import logoImg from './image/logo.jpg'
 
 import Sidebar from './components/Sidebar'
@@ -1968,8 +1969,8 @@ function App() {
         </div>
       </div>
 
-      {alertConfig && (
-        <div className="!fixed !inset-0 !w-screen !h-screen !z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
+      {alertConfig && createPortal(
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
           <div className="w-full max-w-md transform rounded-[32px] bg-white p-8 shadow-2xl transition-all border border-slate-100 scale-100">
             <div className="flex flex-col items-center text-center space-y-5">
               <div className={`flex h-16 w-16 items-center justify-center rounded-full ${alertConfig.type === 'error' ? 'bg-red-50 text-red-500' : 'bg-teal-50 text-teal-500'
@@ -2001,7 +2002,8 @@ function App() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

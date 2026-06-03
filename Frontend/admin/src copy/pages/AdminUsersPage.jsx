@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+
 
 function formatMoney(n) {
   return `Rp ${Number(n || 0).toLocaleString('id-ID')}`
@@ -323,8 +325,8 @@ function AdminUsersPage() {
       )}
 
       {/* Confirm Suspend/Activate Modal (replaces window.confirm) */}
-      {confirmModal.show && confirmModal.user && (
-        <div className="!fixed !inset-0 !w-screen !h-screen !z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
+      {confirmModal.show && confirmModal.user && createPortal(
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
           <div className="w-full max-w-sm rounded-[28px] bg-white p-7 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${confirmModal.user.is_active ? 'bg-rose-100' : 'bg-emerald-100'}`}>
@@ -360,12 +362,13 @@ function AdminUsersPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Modal */}
-      {editingUser && (
-        <div className="!fixed !inset-0 !w-screen !h-screen !z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
+      {editingUser && createPortal(
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
           <div className="w-full max-w-md rounded-[28px] bg-white p-7 shadow-2xl">
             <h2 className="mb-5 text-lg font-bold text-slate-900">Edit Pengguna</h2>
             <form onSubmit={handleSaveEdit} className="space-y-4">
@@ -445,7 +448,8 @@ function AdminUsersPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

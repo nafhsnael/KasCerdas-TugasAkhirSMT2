@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 
 function InitialBalancePage({ onSave, initialBalance = 0 }) {
   const [balance, setBalance] = useState(initialBalance.toString())
@@ -138,8 +139,8 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
           </button>
         </form>
       </div>
-      {notif.open && (
-        <div className="!fixed !inset-0 !w-screen !h-screen !z-[999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      {notif.open && createPortal(
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col items-center space-y-4 max-w-xs w-full mx-4">
             {notif.type === 'success' ? (
               <svg className="h-12 w-12 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +164,8 @@ function InitialBalancePage({ onSave, initialBalance = 0 }) {
               Lanjutkan ke Dashboard
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
