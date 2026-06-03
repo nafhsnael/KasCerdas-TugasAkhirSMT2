@@ -13,18 +13,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Admin User
-        User::updateOrCreate(
-            ['email' => 'admin@kascerdas.com'],
-            [
-                'name' => 'Admin KasCerdas',
-                'username' => 'admin',
-                'password' => Hash::make('password'),
-                'role' => 'admin',
-                'user_type' => null,
-                'is_active' => true,
-            ]
-        );
+        $this->call([
+            AdminUserSeeder::class,
+        ]);
 
         // Regular User
         User::updateOrCreate(
