@@ -275,7 +275,7 @@ function InvoiceModal({ isOpen, transaction, onClose, userType }) {
           <div>
             <h3 className="text-lg font-bold text-slate-800">Detail Invoice</h3>
             {transaction.invoice && (
-              <span className="inline-block mt-1 px-2.5 py-0.5 bg-slate-100 text-slate-500 rounded text-xs font-mono tracking-wider">
+              <span className="inline-block mt-1 px-2.5 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">
                 {transaction.invoice}
               </span>
             )}
@@ -303,70 +303,58 @@ function InvoiceModal({ isOpen, transaction, onClose, userType }) {
         {/* Scrollable Content */}
         <div className="overflow-y-auto p-6 space-y-6 flex-1">
           {/* Highlight Jumlah (Total) */}
-          <div className="text-center p-5 bg-slate-50 rounded-2xl border border-slate-100">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Transaksi</span>
-            <h2 className="text-2xl font-extrabold text-[#38ADA9] mt-1">
+          <div className="text-center p-6 bg-blue-50/60 rounded-2xl border border-blue-100/50">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest block text-center">TOTAL TRANSAKSI</span>
+            <h2 className="text-3xl font-bold text-slate-800 mt-2 text-center">
               Rp {amount.toLocaleString('id-ID')}
             </h2>
           </div>
 
           {/* Informasi Transaksi */}
-          <div className="space-y-3.5">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Informasi Transaksi
+          <div className="space-y-1">
+            <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block mb-2">
+              INFORMASI TRANSAKSI
             </span>
             
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-slate-400">Judul Transaksi</span>
-              <span className="font-semibold text-slate-800 capitalize">{transaction.title}</span>
+            <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+              <span className="text-sm text-slate-400">Judul Transaksi</span>
+              <span className="text-sm font-semibold text-slate-900 capitalize">{transaction.title}</span>
             </div>
             
-            <div className="flex justify-between items-center text-sm pt-2.5 border-t border-dashed border-slate-200">
-              <span className="text-slate-400">Kategori</span>
-              <span className="px-2.5 py-0.5 bg-[#38ADA9]/10 text-[#38ADA9] rounded-md text-xs font-medium">
+            <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+              <span className="text-sm text-slate-400">Kategori</span>
+              <span className="px-2.5 py-0.5 bg-teal-50 text-teal-600 rounded-full text-xs font-medium">
                 {category}
               </span>
             </div>
             
-            <div className="flex justify-between items-center text-sm pt-2.5 border-t border-dashed border-slate-200">
-              <span className="text-slate-400">Tanggal</span>
-              <span className="font-medium text-slate-700">{displayDate}</span>
+            <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+              <span className="text-sm text-slate-400">Tanggal</span>
+              <span className="text-sm font-semibold text-slate-900">{displayDate}</span>
             </div>
           </div>
 
           {/* Detail Stok */}
           {isUmkmUser && isBeliBahanBakuOrStok && (
-            <div className="space-y-3 pt-4 border-t border-slate-100">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Detail Stok
+            <div className="space-y-1 pt-2">
+              <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block mb-2">
+                DETAIL STOK
               </span>
-              <div className="overflow-x-auto rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-400 font-semibold">
-                      <th className="pb-2 font-semibold">Nama Barang</th>
-                      <th className="pb-2 text-center font-semibold">Qty</th>
-                      <th className="pb-2 text-right font-semibold">Harga Satuan</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="text-slate-700">
-                      <td className="pt-2 font-medium capitalize">{stockItemName}</td>
-                      <td className="pt-2 text-center font-medium">{stockQty}</td>
-                      <td className="pt-2 text-right font-medium">
-                        Rp {unitPrice.toLocaleString('id-ID')}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+                <span className="text-sm text-slate-400">Item</span>
+                <span className="text-sm font-semibold text-slate-900 capitalize">{stockItemName}</span>
+              </div>
+              <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+                <span className="text-sm text-slate-400">Kuantitas</span>
+                <span className="text-sm font-semibold text-slate-900">{stockQty}</span>
               </div>
             </div>
           )}
 
           {/* Catatan */}
           {transaction.note && (
-            <div className="space-y-2 pt-4 border-t border-slate-100">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            <div className="space-y-1 pt-2">
+              <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block mb-2">
                 Catatan
               </span>
               <p className="rounded-xl bg-slate-50 p-3.5 text-sm text-slate-700 leading-relaxed border border-slate-100">
@@ -377,9 +365,9 @@ function InvoiceModal({ isOpen, transaction, onClose, userType }) {
 
           {/* Bukti Nota */}
           {receipt && (
-            <div className="space-y-3 pt-4 border-t border-slate-100">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Bukti Nota
+            <div className="space-y-2 pt-2">
+              <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block mb-2">
+                BUKTI NOTA
               </span>
               <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 p-1">
                 <ReceiptPreview
@@ -398,7 +386,7 @@ function InvoiceModal({ isOpen, transaction, onClose, userType }) {
         <div className="p-6 border-t border-slate-100 bg-white">
           <button
             onClick={onClose}
-            className="w-full py-3 bg-[#38ADA9] hover:bg-[#2c8a7d] text-white font-semibold rounded-2xl text-sm shadow-md shadow-[#38ADA9]/10 hover:shadow-[#38ADA9]/20 transition-all duration-200 active:scale-[0.98]"
+            className="w-full py-3 bg-[#38ADA9] hover:bg-[#2c8a7d] text-white font-semibold rounded-xl text-sm transition-all duration-200 active:scale-[0.98]"
           >
             Tutup
           </button>
