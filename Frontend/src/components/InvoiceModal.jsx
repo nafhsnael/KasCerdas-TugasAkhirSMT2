@@ -323,7 +323,9 @@ function InvoiceModal({ isOpen, transaction, onClose, userType }) {
           {/* Highlight Jumlah (Total) */}
           <div className="text-center p-6 bg-blue-50/60 rounded-2xl border border-blue-100/50">
             <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest block text-center">TOTAL TRANSAKSI</span>
-            <h2 className="text-3xl font-bold text-teal-600 mt-2 text-center">
+            <h2 className={`text-3xl font-bold mt-2 text-center ${
+              String(transaction.type).toLowerCase() === 'expense' ? 'text-red-600' : 'text-emerald-600'
+            }`}>
               Rp {amount.toLocaleString('id-ID')}
             </h2>
           </div>
