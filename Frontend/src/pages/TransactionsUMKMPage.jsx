@@ -571,6 +571,7 @@ function TransactionsUMKMPage({
       <InvoiceModal
         isOpen={isInvoiceModalOpen}
         transaction={selectedInvoice}
+        userType="umkm"
         onClose={() => {
           setIsInvoiceModalOpen(false)
           setSelectedInvoice(null)

@@ -193,7 +193,7 @@ function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt, 
   )
 }
 
-function InvoiceModal({ isOpen, transaction, onClose }) {
+function InvoiceModal({ isOpen, transaction, onClose, userType }) {
   if (!isOpen || !transaction) return null
 
   const parseMetadata = (metadata) => {
@@ -238,6 +238,22 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
     } : null)
   const amount = Number(transaction.amount || 0)
   const isStockTransaction = category === 'Beli Bahan Baku / Stok' || category === 'Hutang Supplier'
+
+  const isUmkmUser = 
+    userType === 'umkm' || 
+    metadata.is_umkm === true || 
+    metadata.is_umkm === 'true' || 
+    transaction.user?.usertype === 'umkm'
+
+  const isBeliBahanBakuOrStok = 
+    category === 'Beli Bahan Baku / Stok' || 
+    category === 'Beli Bahan Baku' || 
+    category === 'Beli Stok' || 
+    String(category).toLowerCase().includes('beli bahan baku') || 
+    String(category).toLowerCase().includes('beli stok')
+
+  const qtyVal = Number(stockQtyVal) || 1
+  const unitPrice = Math.round(amount / qtyVal)
 
   const displayDate = (() => {
     const d = transaction.date
@@ -318,20 +334,30 @@ function InvoiceModal({ isOpen, transaction, onClose }) {
           </div>
 
           {/* Detail Stok */}
-          {isStockTransaction && (
-            <div className="space-y-3.5 pt-4 border-t border-slate-100">
+          {isUmkmUser && isBeliBahanBakuOrStok && (
+            <div className="space-y-3 pt-4 border-t border-slate-100">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
                 Detail Stok
               </span>
-              
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-400">Item</span>
-                <span className="font-semibold text-slate-800">{stockItemName}</span>
-              </div>
-              
-              <div className="flex justify-between items-center text-sm pt-2.5 border-t border-dashed border-slate-200">
-                <span className="text-slate-400">Kuantitas</span>
-                <span className="font-semibold text-slate-800">{stockQty}</span>
+              <div className="overflow-x-auto rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-400 font-semibold">
+                      <th className="pb-2 font-semibold">Nama Barang</th>
+                      <th className="pb-2 text-center font-semibold">Qty</th>
+                      <th className="pb-2 text-right font-semibold">Harga Satuan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="text-slate-700">
+                      <td className="pt-2 font-medium capitalize">{stockItemName}</td>
+                      <td className="pt-2 text-center font-medium">{stockQty}</td>
+                      <td className="pt-2 text-right font-medium">
+                        Rp {unitPrice.toLocaleString('id-ID')}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
