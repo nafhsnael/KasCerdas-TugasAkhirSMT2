@@ -70,7 +70,7 @@ function AdminDashboardPage() {
       ) : (
         <div className="space-y-6">
           {/* Row 1: Stat Cards */}
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
             <StatCard label="Total User" value={totalUsers} description="Pengguna terdaftar" />
             <StatCard label="User Aktif" value={activeUsers} description="Akun aktif" />
             <StatCard label="Total Transaksi" value={totalTransactions} description="Semua riwayat" />
