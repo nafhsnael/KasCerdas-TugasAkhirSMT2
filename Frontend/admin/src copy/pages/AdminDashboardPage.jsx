@@ -78,7 +78,7 @@ function AdminDashboardPage() {
           </div>
 
           {/* Row 3: User Terbaru & Transaksi Terbaru */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 w-full">
             <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
               <h2 className="mb-4 text-base font-semibold text-slate-900">User Terbaru</h2>
               <div className="space-y-4">
@@ -116,7 +116,7 @@ function AdminDashboardPage() {
           </div>
 
           {/* Row 4: Top Kategori & Status Sistem */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 w-full">
             <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300">
               <h2 className="mb-4 text-base font-semibold text-slate-900">Top Kategori (Berdasarkan Nominal)</h2>
               <div className="space-y-4">
