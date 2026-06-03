@@ -7,6 +7,11 @@ use App\Models\Wallet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * App\Models\Debt
+ *
+ * @property \Illuminate\Support\Carbon|null $due_date
+ */
 class Debt extends Model
 {
     protected $fillable = [
@@ -57,7 +62,9 @@ class Debt extends Model
      */
     public function getIsOverdueAttribute(): bool
     {
-        return $this->status !== 'paid' && $this->due_date && $this->due_date->lt(now()->startOfDay());
+        /** @var \Illuminate\Support\Carbon|null $dueDate */
+        $dueDate = $this->due_date;
+        return $this->status !== 'paid' && $dueDate && $dueDate->lt(now()->startOfDay());
     }
 
     /**
