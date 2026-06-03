@@ -29,6 +29,7 @@ import DashboardMahasiswaPage from './pages/DashboardMahasiswaPage'
 import AddDebtPage from './pages/AddDebtPage'
 import AddSavingsPage from './pages/AddSavingsPage'
 import ProfilePage from './pages/ProfilePage'
+import MaintenancePage from './pages/MaintenancePage'
 
 // Import API services
 import { transactionAPI, budgetAPI, debtAPI, savingAPI } from './utils/api'
@@ -121,6 +122,42 @@ function App() {
   const [token, setToken] = useState(readInitialToken)
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(token))
   const [authLoading, setAuthLoading] = useState(Boolean(token))
+  const [isMaintenance, setIsMaintenance] = useState(false)
+
+  useEffect(() => {
+    const checkMaintenanceOnStart = async () => {
+      if (window.location.pathname.startsWith('/admin')) return
+      
+      try {
+        const res = await fetch(buildApiUrl('/api/transactions'), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          }
+        })
+        if (res.status === 503) {
+          setIsMaintenance(true)
+        }
+      } catch (e) {
+        if (e.status === 503) {
+          setIsMaintenance(true)
+        }
+      }
+    }
+
+    checkMaintenanceOnStart()
+
+    const handleMaintenanceActive = () => {
+      setIsMaintenance(true)
+    }
+
+    window.addEventListener('maintenance-active', handleMaintenanceActive)
+    return () => {
+      window.removeEventListener('maintenance-active', handleMaintenanceActive)
+    }
+  }, [token])
 
   const [alertConfig, setAlertConfig] = useState(null)
 
@@ -1967,6 +2004,10 @@ function App() {
   }
 
   const isAdminPath = window.location.pathname.startsWith('/admin')
+
+  if (isMaintenance && !isAdminPath) {
+    return <MaintenancePage />
+  }
 
   return (
     <div className="w-full min-h-screen flex bg-slate-50 text-slate-900">

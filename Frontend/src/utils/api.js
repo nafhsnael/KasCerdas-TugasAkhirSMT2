@@ -45,9 +45,14 @@ async function apiFetch(endpoint, options = {}) {
   
   const data = await response.json().catch(() => null)
 
-    // Maintenance mode (503) should be treated as a silent success
+    // Maintenance mode (503) should dispatch global event and throw error
     if (response.status === 503) {
-      return {};
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('maintenance-active'))
+      }
+      const error = new Error('Sistem sedang dalam maintenance/pemeliharaan.')
+      error.status = 503
+      throw error
     }
 
     if (!response.ok) {

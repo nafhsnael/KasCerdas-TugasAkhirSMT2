@@ -33,6 +33,8 @@ class CheckMaintenance
                 'api/auth/logout', // logout
                 'api/auth/me', // get authenticated user info
                 'api/wallet/me', // wallet info after login
+                'api/auth/login', // login
+                'api/auth/register', // register
             ];
             foreach ($whitelisted as $path) {
                 if ($request->is($path)) {
