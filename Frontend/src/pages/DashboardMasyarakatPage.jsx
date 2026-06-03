@@ -98,13 +98,15 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
   })
 
   const isSaldoAwalTransaction = (transaction) => {
-    const cat = String(transaction.category || '').toLowerCase()
-    const businessCat = String(transaction.businessCategory || '').toLowerCase()
+    const cat = String(transaction?.category || '').trim().toLowerCase()
+    const businessCat = String(transaction?.businessCategory || '').trim().toLowerCase()
+    const title = String(transaction?.title || '').trim().toLowerCase()
+    const note = String(transaction?.note || '').trim().toLowerCase()
     return (
-      cat === 'saldo awal' ||
-      cat === 'initial' ||
-      businessCat === 'saldo awal' ||
-      businessCat === 'initial'
+      cat === 'saldo awal' || cat === 'initial' || cat === 'initial balance' ||
+      businessCat === 'saldo awal' || businessCat === 'initial' || businessCat === 'initial balance' ||
+      title === 'saldo awal' || title === 'initial' || title === 'initial balance' ||
+      note === 'saldo awal' || note === 'initial' || note === 'initial balance'
     )
   }
 
