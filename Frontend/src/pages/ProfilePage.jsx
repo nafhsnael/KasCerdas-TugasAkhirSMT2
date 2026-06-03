@@ -41,6 +41,19 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
     return '-';
   }, [profile.usertype, userProfile?.usertype]);
 
+  const buildStorageUrl = (path) => {
+    if (!path) return null
+    const value = String(path).trim()
+    if (!value) return null
+    if (/^(https?:|blob:|data:)/i.test(value)) return value
+
+    const cleanPath = value.replace(/^\/+/, '')
+    const storagePath = (cleanPath.startsWith('storage/') || cleanPath.startsWith('avatars/'))
+      ? cleanPath
+      : `storage/${cleanPath}`
+    return `${backendUrl}/${storagePath}`
+  }
+
   // Fetch user profile from backend on mount
   useEffect(() => {
     const token = window.localStorage.getItem('token');
@@ -63,8 +76,9 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
             address: data.address || '',
             usertype: data.user_type || '',
           });
-          setProfileImage(data.profileImage || '');
-          setImagePreview(data.profileImage || '');
+          const finalImg = buildStorageUrl(data.profileImage) || '';
+          setProfileImage(finalImg);
+          setImagePreview(finalImg);
           if (setUserProfile) {
             setUserProfile((prev) => ({
               ...prev,
@@ -72,7 +86,7 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
               user: data.username || prev.user,
               email: data.email || prev.email,
               usertype: data.user_type || prev.usertype,
-              profileImage: data.profileImage || prev.profileImage,
+              profileImage: finalImg || prev.profileImage,
             }));
           }
         }
@@ -124,17 +138,18 @@ function ProfilePage({ userProfile, setUserProfile, onNavigate }) {
         const json = await response.json();
         if (setUserProfile) {
           const updatedUser = json.data || {};
+          const finalImg = buildStorageUrl(updatedUser.profileImage) || buildStorageUrl(profileImage) || '';
           setUserProfile((prev) => ({
             ...prev,
             nama: updatedUser.name || prev.nama,
             user: updatedUser.username || prev.user,
             email: updatedUser.email || prev.email,
             usertype: updatedUser.user_type || prev.usertype,
-            profileImage: updatedUser.profileImage || profileImage || prev.profileImage,
+            profileImage: finalImg || prev.profileImage,
           }));
           if (updatedUser.profileImage) {
-            setProfileImage(updatedUser.profileImage);
-            setImagePreview(updatedUser.profileImage);
+            setProfileImage(finalImg);
+            setImagePreview(finalImg);
           }
         }
         showAlert('Profil berhasil diperbarui!', 'Berhasil');

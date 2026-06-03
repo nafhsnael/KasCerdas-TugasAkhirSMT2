@@ -401,7 +401,9 @@ function App() {
     if (/^(https?:|blob:|data:)/i.test(value)) return value
 
     const cleanPath = value.replace(/^\/+/, '')
-    const storagePath = cleanPath.startsWith('storage/') ? cleanPath : `storage/${cleanPath}`
+    const storagePath = (cleanPath.startsWith('storage/') || cleanPath.startsWith('avatars/'))
+      ? cleanPath
+      : `storage/${cleanPath}`
 
     const backendOrigin = 'https://backend-kascerdas-production.up.railway.app'
     return `${backendOrigin}/${storagePath}`
