@@ -11,6 +11,7 @@ function DashboardUMKMPage({
   umkmSummary,
   eWalletBalance,
   onQuickAction,
+  debts = [],
 }) {
   // initialIncome = saldo awal yang dimasukkan (Initial/Saldo Awal)
   // NOTE: di beberapa backend payload, saldo awal kadang sudah tercampur di umkmSummary.income.
@@ -38,8 +39,56 @@ function DashboardUMKMPage({
   const inventoryItems = Array.isArray(umkmSummary.inventory) ? umkmSummary.inventory : []
 
   const lowStockItems = inventoryItems.filter((item) => item.stock <= item.reorderLevel)
-  const totalPayables = umkmSummary.payables
-  const totalReceivables = umkmSummary.receivables
+
+  // Helper to determine the category of a debt (same as ReportsUMKMPage.jsx)
+  const getDebtCategory = (debt) => {
+    const noteLower = String(debt.note || '').toLowerCase().trim()
+    if (noteLower.includes('piutang pelanggan')) return 'Piutang Pelanggan'
+    if (noteLower.includes('hutang supplier')) return 'Hutang Supplier'
+
+    const creditorLower = String(debt.creditor || debt.creditor_name || '').toLowerCase().trim()
+    if (creditorLower.includes('piutang pelanggan')) return 'Piutang Pelanggan'
+    if (creditorLower.includes('hutang supplier')) return 'Hutang Supplier'
+
+    const matchingTrx = (transactions || []).find(
+      (t) => String(t.title || t.judul || '').toLowerCase().trim() === creditorLower
+    )
+    if (matchingTrx) {
+      const cat = String(matchingTrx.category || matchingTrx.kategori || '').toLowerCase()
+      if (cat.includes('piutang')) return 'Piutang Pelanggan'
+      if (cat.includes('hutang')) return 'Hutang Supplier'
+    }
+
+    if (creditorLower.includes('piutang') || creditorLower.includes('pelanggan')) {
+      return 'Piutang Pelanggan'
+    }
+    return 'Hutang Supplier'
+  }
+
+  const supplierDebts = useMemo(() => {
+    return (debts || []).filter((d) => getDebtCategory(d) === 'Hutang Supplier')
+  }, [debts, transactions])
+
+  const customerPiutang = useMemo(() => {
+    return (debts || []).filter((d) => getDebtCategory(d) === 'Piutang Pelanggan')
+  }, [debts, transactions])
+
+  const totalPayables = useMemo(() => {
+    return supplierDebts.reduce((sum, d) => {
+      const amount = parseFloat(d.amount) || 0;
+      const dibayar = parseFloat(d.paid_amount || d.paidAmount) || 0;
+      return sum + Math.max(0, amount - dibayar);
+    }, 0);
+  }, [supplierDebts]);
+
+  const totalReceivables = useMemo(() => {
+    return customerPiutang.reduce((sum, d) => {
+      const amount = parseFloat(d.amount) || 0;
+      const dibayar = parseFloat(d.paid_amount || d.paidAmount) || 0;
+      return sum + Math.max(0, amount - dibayar);
+    }, 0);
+  }, [customerPiutang]);
+
   const costOfGoodsSold = umkmSummary.estimatedHpp
   const profitLoss = profitIncome - costOfGoodsSold - businessExpense
   

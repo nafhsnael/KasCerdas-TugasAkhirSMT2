@@ -1917,6 +1917,7 @@ function App() {
               umkmSummary={umkmSummary}
               eWalletBalance={umkmEWalletBalance || initialBalance}
               onQuickAction={handleUmkmQuickAction}
+              debts={debts}
             />
           ) : (
             <DashboardPage
