@@ -301,7 +301,11 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
     )
   )
 
-  const overallScore = (transactions || []).length === 0
+  const isEmptyData =
+    (transactions || []).length === 0 ||
+    (transactions || []).filter(t => !isSaldoAwalTransaction(t)).length === 0
+
+  const overallScore = isEmptyData
     ? 100
     : Math.round(
         cashflowScore * 0.22 +
@@ -311,33 +315,20 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
         stabilityScore * 0.2
       )
 
-  const isEmptyData =
-    (transactions || []).length === 0 ||
-    (transactions || []).filter(t => !isSaldoAwalTransaction(t)).length === 0
+  const financialCategory = overallScore >= 80 ? 'Sangat Sehat' :
+    overallScore >= 60 ? 'Cukup Sehat' :
+    overallScore >= 40 ? 'Kurang Stabil' :
+    'Buruk'
 
-  const hasNoTransactions = (transactions || []).length === 0
-  const isScoreEmpty = isEmptyData && !hasNoTransactions
+  const scoreColor = overallScore >= 80 ? 'text-emerald-700 bg-emerald-50 border-emerald-100' :
+    overallScore >= 60 ? 'text-lime-700 bg-lime-50 border-lime-100' :
+    overallScore >= 40 ? 'text-amber-700 bg-amber-50 border-amber-100' :
+    'text-red-700 bg-red-50 border-red-100'
 
-  const financialCategory = isScoreEmpty
-    ? 'Belum ada data'
-    : (overallScore >= 80 ? 'Sangat Sehat' :
-       overallScore >= 60 ? 'Cukup Sehat' :
-       overallScore >= 40 ? 'Kurang Stabil' :
-       'Buruk')
-
-  const scoreColor = isScoreEmpty
-    ? 'text-slate-600 bg-slate-50 border-slate-200'
-    : (overallScore >= 80 ? 'text-emerald-700 bg-emerald-50 border-emerald-100' :
-       overallScore >= 60 ? 'text-lime-700 bg-lime-50 border-lime-100' :
-       overallScore >= 40 ? 'text-amber-700 bg-amber-50 border-amber-100' :
-       'text-red-700 bg-red-50 border-red-100')
-
-  const scoreRingColor = isScoreEmpty
-    ? '#94A3B8'
-    : (overallScore >= 80 ? '#16A34A' :
-       overallScore >= 60 ? '#65A30D' :
-       overallScore >= 40 ? '#F59E0B' :
-       '#DC2626')
+  const scoreRingColor = overallScore >= 80 ? '#16A34A' :
+    overallScore >= 60 ? '#65A30D' :
+    overallScore >= 40 ? '#F59E0B' :
+    '#DC2626'
 
   const healthAspects = [
     {
@@ -369,7 +360,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
 
   const circleRadius = 60
   const circleCircumference = 2 * Math.PI * circleRadius
-  const progressOffset = circleCircumference * (1 - (isScoreEmpty ? 0 : overallScore) / 100)
+  const progressOffset = circleCircumference * (1 - overallScore / 100)
 
   return (
     <div className="space-y-8 animate-fade-in-up">
@@ -487,7 +478,7 @@ function DashboardMasyarakatPage({ walletSummary, transactions, budgets, walletI
               <div className="absolute inset-0 grid place-items-center">
                 <div>
                   <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Score</p>
-                  <p className="mt-2 text-4xl font-semibold text-slate-900">{isScoreEmpty ? '-' : overallScore}</p>
+                  <p className="mt-2 text-4xl font-semibold text-slate-900">{overallScore}</p>
                 </div>
               </div>
             </div>
