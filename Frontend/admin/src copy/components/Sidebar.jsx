@@ -48,13 +48,19 @@ function Sidebar({ currentPage, onNavigate, userProfile, onLogout }) {
       {/* User Info */}
       <div className={`p-4 border-b border-[#F6B93B]/20 ${!isExpanded && 'flex justify-center'}`}>
         <div className="flex items-center gap-3">
-          {userProfile?.profileImage && (
-            <img
-              src={userProfile.profileImage}
-              alt="Profile"
-              className="h-12 w-12 rounded-full object-cover border-2 border-[#F6B93B]"
-            />
-          )}
+          <div className="relative h-12 w-12 rounded-full border-2 border-[#F6B93B] overflow-hidden flex items-center justify-center bg-[#F6B93B]/20 text-[#F6B93B] font-bold text-lg flex-shrink-0">
+            {userProfile?.profileImage ? (
+              <img
+                src={userProfile.profileImage}
+                alt="Profile"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : null}
+            <span>{userProfile?.nama ? userProfile.nama.charAt(0).toUpperCase() : 'U'}</span>
+          </div>
           {isExpanded && (
             <div className="flex-1">
               <p className="font-semibold text-sm">{userProfile?.nama}</p>

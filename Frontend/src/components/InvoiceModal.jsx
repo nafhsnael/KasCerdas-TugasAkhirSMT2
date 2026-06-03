@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 const getBackendOrigin = () => {
-  return 'https://backend-kascerdas-production.up.railway.app'
+  const baseApiUrl = import.meta.env.VITE_API_URL || 'https://backend-kascerdas-production.up.railway.app'
+  return baseApiUrl.replace(/\/api$/, '')
 }
 
 const getApiBaseUrl = () => {
-  return 'https://backend-kascerdas-production.up.railway.app/api'
+  return import.meta.env.VITE_API_URL || 'https://backend-kascerdas-production.up.railway.app/api'
 }
 
 const buildReceiptUrl = (value) => {
@@ -33,6 +34,7 @@ function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt, 
   const [secureType, setSecureType] = useState('')
   const [secureLoading, setSecureLoading] = useState(false)
   const [urlIndex, setUrlIndex] = useState(0)
+  const [hasError, setHasError] = useState(false)
 
   const urls = useMemo(() => {
     const values = [
@@ -76,8 +78,8 @@ function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt, 
 
       const cleanRaw = raw.replace(/^\/+/, '')
       const storagePath = cleanRaw.startsWith('storage/') ? cleanRaw : `storage/${cleanRaw}`
-      candidates.push(`/${storagePath}`)
       if (backendOrigin) candidates.push(`${backendOrigin}/${storagePath}`)
+      candidates.push(`/${storagePath}`)
     })
 
     return [...new Set(candidates.filter(Boolean))]
@@ -97,6 +99,7 @@ function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt, 
     setSecureUrl(null)
     setSecureType('')
     setUrlIndex(0)
+    setHasError(false)
 
     if (!canFetchSecureReceipt) {
       setSecureLoading(false)
@@ -142,12 +145,27 @@ function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt, 
   const displayAsPdf = isPdfReceipt || secureType === 'application/pdf'
   const displayAsImage = !displayAsPdf && (isImageReceipt || secureType.startsWith('image/'))
 
+  const handleImageError = () => {
+    if (urlIndex + 1 < urls.length) {
+      setUrlIndex((prev) => prev + 1)
+    } else {
+      setHasError(true)
+    }
+  }
+
   if (secureLoading && !src) {
     return <p className="text-sm text-slate-500">Memuat bukti nota...</p>
   }
 
-  if (!src) {
-    return <p className="text-sm text-slate-500">Bukti nota belum tersedia.</p>
+  if (hasError || !src) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center">
+        <svg className="mx-auto h-8 w-8 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <p className="text-xs text-slate-500 font-medium">Bukti nota tidak dapat dimuat atau tidak valid.</p>
+      </div>
+    )
   }
 
   if (displayAsPdf) {
@@ -165,7 +183,7 @@ function ReceiptPreview({ transactionId, receipt, isImageReceipt, isPdfReceipt, 
       <img
         src={src}
         alt="Bukti Nota"
-        onError={() => setUrlIndex((index) => (index + 1 < urls.length ? index + 1 : index))}
+        onError={handleImageError}
         className="max-h-[420px] w-full rounded-xl border border-slate-200 bg-white object-contain p-2"
       />
     )
@@ -273,7 +291,7 @@ function InvoiceModal({ isOpen, transaction, onClose, userType }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white">
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Detail Invoice</h3>
+            <h3 className="text-lg font-bold text-gray-600">Detail Invoice</h3>
             {transaction.invoice && (
               <span className="inline-block mt-1 px-2.5 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">
                 {transaction.invoice}
@@ -304,49 +322,49 @@ function InvoiceModal({ isOpen, transaction, onClose, userType }) {
         <div className="overflow-y-auto p-6 space-y-6 flex-1">
           {/* Highlight Jumlah (Total) */}
           <div className="text-center p-6 bg-blue-50/60 rounded-2xl border border-blue-100/50">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest block text-center">TOTAL TRANSAKSI</span>
-            <h2 className="text-3xl font-bold text-slate-800 mt-2 text-center">
+            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest block text-center">TOTAL TRANSAKSI</span>
+            <h2 className="text-3xl font-bold text-teal-600 mt-2 text-center">
               Rp {amount.toLocaleString('id-ID')}
             </h2>
           </div>
 
           {/* Informasi Transaksi */}
           <div className="space-y-1">
-            <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block mb-2">
+            <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold block mb-2">
               INFORMASI TRANSAKSI
             </span>
             
             <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-              <span className="text-sm text-slate-400">Judul Transaksi</span>
-              <span className="text-sm font-semibold text-slate-900 capitalize">{transaction.title}</span>
+              <span className="text-sm text-gray-500">Judul Transaksi</span>
+              <span className="text-sm font-semibold text-gray-800 capitalize">{transaction.title}</span>
             </div>
             
             <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-              <span className="text-sm text-slate-400">Kategori</span>
+              <span className="text-sm text-gray-500">Kategori</span>
               <span className="px-2.5 py-0.5 bg-teal-50 text-teal-600 rounded-full text-xs font-medium">
                 {category}
               </span>
             </div>
             
             <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-              <span className="text-sm text-slate-400">Tanggal</span>
-              <span className="text-sm font-semibold text-slate-900">{displayDate}</span>
+              <span className="text-sm text-gray-500">Tanggal</span>
+              <span className="text-sm font-semibold text-gray-800">{displayDate}</span>
             </div>
           </div>
 
           {/* Detail Stok */}
           {isUmkmUser && isBeliBahanBakuOrStok && (
             <div className="space-y-1 pt-2">
-              <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block mb-2">
+              <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold block mb-2">
                 DETAIL STOK
               </span>
               <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-                <span className="text-sm text-slate-400">Item</span>
-                <span className="text-sm font-semibold text-slate-900 capitalize">{stockItemName}</span>
+                <span className="text-sm text-gray-500">Item</span>
+                <span className="text-sm font-semibold text-gray-800 capitalize">{stockItemName}</span>
               </div>
               <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-                <span className="text-sm text-slate-400">Kuantitas</span>
-                <span className="text-sm font-semibold text-slate-900">{stockQty}</span>
+                <span className="text-sm text-gray-500">Kuantitas</span>
+                <span className="text-sm font-semibold text-gray-800">{stockQty}</span>
               </div>
             </div>
           )}
@@ -354,21 +372,21 @@ function InvoiceModal({ isOpen, transaction, onClose, userType }) {
           {/* Catatan */}
           {transaction.note && (
             <div className="space-y-1 pt-2">
-              <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block mb-2">
+              <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold block mb-2">
                 Catatan
               </span>
-              <p className="rounded-xl bg-slate-50 p-3.5 text-sm text-slate-700 leading-relaxed border border-slate-100">
+              <p className="rounded-xl bg-slate-50 p-3.5 text-sm text-gray-700 leading-relaxed border border-slate-100">
                 {transaction.note}
               </p>
             </div>
           )}
 
           {/* Bukti Nota */}
-          {receipt && (
-            <div className="space-y-2 pt-2">
-              <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block mb-2">
-                BUKTI NOTA
-              </span>
+          <div className="space-y-2 pt-2">
+            <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold block mb-2">
+              BUKTI NOTA
+            </span>
+            {receipt ? (
               <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 p-1">
                 <ReceiptPreview
                   transactionId={transaction.id}
@@ -378,8 +396,15 @@ function InvoiceModal({ isOpen, transaction, onClose, userType }) {
                   transaction={transaction}
                 />
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center">
+                <svg className="mx-auto h-8 w-8 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-xs text-slate-500">Bukti nota belum diunggah.</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}

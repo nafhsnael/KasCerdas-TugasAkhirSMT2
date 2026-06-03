@@ -690,33 +690,33 @@ function App() {
     setShowLanding(false)
     setAuthLoading(true)
 
-    Promise.all([fetchCurrentUser(), fetchWalletInfo()])
-      .then(async ([authUser, walletData]) => {
+    Promise.all([fetchCurrentUser(), fetchWalletInfo(), fetchUserProfileData()])
+      .then(async ([authUser, walletData, profileData]) => {
         const isAdmin = authUser.role === 'admin'
 
         // Kalau user login Google baru, biasanya user_type masih null.
         // Jadi jangan pakai role "user" sebagai usertype.
-        const resolvedUserType = authUser.user_type || (isAdmin ? 'admin' : null)
+        const resolvedUserType = (profileData && profileData.user_type) || authUser.user_type || (isAdmin ? 'admin' : null)
 
         setUserProfile((prev) => {
           const nextProfile = {
             ...prev,
-            nama: authUser.name || prev.nama,
-            user: authUser.username || prev.user,
-            email: authUser.email || prev.email,
+            nama: (profileData && profileData.name) || authUser.name || prev.nama,
+            user: (profileData && profileData.username) || authUser.username || prev.user,
+            email: (profileData && profileData.email) || authUser.email || prev.email,
             usertype: resolvedUserType,
             dompet: walletData?.name || (isAdmin ? 'Admin Wallet' : prev.dompet),
-            profileImage: buildStorageUrl(authUser.avatar) || prev.profileImage,
+            profileImage: (profileData && profileData.profileImage) ? buildStorageUrl(profileData.profileImage) : (buildStorageUrl(authUser.avatar) || prev.profileImage),
           }
           // Direct sync to localStorage to prevent refresh/loading race conditions
           const authUserObj = {
             id: authUser.id,
-            name: authUser.name,
-            username: authUser.username,
-            email: authUser.email,
+            name: (profileData && profileData.name) || authUser.name,
+            username: (profileData && profileData.username) || authUser.username,
+            email: (profileData && profileData.email) || authUser.email,
             role: authUser.role,
-            user_type: authUser.user_type,
-            avatar: authUser.avatar || '',
+            user_type: resolvedUserType,
+            avatar: (profileData && profileData.profileImage) ? profileData.profileImage : (authUser.avatar || ''),
           }
           window.localStorage.setItem('auth_user', JSON.stringify(authUserObj))
           window.localStorage.setItem('user_profile', JSON.stringify(nextProfile))
@@ -1530,6 +1530,20 @@ function App() {
         // ignore
       }
       throw e
+    }
+  }
+
+  const fetchUserProfileData = async () => {
+    try {
+      const res = await authFetch('/api/user/profil', { method: 'GET' })
+      if (!res.ok) {
+        throw new Error('Gagal mengambil detail profil')
+      }
+      const json = await res.json()
+      return json.data
+    } catch (e) {
+      console.error('Error fetching user profile data:', e)
+      return null
     }
   }
 
