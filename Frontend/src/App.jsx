@@ -2020,7 +2020,7 @@ function App() {
         />
       )}
       <div className={`flex-1 flex flex-col ${isAuthenticated && !showUserType && !showInitialBalance && !isAdminPath ? 'ml-64' : ''}`}>
-        {isAdminPath ? (
+        {isAdminPath || currentPage === 'landing' ? (
           pageComponent
         ) : (
           <div className="flex-grow p-4 md:p-6 lg:p-8">

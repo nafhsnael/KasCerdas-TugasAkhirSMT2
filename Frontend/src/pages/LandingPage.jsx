@@ -47,8 +47,10 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50 to-white">
-      {/* Navbar */}
-      <nav className="bg-white shadow-sm">
+      <div className="flex-grow p-4 md:p-6 lg:p-8">
+        <div className="mt-6 max-w-6xl mx-auto w-full animate-page-fade">
+          {/* Navbar */}
+          <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
@@ -220,10 +222,12 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
           </div>
         </div>
       </div>
+        </div>
+      </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-teal-600 to-teal-700 py-20 shadow-inner">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+      <div className="w-full max-w-full m-0 p-0 bg-gradient-to-r from-teal-600 to-teal-700 py-20 shadow-inner">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 flex flex-col items-center">
           <h2 className="text-3xl md:text-4xl font-extrabold text-white">Mulai Kelola Keuangan Anda Sekarang</h2>
           <p className="text-teal-100 text-lg max-w-xl mx-auto">
             Gratis, aman, dan mudah digunakan. Daftar dalam hitungan detik.
@@ -238,7 +242,7 @@ export default function LandingPage({ onLoginClick, onRegisterClick }) {
       </div>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-8">
+      <footer className="w-full max-w-full m-0 p-0 bg-slate-900 text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-slate-400">
             © 2026 KasCerdas. Semua hak dilindungi. Kelola keuangan dengan lebih cerdas.
