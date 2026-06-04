@@ -372,9 +372,24 @@ function AdminUsersPage() {
       {/* Edit Modal */}
       {/* Edit Modal */}
       {editingUser && createPortal(
-        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in-up">
-          <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
-            <h2 className="mb-5 text-lg font-bold text-slate-900">Edit Pengguna</h2>
+        <div className="!fixed !inset-0 !w-screen !h-screen !z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-fade-in-up">
+          <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl relative overflow-hidden border border-slate-100/80">
+            {/* Top accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#38ADA9]"></div>
+            
+            {/* Modal Header */}
+            <div className="flex items-center gap-4 mb-6 mt-2">
+              <div className="w-12 h-12 rounded-2xl bg-[#38ADA9]/10 text-[#38ADA9] flex items-center justify-center shrink-0">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.83 21.75a.75.75 0 01-.343.203l-4.852 1.2a.75.75 0 01-.908-.908l1.2-4.852a.75.75 0 01.203-.343L16.862 4.487zm0 0L19.5 7.125" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Edit Pengguna</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Ubah informasi akun dan peran pengguna</p>
+              </div>
+            </div>
+
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
                 <label className="text-xs uppercase text-slate-500 font-semibold tracking-wider mb-1.5 block">NAMA</label>
